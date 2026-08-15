@@ -47,7 +47,7 @@ services:
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      NODE_ENV: production
+      # NODE_ENV: production
       REDIS_URL: ${REDIS_URL}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
       WEB_URL: ${WEB_URL}
@@ -81,7 +81,7 @@ services:
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      NODE_ENV: production
+      # NODE_ENV: production
       REDIS_URL: ${REDIS_URL}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
       WEB_URL: ${WEB_URL}
@@ -98,7 +98,7 @@ services:
         condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: ${API_URL}
-      NODE_ENV: production
+      # NODE_ENV: production
     ports:
       - "${WEB_PORT:-3000}:3000"
 

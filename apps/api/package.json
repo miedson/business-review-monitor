@@ -7,6 +7,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "tsx src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "DATABASE_URL=postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor vitest run"
   },

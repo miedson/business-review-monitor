@@ -15,7 +15,8 @@
     "db:studio": "pnpm --filter @brm/database db:studio",
     "dev:api": "pnpm --filter @brm/api dev",
     "dev:web": "pnpm --filter @brm/web dev",
-    "dev:worker": "pnpm --filter @brm/worker dev"
+    "dev:worker": "pnpm --filter @brm/worker dev",
+    "check:deploy": "pnpm -r typecheck && pnpm --filter @brm/web build && pnpm --filter @brm/api build && pnpm --filter @brm/worker build"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
