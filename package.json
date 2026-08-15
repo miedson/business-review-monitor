@@ -1,0 +1,29 @@
+{
+  "name": "business-review-monitor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
+    "test": "DATABASE_URL=postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor vitest run",
+    "graphify:build": "GRAPHIFY_OUT=graphify-out graphify extract apps packages --code-only --out .",
+    "graphify:check": "graphify query apiAppName --graph graphify-out/graph.json",
+    "db:generate": "pnpm --filter @brm/database db:generate",
+    "db:migrate": "pnpm --filter @brm/database db:migrate",
+    "db:studio": "pnpm --filter @brm/database db:studio",
+    "dev:api": "pnpm --filter @brm/api dev",
+    "dev:web": "pnpm --filter @brm/web dev",
+    "dev:worker": "pnpm --filter @brm/worker dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.2.0",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0",
+    "vitest": "^2.1.8"
+  }
+}

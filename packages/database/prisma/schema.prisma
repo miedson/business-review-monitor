@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TenantUserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum GoogleConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  REAUTH_REQUIRED
+  ERROR
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+  tenants      TenantUser[]
+
+  @@map("users")
+}
+
+model Tenant {
+  id                String             @id @default(cuid())
+  name              String
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
+  users             TenantUser[]
+  googleConnections GoogleConnection[]
+  businessLocations BusinessLocation[]
+  reviewCaches      ReviewCache[]
+
+  @@map("tenants")
+}
+
+model TenantUser {
+  id        String         @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      TenantUserRole @default(OWNER)
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("tenant_users")
+}
+
+model GoogleConnection {
+  id                    String                 @id @default(cuid())
+  tenantId              String
+  googleAccountEmail    String?
+  googleAccountId       String?
+  encryptedRefreshToken String?
+  scope                 String
+  status                GoogleConnectionStatus @default(DISCONNECTED)
+  connectedAt           DateTime?              @db.Timestamptz(3)
+  disconnectedAt        DateTime?              @db.Timestamptz(3)
+  createdAt             DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime               @updatedAt @db.Timestamptz(3)
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  businessLocations     BusinessLocation[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("google_connections")
+}
+
+model BusinessLocation {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  googleConnectionId String
+  googleAccountId    String
+  googleLocationId   String
+  name               String
+  storeCode          String?
+  isSelected         Boolean          @default(false)
+  isActive           Boolean          @default(true)
+  lastSyncedAt       DateTime?        @db.Timestamptz(3)
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  googleConnection   GoogleConnection @relation(fields: [googleConnectionId], references: [id], onDelete: Cascade)
+  reviewCaches       ReviewCache[]
+
+  @@unique([googleConnectionId, googleLocationId])
+  @@index([tenantId])
+  @@index([googleConnectionId])
+  @@index([isSelected])
+  @@map("business_locations")
+}
+
+model ReviewCache {
+  id                 String           @id @default(cuid())
+  tenantId           String
+  businessLocationId String
+  googleReviewId     String
+  reviewerName       String?
+  starRating         Int
+  comment            String?
+  reviewCreatedAt    DateTime         @db.Timestamptz(3)
+  reviewUpdatedAt    DateTime         @db.Timestamptz(3)
+  cachedAt           DateTime         @db.Timestamptz(3)
+  expiresAt          DateTime         @db.Timestamptz(3)
+  createdAt          DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  businessLocation   BusinessLocation @relation(fields: [businessLocationId], references: [id], onDelete: Cascade)
+
+  @@unique([businessLocationId, googleReviewId])
+  @@index([tenantId])
+  @@index([businessLocationId])
+  @@index([expiresAt])
+  @@map("review_cache")
+}

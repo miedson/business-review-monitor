@@ -1,0 +1,121 @@
+services:
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && CI=true pnpm install --frozen-lockfile && pnpm db:generate && pnpm dev:api"
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3333
+      DATABASE_URL: postgresql://brm:brm_dev_password@postgres:5432/business_review_monitor
+      REDIS_URL: redis://redis:6379
+      BRM_QUEUE_PREFIX: brm
+      JWT_ACCESS_SECRET: replace-with-at-least-32-characters
+      JWT_REFRESH_SECRET: replace-with-at-least-32-characters
+      TOKEN_ENCRYPTION_KEY: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=
+      GOOGLE_CLIENT_ID: replace-with-google-client-id
+      GOOGLE_CLIENT_SECRET: replace-with-google-client-secret
+      GOOGLE_REDIRECT_URI: http://localhost:3333/integrations/google/callback
+      WEB_URL: http://localhost:3000
+      API_URL: http://localhost:3333
+      GOOGLE_PROVIDER: mock
+    ports:
+      - "${API_PORT:-3333}:3333"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - pnpm-store:/app/.pnpm-store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3333/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+  web:
+    image: node:22-alpine
+    working_dir: /app/apps/web
+    command: sh -c "cd /app && corepack enable && CI=true pnpm install --frozen-lockfile && cd /app/apps/web && pnpm dev"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/web/node_modules
+      - pnpm-store:/app/.pnpm-store
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && CI=true pnpm install --frozen-lockfile && pnpm db:generate && pnpm dev:worker"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://brm:brm_dev_password@postgres:5432/business_review_monitor
+      REDIS_URL: redis://redis:6379
+      BRM_QUEUE_PREFIX: brm
+      JWT_ACCESS_SECRET: replace-with-at-least-32-characters
+      JWT_REFRESH_SECRET: replace-with-at-least-32-characters
+      TOKEN_ENCRYPTION_KEY: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=
+      GOOGLE_CLIENT_ID: replace-with-google-client-id
+      GOOGLE_CLIENT_SECRET: replace-with-google-client-secret
+      GOOGLE_REDIRECT_URI: http://localhost:3333/integrations/google/callback
+      WEB_URL: http://localhost:3000
+      API_URL: http://localhost:3333
+      GOOGLE_PROVIDER: mock
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/worker/node_modules
+      - pnpm-store:/app/.pnpm-store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: brm
+      POSTGRES_PASSWORD: brm_dev_password
+      POSTGRES_DB: business_review_monitor
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brm -d business_review_monitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  pnpm-store:
