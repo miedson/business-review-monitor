@@ -19,6 +19,9 @@ COPY apps apps
 COPY packages packages
 RUN pnpm --filter @brm/database db:generate
 RUN pnpm --filter @brm/config build
+RUN pnpm --filter @brm/database build
+RUN pnpm --filter @brm/shared build
+RUN pnpm --filter @brm/review-monitoring build
 RUN pnpm --filter @brm/api typecheck
 RUN pnpm --filter @brm/api build
 
