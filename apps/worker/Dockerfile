@@ -17,6 +17,7 @@ ENV NODE_ENV=development
 COPY apps apps
 COPY packages packages
 RUN pnpm --filter @brm/database db:generate
+RUN pnpm --filter @brm/config build
 RUN pnpm --filter @brm/worker typecheck
 RUN pnpm --filter @brm/worker build
 
