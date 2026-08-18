@@ -14,7 +14,7 @@ const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
   ({ variant = "default", padding = "md", children, className, ...rest }, ref) => {
     const variantStyles = {
       default: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border" },
-      elevated: { bg: "surface.primary", boxShadow: "md" },
+      elevated: { bg: "surface.primary", boxShadow: "sm" },
       outlined: { bg: "transparent", border: "1px solid", borderColor: "surface.borderStrong" },
       filled: { bg: "surface.secondary" },
     };
@@ -29,7 +29,7 @@ const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
     return (
       <Card.Root
         ref={ref}
-        css={{ borderRadius: "xl", transition: "all 0.2s ease", ...variantStyles[variant], ...paddingStyles[padding] }}
+        css={{ borderRadius: "2xl", transition: "all 0.15s ease", ...variantStyles[variant], ...paddingStyles[padding] }}
         className={className}
         {...rest}
       >

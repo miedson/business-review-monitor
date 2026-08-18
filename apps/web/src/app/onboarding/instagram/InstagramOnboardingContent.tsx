@@ -96,7 +96,7 @@ export function InstagramOnboardingContent() {
           <Text fontWeight="medium" color="text.secondary">É necessário utilizar uma conta profissional Business ou Creator.</Text>
         </Text>
 
-        <Box css={{ bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "xl", p: 6 }}>
+        <Box css={{ bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "2xl", boxShadow: "sm", p: { base: 5, md: 6 } }}>
           <Box css={{ display: "flex", alignItems: "flexStart", gap: 4, mb: 6 }}>
             <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", w: 12, h: 12, borderRadius: "lg", bg: "pink.50", color: "pink.600", flexShrink: 0 }}>
               <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2">

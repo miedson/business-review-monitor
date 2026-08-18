@@ -328,7 +328,7 @@ export default function DashboardPage() {
                             ) : (
                               <Flex css={{ flexDirection: "column", gap: 3 }}>
                                 {googleReviews.slice(0, 5).map((review) => (
-                                  <Box key={review.id} css={{ p: 4, bg: "surface.tertiary", borderRadius: "lg", border: "1px solid", borderColor: "surface.border" }}>
+                                  <Box key={review.id} css={{ p: 4, bg: "surface.tertiary", borderRadius: "2xl", border: "1px solid", borderColor: "surface.border" }}>
                                     <Flex css={{ justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 2 }}>
                                       <Text fontWeight="semibold" color="text.primary">{starRatingLabel(review.starRating)}</Text>
                                       <Text fontSize="sm" color="text.tertiary">{formatDate(review.updatedAt)}</Text>

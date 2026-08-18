@@ -53,9 +53,9 @@ export default function RegisterPage() {
           bg: "surface.primary",
           border: "1px solid",
           borderColor: "surface.border",
-          borderRadius: "xl",
-          boxShadow: "lg",
-          p: 8,
+          borderRadius: "2xl",
+          boxShadow: "sm",
+          p: { base: 6, md: 8 },
         }}
       >
         <Box css={{ textAlign: "center", mb: 8 }}>
@@ -93,43 +93,42 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (
-            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible>
+            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={4}>
               {errorMessage}
             </Alert>
           )}
 
-          <Input
-            label="Nome"
-            autoComplete="name"
-            placeholder="Seu nome"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            mb={4}
-          />
+          <Box css={{ display: "flex", flexDirection: "column", gap: 4, mb: 6 }}>
+            <Input
+              label="Nome"
+              autoComplete="name"
+              placeholder="Seu nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
 
-          <Input
-            label="Email"
-            type="email"
-            autoComplete="email"
-            placeholder="voce@empresa.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            mb={4}
-          />
+            <Input
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="voce@empresa.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
 
-          <Input
-            label="Senha"
-            type="password"
-            autoComplete="new-password"
-            minLength={8}
-            placeholder="Mínimo de 8 caracteres"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            mb={4}
-          />
+            <Input
+              label="Senha"
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              placeholder="Mínimo de 8 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </Box>
 
           <Button
             type="submit"
@@ -141,15 +140,15 @@ export default function RegisterPage() {
             Criar conta
           </Button>
 
-          <Flex css={{ justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
+          <Flex css={{ justifyContent: "center", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Text color="text.tertiary" fontSize="sm">
               Já tem conta?
             </Text>
             <ChakraLink asChild>
-              <NextLink href="/login">
-                <Button variant="ghost" size="sm" fontWeight="semibold">
+              <NextLink href="/login" passHref style={{ textDecoration: "none" }}>
+                <Text color="brand.600" fontSize="sm" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: "underline" }}>
                   Entrar
-                </Button>
+                </Text>
               </NextLink>
             </ChakraLink>
           </Flex>

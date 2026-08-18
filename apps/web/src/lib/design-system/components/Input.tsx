@@ -51,7 +51,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
     return (
       <Field.Root disabled={disabled}>
         {label && (
-          <Field.Label htmlFor={id} css={{ fontSize: "sm", fontWeight: "medium", color: "text.secondary" }}>
+          <Field.Label htmlFor={id} css={{ fontSize: "sm", fontWeight: "medium", color: "text.secondary", mb: 1.5, display: "block" }}>
             {label}
             {required && <span style={{ color: "var(--colors-status-error-icon)", marginLeft: "0.25rem" }}>*</span>}
           </Field.Label>
@@ -63,12 +63,12 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
             bg: "surface.primary",
             border: "1px solid",
             borderColor: error ? "status.error.border" : "surface.border",
-            borderRadius: "lg",
-            transition: "all 0.2s ease",
+            borderRadius: "md",
+            transition: "all 0.15s ease",
             position: "relative",
             _focusWithin: {
               borderColor: error ? "status.error.border" : "brand.500",
-              boxShadow: error ? "0 0 0 3px rgba(239, 68, 68, 0.35)" : "focus",
+              boxShadow: error ? "0 0 0 2px {colors.status.error.icon}.300" : "0 0 0 2px {colors.brand.500}.300",
             },
             _hover: {
               borderColor: error ? "status.error.border" : "surface.borderStrong",
@@ -97,7 +97,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
               fontSize: "var(--fontSizes-sm)",
               color: "var(--colors-text-primary)",
               height: "44px",
-              _placeholder: { color: "var(--colors-text-quaternary)" },
+              _placeholder: { color: "var(--colors-text-quaternary)", opacity: 0.7 },
               _disabled: { opacity: 0.5, cursor: "not-allowed" },
             }}
             {...rest}

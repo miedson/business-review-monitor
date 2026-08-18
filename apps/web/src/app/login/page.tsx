@@ -33,7 +33,7 @@ export default function LoginPage() {
     }
   }
 
-  return (
+return (
     <Box
       css={{
         minH: "100vh",
@@ -52,9 +52,9 @@ export default function LoginPage() {
           bg: "surface.primary",
           border: "1px solid",
           borderColor: "surface.border",
-          borderRadius: "xl",
-          boxShadow: "lg",
-          p: 8,
+          borderRadius: "2xl",
+          boxShadow: "sm",
+          p: { base: 6, md: 8 },
         }}
       >
         <Box css={{ textAlign: "center", mb: 8 }}>
@@ -92,33 +92,33 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (
-            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible>
+            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={4}>
               {errorMessage}
             </Alert>
           )}
 
-          <Input
-            label="Email"
-            type="email"
-            autoComplete="email"
-            placeholder="voce@empresa.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            mb={4}
-          />
+          <Box css={{ display: "flex", flexDirection: "column", gap: 4, mb: 6 }}>
+            <Input
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="voce@empresa.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
 
-          <Input
-            label="Senha"
-            type="password"
-            autoComplete="current-password"
-            placeholder="Sua senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            showPasswordToggle
-            mb={4}
-          />
+            <Input
+              label="Senha"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Sua senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              showPasswordToggle
+            />
+          </Box>
 
           <Button
             type="submit"
@@ -130,15 +130,15 @@ export default function LoginPage() {
             Entrar
           </Button>
 
-          <Flex css={{ justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
+          <Flex css={{ justifyContent: "center", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Text color="text.tertiary" fontSize="sm">
               Ainda não tem conta?
             </Text>
             <ChakraLink asChild>
-              <NextLink href="/register">
-                <Button variant="ghost" size="sm" fontWeight="semibold">
+              <NextLink href="/register" passHref style={{ textDecoration: "none" }}>
+                <Text color="brand.600" fontSize="sm" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: "underline" }}>
                   Criar conta
-                </Button>
+                </Text>
               </NextLink>
             </ChakraLink>
           </Flex>
