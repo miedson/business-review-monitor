@@ -98,33 +98,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     );
   }
 
-  const sidebarTrigger = (
-    <DrawerTrigger asChild>
-      <IconButton
-        aria-label="Abrir menu"
-        css={{
-          display: { base: "flex", md: "none" },
-          alignItems: "center",
-          justifyContent: "center",
-          p: 2,
-          borderRadius: "lg",
-          _hover: { bg: "surface.tertiary" },
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </IconButton>
-    </DrawerTrigger>
-  );
-
   const breadcrumb = getBreadcrumb(pathname) ?? [];
 
   return (
-    <Box css={{ display: "flex", minH: "100vh", bg: "surface.secondary" }}>
-      <Drawer.Root open={isSidebarOpen} onOpenChange={closeSidebar}>
+    <Drawer.Root open={isSidebarOpen} onOpenChange={closeSidebar}>
+      <Box css={{ display: "flex", minH: "100vh", bg: "surface.secondary" }}>
         <DrawerTrigger asChild>
           <Box css={{ display: "none" }} />
         </DrawerTrigger>
@@ -157,30 +135,50 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </DrawerBody>
           </DrawerContent>
         </DrawerPositioner>
-      </Drawer.Root>
 
-      <Flex css={{ display: "flex", flexDirection: "column", flex: 1, minW: 0, marginLeft: { base: 0, md: "280px" } }}>
-        <Topbar
-          title={getPageTitle(pathname)}
-          breadcrumb={breadcrumb}
-          userName={session.user.name}
-          userEmail={session.user.email}
-          userInitials={userInitials}
-          onSignOut={handleSignOut}
-          sidebarTrigger={sidebarTrigger}
-        />
+        <Flex css={{ display: "flex", flexDirection: "column", flex: 1, minW: 0, marginLeft: { base: 0, md: "280px" } }}>
+          <Topbar
+            title={getPageTitle(pathname)}
+            breadcrumb={breadcrumb}
+            userName={session.user.name}
+            userEmail={session.user.email}
+            userInitials={userInitials}
+            onSignOut={handleSignOut}
+            sidebarTrigger={
+              <DrawerTrigger asChild>
+                <IconButton
+                  aria-label="Abrir menu"
+                  css={{
+                    display: { base: "flex", md: "none" },
+                    alignItems: "center",
+                    justifyContent: "center",
+                    p: 2,
+                    borderRadius: "lg",
+                    _hover: { bg: "surface.tertiary" },
+                  }}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
+                </IconButton>
+              </DrawerTrigger>
+            }
+          />
 
-        <Box
-          css={{
-            flex: 1,
-            p: { base: 4, md: 6 },
-            overflowX: "hidden",
-          }}
-        >
-          {children}
-        </Box>
-      </Flex>
-    </Box>
+          <Box
+            css={{
+              flex: 1,
+              p: { base: 4, md: 6 },
+              overflowX: "hidden",
+            }}
+          >
+            {children}
+          </Box>
+        </Flex>
+      </Box>
+    </Drawer.Root>
   );
 }
 
