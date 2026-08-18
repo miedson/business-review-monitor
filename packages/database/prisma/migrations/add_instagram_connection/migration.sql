@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "InstagramConnectionStatus" AS ENUM ('CONNECTED', 'DISCONNECTED', 'REAUTH_REQUIRED', 'ERROR');
+
 -- CreateTable
 CREATE TABLE "instagram_connections" (
     "id" TEXT NOT NULL,
@@ -16,9 +19,6 @@ CREATE TABLE "instagram_connections" (
 
     CONSTRAINT "instagram_connections_pkey" PRIMARY KEY ("id")
 );
-
--- CreateEnum
-CREATE TYPE "InstagramConnectionStatus" AS ENUM ('CONNECTED', 'DISCONNECTED', 'REAUTH_REQUIRED', 'ERROR');
 
 -- CreateIndex
 CREATE UNIQUE INDEX "instagram_connections_tenantId_key" ON "instagram_connections"("tenantId");
