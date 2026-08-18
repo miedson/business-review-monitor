@@ -3,12 +3,22 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
+ENV NODE_ENV=production
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/ui/package.json packages/ui/package.json
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS dev-deps
+ENV NODE_ENV=development
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/config/package.json packages/config/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/ui/package.json packages/ui/package.json
+RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 ENV NODE_ENV=production
@@ -23,3 +33,10 @@ ENV NODE_ENV=production
 COPY --from=build /app /app
 EXPOSE 3000
 CMD ["pnpm", "--filter", "@brm/web", "start"]
+
+FROM dev-deps AS development
+ENV NODE_ENV=development
+COPY apps/web apps/web
+COPY packages packages
+EXPOSE 3000
+CMD ["sh", "-c", "pnpm --filter @brm/config build && pnpm --filter @brm/shared build && pnpm --filter @brm/ui build && pnpm --filter @brm/web dev"]
