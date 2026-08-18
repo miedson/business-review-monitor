@@ -4,8 +4,8 @@ import { AppProviders } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Business Review Monitor",
-  description: "Google Business Profile review monitoring"
+  title: "Business Reputation Hub",
+  description: "Centralize sua reputação digital. Monitore Google, Instagram e Facebook em um único lugar.",
 };
 
 export default function RootLayout({

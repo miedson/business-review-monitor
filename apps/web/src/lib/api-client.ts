@@ -72,6 +72,15 @@ const instagramConnectUrlResponseSchema = z.object({
   authorizationUrl: z.string().url(),
 });
 
+const instagramAccountSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+});
+
+const instagramAccountsResponseSchema = z.object({
+  accounts: z.array(instagramAccountSchema),
+});
+
 type RequestOptions = {
   accessToken?: string;
   body?: unknown;
@@ -85,6 +94,7 @@ export type GoogleLocation = z.infer<typeof googleLocationSchema>;
 export type GoogleReview = z.infer<typeof googleReviewSchema>;
 export type GoogleReviewsResponse = z.infer<typeof googleReviewsResponseSchema>;
 export type GoogleSyncResponse = z.infer<typeof googleSyncResponseSchema>;
+export type InstagramAccount = z.infer<typeof instagramAccountSchema>;
 
 export async function register(input: {
   name: string;
@@ -209,6 +219,14 @@ export async function disconnectInstagram(input: {
         method: "POST"
       })
     );
+}
+
+export async function listInstagramAccounts(
+  accessToken: string
+): Promise<{ accounts: InstagramAccount[] }> {
+  return instagramAccountsResponseSchema.parse(
+    await requestJson("/integrations/instagram/accounts", { accessToken })
+  );
 }
 
 async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {

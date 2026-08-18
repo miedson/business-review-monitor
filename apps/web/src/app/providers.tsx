@@ -1,9 +1,10 @@
 "use client";
 
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
+import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { system } from "@/lib/design-system/theme";
 
 export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   const [queryClient] = useState(
@@ -19,7 +20,7 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   return (
-    <ChakraProvider value={defaultSystem}>
+    <ChakraProvider value={system}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </ChakraProvider>
   );
