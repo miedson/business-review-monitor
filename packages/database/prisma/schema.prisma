@@ -19,6 +19,13 @@ enum GoogleConnectionStatus {
   ERROR
 }
 
+enum InstagramConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  REAUTH_REQUIRED
+  ERROR
+}
+
 model User {
   id           String       @id @default(cuid())
   name         String
@@ -32,14 +39,15 @@ model User {
 }
 
 model Tenant {
-  id                String             @id @default(cuid())
-  name              String
-  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
-  users             TenantUser[]
-  googleConnections GoogleConnection[]
-  businessLocations BusinessLocation[]
-  reviewCaches      ReviewCache[]
+  id                    String                  @id @default(cuid())
+  name                  String
+  createdAt             DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                @updatedAt @db.Timestamptz(3)
+  users                 TenantUser[]
+  googleConnections     GoogleConnection[]
+  instagramConnections  InstagramConnection[]
+  businessLocations     BusinessLocation[]
+  reviewCaches          ReviewCache[]
 
   @@map("tenants")
 }
@@ -77,6 +85,28 @@ model GoogleConnection {
   @@index([tenantId])
   @@index([status])
   @@map("google_connections")
+}
+
+model InstagramConnection {
+  id                     String                    @id @default(cuid())
+  tenantId               String
+  instagramUserId        String
+  username               String?
+  accountType            String?
+  encryptedAccessToken   String?
+  scope                  String
+  status                 InstagramConnectionStatus @default(DISCONNECTED)
+  connectedAt            DateTime?                 @db.Timestamptz(3)
+  disconnectedAt         DateTime?                 @db.Timestamptz(3)
+  tokenExpiresAt         DateTime?                 @db.Timestamptz(3)
+  createdAt              DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                  @updatedAt @db.Timestamptz(3)
+  tenant                 Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("instagram_connections")
 }
 
 model BusinessLocation {

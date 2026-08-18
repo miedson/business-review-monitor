@@ -1,0 +1,382 @@
+import type {
+  ListBusinessProfileAccountsInput,
+  BusinessProfileReviewProvider,
+  ListBusinessProfileAccountsResult,
+  ListBusinessProfileLocationsResult,
+  ListBusinessReviewsResult,
+  ProviderAuthorizationCodeInput,
+  ProviderAuthorizationUrlInput,
+  ProviderTokenSet,
+  RefreshProviderAccessTokenInput,
+  RevokeProviderAuthorizationInput
+} from "../../application/ports/business-profile-review-provider.js";
+import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
+import { INSTAGRAM_SCOPE_STRING } from "./instagram.constants.js";
+
+const instagramAuthorizationEndpoint = "https://api.instagram.com/oauth/authorize";
+const instagramTokenEndpoint = "https://api.instagram.com/oauth/access_token";
+const instagramGraphApiBase = "https://graph.instagram.com";
+const instagramRevokeEndpoint = "https://api.instagram.com/oauth/revoke";
+
+type FetchFunction = typeof fetch;
+
+export type InstagramApiProviderOptions = {
+  appId: string;
+  appSecret: string;
+  redirectUri: string;
+  graphApiVersion: string;
+  fetchFn?: FetchFunction;
+  authorizationEndpoint?: string;
+  tokenEndpoint?: string;
+  graphApiBase?: string;
+  revokeEndpoint?: string;
+};
+
+type InstagramTokenResponse = {
+  access_token: string;
+  token_type: string;
+  expires_in?: number | undefined;
+  user_id?: number | undefined;
+};
+
+type LongLivedTokenResponse = {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+};
+
+type InstagramUserProfile = {
+  id: string;
+  username: string;
+  account_type: string;
+  media_count?: number;
+};
+
+export class InstagramApiProvider implements BusinessProfileReviewProvider {
+  private readonly appId: string;
+  private readonly appSecret: string;
+  private readonly redirectUri: string;
+  private readonly graphApiVersion: string;
+  private readonly fetchFn: FetchFunction;
+  private readonly authorizationEndpoint: string;
+  private readonly tokenEndpoint: string;
+  private readonly graphApiBase: string;
+  private readonly revokeEndpoint: string;
+
+  constructor(options: InstagramApiProviderOptions) {
+    this.appId = options.appId;
+    this.appSecret = options.appSecret;
+    this.redirectUri = options.redirectUri;
+    this.graphApiVersion = options.graphApiVersion;
+    this.fetchFn = options.fetchFn ?? fetch;
+    this.authorizationEndpoint =
+      options.authorizationEndpoint ?? instagramAuthorizationEndpoint;
+    this.tokenEndpoint = options.tokenEndpoint ?? instagramTokenEndpoint;
+    this.graphApiBase = options.graphApiBase ?? instagramGraphApiBase;
+    this.revokeEndpoint = options.revokeEndpoint ?? instagramRevokeEndpoint;
+  }
+
+  buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
+    const url = new URL(this.authorizationEndpoint);
+
+    url.searchParams.set("client_id", this.appId);
+    url.searchParams.set("redirect_uri", this.redirectUri);
+    url.searchParams.set("scope", INSTAGRAM_SCOPE_STRING);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("state", input.state);
+
+    return url.toString();
+  }
+
+  async exchangeAuthorizationCode(
+    input: ProviderAuthorizationCodeInput
+  ): Promise<ProviderTokenSet> {
+    if (input.code.length === 0) {
+      throw new GoogleBusinessProfileProviderError(
+        "INSTAGRAM_INVALID_CALLBACK",
+        "Instagram OAuth authorization code is required"
+      );
+    }
+
+    const shortLivedToken = await this.requestShortLivedToken(input.code);
+    const longLivedToken = await this.exchangeForLongLivedToken(shortLivedToken.access_token);
+
+    return {
+      accessToken: longLivedToken.access_token,
+      expiresInSeconds: longLivedToken.expires_in,
+      refreshToken: undefined,
+      scope: INSTAGRAM_SCOPE_STRING
+    } as ProviderTokenSet;
+  }
+
+  async refreshAccessToken(
+    input: RefreshProviderAccessTokenInput
+  ): Promise<ProviderTokenSet> {
+    const longLivedToken = await this.exchangeForLongLivedToken(input.refreshToken);
+
+    return {
+      accessToken: longLivedToken.access_token,
+      expiresInSeconds: longLivedToken.expires_in,
+      refreshToken: input.refreshToken,
+      scope: INSTAGRAM_SCOPE_STRING
+    };
+  }
+
+  async revokeAuthorization(
+    input: RevokeProviderAuthorizationInput
+  ): Promise<void> {
+    if (input.refreshToken.length === 0) {
+      return;
+    }
+
+    const response = await this.fetchFn(this.revokeEndpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: this.appId,
+        client_secret: this.appSecret,
+        token: input.refreshToken
+      })
+    });
+
+    if (!response.ok) {
+      throw new GoogleBusinessProfileProviderError(
+        "INSTAGRAM_REFRESH_FAILED",
+        "Instagram authorization revocation failed"
+      );
+    }
+  }
+
+  async listAccounts(
+    input: ListBusinessProfileAccountsInput
+  ): Promise<ListBusinessProfileAccountsResult> {
+    const profile = await this.getUserProfile(input.accessToken);
+
+    return {
+      accounts: [
+        {
+          id: profile.id,
+          name: profile.username,
+          accountName: profile.username
+        }
+      ]
+    };
+  }
+
+  async listLocations(): Promise<ListBusinessProfileLocationsResult> {
+    return {
+      locations: []
+    };
+  }
+
+  async listReviews(): Promise<ListBusinessReviewsResult> {
+    return {
+      reviews: [],
+      averageRating: 0,
+      totalReviewCount: 0
+    };
+  }
+
+  async getUserProfile(accessToken: string): Promise<InstagramUserProfile> {
+    const url = new URL(`${this.graphApiBase}/me`);
+    url.searchParams.set("fields", "id,username,account_type,media_count");
+    url.searchParams.set("access_token", accessToken);
+
+    const response = await this.fetchFn(url, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram Graph API request failed"
+      );
+    }
+
+    const payload = (await response.json()) as InstagramUserProfile;
+    return payload;
+  }
+
+  private async requestShortLivedToken(code: string): Promise<InstagramTokenResponse> {
+    const response = await this.fetchFn(this.tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: this.appId,
+        client_secret: this.appSecret,
+        grant_type: "authorization_code",
+        redirect_uri: this.redirectUri,
+        code
+      })
+    });
+
+    const payload = await readJson(response);
+
+    if (!response.ok) {
+      throw mapTokenError(payload);
+    }
+
+    return normalizeShortLivedTokenResponse(payload);
+  }
+
+  private async exchangeForLongLivedToken(
+    shortLivedToken: string
+  ): Promise<LongLivedTokenResponse> {
+    const url = new URL(`${this.graphApiBase}/access_token`);
+    url.searchParams.set("grant_type", "ig_exchange_token");
+    url.searchParams.set("client_secret", this.appSecret);
+    url.searchParams.set("access_token", shortLivedToken);
+
+    const response = await this.fetchFn(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    const payload = await readJson(response);
+
+    if (!response.ok) {
+      throw mapTokenError(payload);
+    }
+
+    return normalizeLongLivedTokenResponse(payload);
+  }
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+function normalizeShortLivedTokenResponse(payload: unknown): InstagramTokenResponse {
+  if (!isInstagramTokenResponse(payload)) {
+    throw new GoogleBusinessProfileProviderError(
+      "INSTAGRAM_REFRESH_FAILED",
+      "Instagram OAuth token response is invalid"
+    );
+  }
+
+  return {
+    access_token: payload.access_token,
+    token_type: payload.token_type,
+    expires_in: payload.expires_in,
+    user_id: payload.user_id
+  };
+}
+
+function normalizeLongLivedTokenResponse(payload: unknown): LongLivedTokenResponse {
+  if (!isLongLivedTokenResponse(payload)) {
+    throw new GoogleBusinessProfileProviderError(
+      "INSTAGRAM_REFRESH_FAILED",
+      "Instagram long-lived token response is invalid"
+    );
+  }
+
+  return {
+    access_token: payload.access_token,
+    token_type: payload.token_type,
+    expires_in: payload.expires_in
+  };
+}
+
+function isInstagramTokenResponse(payload: unknown): payload is InstagramTokenResponse {
+  if (typeof payload !== "object" || payload === null) {
+    return false;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+
+  return (
+    typeof candidate.access_token === "string" &&
+    candidate.access_token.length > 0 &&
+    typeof candidate.token_type === "string" &&
+    (candidate.expires_in === undefined ||
+      typeof candidate.expires_in === "number") &&
+    (candidate.user_id === undefined || typeof candidate.user_id === "number")
+  );
+}
+
+function isLongLivedTokenResponse(payload: unknown): payload is LongLivedTokenResponse {
+  if (typeof payload !== "object" || payload === null) {
+    return false;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+
+  return (
+    typeof candidate.access_token === "string" &&
+    candidate.access_token.length > 0 &&
+    typeof candidate.token_type === "string" &&
+    typeof candidate.expires_in === "number" &&
+    Number.isFinite(candidate.expires_in)
+  );
+}
+
+function mapTokenError(payload: unknown): GoogleBusinessProfileProviderError {
+  const errorCode = readErrorCode(payload);
+
+  if (errorCode === "invalid_grant" || errorCode === "OAuthException") {
+    return new GoogleBusinessProfileProviderError(
+      "INSTAGRAM_TOKEN_REVOKED",
+      "Instagram authorization expired or was revoked"
+    );
+  }
+
+  if (errorCode === "access_denied") {
+    return new GoogleBusinessProfileProviderError(
+      "INSTAGRAM_PERMISSION_DENIED",
+      "Instagram authorization was denied"
+    );
+  }
+
+  return new GoogleBusinessProfileProviderError(
+    "INSTAGRAM_REFRESH_FAILED",
+    "Instagram OAuth token request failed"
+  );
+}
+
+function readErrorCode(payload: unknown): string | undefined {
+  if (typeof payload !== "object" || payload === null) {
+    return undefined;
+  }
+
+  const candidate = payload as Record<string, unknown>;
+
+  if (typeof candidate.error_code === "number") {
+    return String(candidate.error_code);
+  }
+
+  if (typeof candidate.error_type === "string") {
+    return candidate.error_type;
+  }
+
+  if (typeof candidate.error === "string") {
+    return candidate.error;
+  }
+
+  return undefined;
+}
+
+function mapInstagramApiErrorStatus(
+  status: number
+): "INSTAGRAM_PERMISSION_DENIED" | "INSTAGRAM_RATE_LIMITED" | "INSTAGRAM_API_UNAVAILABLE" {
+  if (status === 401 || status === 403) {
+    return "INSTAGRAM_PERMISSION_DENIED";
+  }
+
+  if (status === 429) {
+    return "INSTAGRAM_RATE_LIMITED";
+  }
+
+  return "INSTAGRAM_API_UNAVAILABLE";
+}

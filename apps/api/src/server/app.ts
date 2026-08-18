@@ -20,6 +20,14 @@ import {
   PrismaGoogleConnectionRepository,
   StartGoogleOAuthConnection
 } from "@brm/review-monitoring";
+import {
+  CompleteInstagramOAuthCallback,
+  DisconnectInstagramConnection,
+  InstagramApiProvider,
+  ListInstagramAccounts,
+  PrismaInstagramConnectionRepository,
+  StartInstagramOAuthConnection
+} from "@brm/review-monitoring";
 import { createEncryptionServiceFromBase64Key } from "@brm/shared";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
@@ -32,6 +40,7 @@ import {
   googleReviewSyncQueueName
 } from "../modules/integrations/bullmq-review-sync-job-scheduler.js";
 import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-integration.routes.js";
+import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
 import {
@@ -139,7 +148,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     refreshSecret: config.JWT_REFRESH_SECRET,
     secureCookies: isProduction
   });
-  const provider =
+  const googleProvider =
     config.GOOGLE_PROVIDER === "mock"
       ? new GoogleBusinessProfileMockProvider({
           redirectUri: config.GOOGLE_REDIRECT_URI
@@ -149,21 +158,28 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
           clientSecret: config.GOOGLE_CLIENT_SECRET,
           redirectUri: config.GOOGLE_REDIRECT_URI
         });
+  const instagramProvider = new InstagramApiProvider({
+    appId: config.META_APP_ID,
+    appSecret: config.META_APP_SECRET,
+    redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
+    graphApiVersion: config.META_GRAPH_API_VERSION
+  });
   const stateStore = new InMemoryOAuthStateStore({
     ttlMs: 10 * 60 * 1000
   });
   const googleConnectionRepository = new PrismaGoogleConnectionRepository(prisma);
+  const instagramConnectionRepository = new PrismaInstagramConnectionRepository(prisma);
   const businessLocationRepository = new PrismaBusinessLocationRepository(prisma);
   const reviewCacheRepository = new PrismaReviewCacheRepository(prisma);
   const tokenCipher = new EncryptionTokenCipher(
     createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY)
   );
   const startGoogleOAuthConnection = new StartGoogleOAuthConnection({
-    provider,
+    provider: googleProvider,
     stateStore
   });
   const completeGoogleOAuthCallback = new CompleteGoogleOAuthCallback({
-    provider,
+    provider: googleProvider,
     stateStore,
     tokenCipher,
     googleConnectionRepository,
@@ -171,17 +187,38 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   });
   const listGoogleAccounts = new ListGoogleAccounts({
     googleConnectionRepository,
-    provider,
+    provider: googleProvider,
     tokenCipher
   });
   const listGoogleLocations = new ListGoogleLocations({
     googleConnectionRepository,
-    provider,
+    provider: googleProvider,
     tokenCipher
   });
   const listGoogleReviews = new ListGoogleReviews({
     googleConnectionRepository,
-    provider,
+    provider: googleProvider,
+    tokenCipher
+  });
+  const startInstagramOAuthConnection = new StartInstagramOAuthConnection({
+    provider: instagramProvider,
+    stateStore
+  });
+  const completeInstagramOAuthCallback = new CompleteInstagramOAuthCallback({
+    provider: instagramProvider,
+    stateStore,
+    tokenCipher,
+    instagramConnectionRepository,
+    now: () => new Date()
+  });
+  const listInstagramAccounts = new ListInstagramAccounts({
+    instagramConnectionRepository,
+    provider: instagramProvider,
+    tokenCipher
+  });
+  const disconnectInstagramConnection = new DisconnectInstagramConnection({
+    instagramConnectionRepository,
+    provider: instagramProvider,
     tokenCipher
   });
   const redis = createRedisClient(config.REDIS_URL);
@@ -204,7 +241,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   const disconnectGoogleConnection = new DisconnectGoogleConnection({
     businessLocationRepository,
     googleConnectionRepository,
-    provider,
+    provider: googleProvider,
     reviewCacheRepository,
     tokenCipher
   });
@@ -220,6 +257,14 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     requestGoogleReviewSync,
     selectBusinessLocation,
     disconnectGoogleConnection,
+    webUrl: config.WEB_URL
+  });
+  registerInstagramIntegrationRoutes(app, {
+    authService,
+    startInstagramOAuthConnection,
+    completeInstagramOAuthCallback,
+    listInstagramAccounts,
+    disconnectInstagramConnection,
     webUrl: config.WEB_URL
   });
 

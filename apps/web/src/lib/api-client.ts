@@ -68,6 +68,10 @@ const googleConnectUrlResponseSchema = z.object({
   authorizationUrl: z.string().url(),
 });
 
+const instagramConnectUrlResponseSchema = z.object({
+  authorizationUrl: z.string().url(),
+});
+
 type RequestOptions = {
   accessToken?: string;
   body?: unknown;
@@ -181,6 +185,26 @@ export async function disconnectGoogle(input: {
     .object({ disconnected: z.boolean() })
     .parse(
       await requestJson("/integrations/google/disconnect", {
+        accessToken: input.accessToken,
+        method: "POST"
+      })
+    );
+}
+
+export async function buildInstagramConnectUrl(accessToken: string): Promise<string> {
+  const result = instagramConnectUrlResponseSchema.parse(
+    await requestJson("/integrations/instagram/connect-url", { accessToken })
+  );
+  return result.authorizationUrl;
+}
+
+export async function disconnectInstagram(input: {
+  accessToken: string;
+}): Promise<{ disconnected: boolean }> {
+  return z
+    .object({ disconnected: z.boolean() })
+    .parse(
+      await requestJson("/integrations/instagram/disconnect", {
         accessToken: input.accessToken,
         method: "POST"
       })

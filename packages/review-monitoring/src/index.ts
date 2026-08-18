@@ -134,3 +134,55 @@ export type {
 
 export { PrismaBusinessLocationRepository } from "./adapters/database/prisma-business-location-repository.js";
 export { PrismaReviewCacheRepository } from "./adapters/database/prisma-review-cache-repository.js";
+
+export {
+  INSTAGRAM_SCOPES,
+  INSTAGRAM_SCOPE_STRING
+} from "./adapters/meta/instagram.constants.js";
+export {
+  InstagramApiProvider
+} from "./adapters/meta/instagram-api-provider.js";
+export type {
+  InstagramApiProviderOptions
+} from "./adapters/meta/instagram-api-provider.js";
+
+export {
+  PrismaInstagramConnectionRepository
+} from "./adapters/database/prisma-instagram-connection-repository.js";
+
+export {
+  CompleteInstagramOAuthCallback
+} from "./application/use-cases/complete-instagram-oauth-callback.js";
+export type {
+  CompleteInstagramOAuthCallbackInput,
+  CompleteInstagramOAuthCallbackResult
+} from "./application/use-cases/complete-instagram-oauth-callback.js";
+export {
+  StartInstagramOAuthConnection
+} from "./application/use-cases/start-instagram-oauth-connection.js";
+export type {
+  StartInstagramOAuthConnectionInput,
+  StartInstagramOAuthConnectionResult
+} from "./application/use-cases/start-instagram-oauth-connection.js";
+export {
+  DisconnectInstagramConnection
+} from "./application/use-cases/disconnect-instagram-connection.js";
+export type {
+  DisconnectInstagramConnectionDependencies,
+  DisconnectInstagramConnectionInput,
+  DisconnectInstagramConnectionResult
+} from "./application/use-cases/disconnect-instagram-connection.js";
+
+export type {
+  InstagramConnectionRepository,
+  SaveConnectedInstagramConnectionInput,
+  StoredInstagramConnection
+} from "./application/ports/instagram-connection-repository.js";
+
+export {
+  ListInstagramAccounts
+} from "./application/use-cases/list-instagram-accounts.js";
+export type {
+  ListInstagramAccountsDependencies,
+  ListInstagramAccountsInput
+} from "./application/use-cases/list-instagram-accounts.js";

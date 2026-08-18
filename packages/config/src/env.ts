@@ -25,7 +25,12 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z.string().url(),
   WEB_URL: z.string().url(),
   API_URL: z.string().url(),
-  GOOGLE_PROVIDER: z.enum(["real", "mock"]).default("mock")
+  GOOGLE_PROVIDER: z.enum(["real", "mock"]).default("mock"),
+  META_APP_ID: z.string().min(1),
+  META_APP_SECRET: z.string().min(1),
+  META_INSTAGRAM_REDIRECT_URI: z.string().url(),
+  META_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
+  META_GRAPH_API_VERSION: z.string().min(1).default("v21.0")
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

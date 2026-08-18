@@ -15,7 +15,7 @@ export type ProviderAuthorizationCodeInput = {
 export type ProviderTokenSet = {
   accessToken: string;
   expiresInSeconds: number;
-  refreshToken?: string;
+  refreshToken?: string | undefined;
   scope: string;
 };
 
