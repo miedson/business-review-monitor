@@ -57,6 +57,9 @@ services:
     environment:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3333
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      NEXT_WEBPACK_POLLING: "1000"
     ports:
       - "${WEB_PORT:-3000}:3000"
     volumes:
@@ -69,6 +72,7 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    command: ["sh", "-c", "pnpm --filter @brm/config build && pnpm --filter @brm/shared build && pnpm --filter @brm/ui build && pnpm --filter @brm/web dev"]
 
   worker:
     build:

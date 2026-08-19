@@ -36,7 +36,5 @@ CMD ["pnpm", "--filter", "@brm/web", "start"]
 
 FROM dev-deps AS development
 ENV NODE_ENV=development
-COPY apps/web apps/web
-COPY packages packages
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @brm/config build && pnpm --filter @brm/shared build && pnpm --filter @brm/ui build && pnpm --filter @brm/web dev"]
+CMD ["pnpm", "--filter", "@brm/web", "dev"]
