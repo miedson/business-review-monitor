@@ -22,6 +22,8 @@ export type MetaWebhookCommentValue = {
   from?: MetaWebhookFrom;
   created_time?: number;
   text?: string;
+  id?: string;
+  media?: { id: string } | string;
 };
 
 export type MetaWebhookChangeValue = {

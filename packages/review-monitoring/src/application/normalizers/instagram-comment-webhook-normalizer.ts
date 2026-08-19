@@ -25,14 +25,14 @@ export class DefaultInstagramCommentWebhookNormalizer
 
     const value = change.value as MetaWebhookCommentValue;
 
-    const commentId = value.comment_id;
+    const commentId = value.id ?? value.comment_id;
     if (!commentId) {
       return null;
     }
 
     const instagramAccountId = entry.id;
 
-    const mediaId = value.media_id;
+    const mediaId = this.extractMediaId(value);
     const from = value.from;
     const createdTime = value.created_time;
     const text = value.text;
@@ -47,5 +47,18 @@ export class DefaultInstagramCommentWebhookNormalizer
       createdAtExternal: createdTime ? new Date(createdTime * 1000) : undefined,
       rawEventId: entry.id
     };
+  }
+
+  private extractMediaId(value: MetaWebhookCommentValue): string | undefined {
+    if (value.media_id) {
+      return value.media_id;
+    }
+    if (value.media) {
+      if (typeof value.media === "string") {
+        return value.media;
+      }
+      return value.media.id;
+    }
+    return undefined;
   }
 }
