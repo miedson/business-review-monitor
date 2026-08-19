@@ -27,7 +27,6 @@ export type InstagramApiMockProviderOptions = {
   authorizationBaseUrl?: string;
   redirectUri?: string;
   scenario?: InstagramApiMockScenario;
-  professionalAccountId?: string;
 };
 
 const mockLongLivedToken = "mock-long-lived-token";
@@ -35,15 +34,10 @@ const mockUserId = "mock-user-id";
 const mockUsername = "mock_username";
 const mockAccountType = "BUSINESS";
 
-function generateMockProfessionalAccountId(): string {
-  return `mock-professional-account-${Math.random().toString(36).substring(2, 15)}`;
-}
-
 export class InstagramApiMockProvider implements InstagramReviewProvider {
   private readonly authorizationBaseUrl: string;
   private readonly redirectUri: string;
   private readonly scenario: InstagramApiMockScenario;
-  private readonly professionalAccountId: string;
 
   constructor(options: InstagramApiMockProviderOptions = {}) {
     this.authorizationBaseUrl =
@@ -51,7 +45,6 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     this.redirectUri =
       options.redirectUri ?? "http://localhost:3333/integrations/instagram/callback";
     this.scenario = options.scenario ?? "connected";
-    this.professionalAccountId = options.professionalAccountId ?? generateMockProfessionalAccountId();
   }
 
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
@@ -160,19 +153,6 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
       username: mockUsername,
       account_type: mockAccountType
     };
-  }
-
-  async getProfessionalAccountId(accessToken: string): Promise<string> {
-    this.assertUsableAccessToken(accessToken);
-
-    if (this.scenario === "no-professional-account") {
-      throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
-        "Instagram Professional Account ID not found. The connected account must be a Professional Account (Business or Creator)."
-      );
-    }
-
-    return this.professionalAccountId;
   }
 
   private assertUsableAccessToken(accessToken: string): void {

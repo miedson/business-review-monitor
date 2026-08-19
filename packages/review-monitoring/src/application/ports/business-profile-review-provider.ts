@@ -86,7 +86,6 @@ export interface BusinessProfileReviewProvider {
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
-  getProfessionalAccountId(accessToken: string): Promise<string>;
 }
 
 export type GoogleBusinessProfileProvider = BusinessProfileReviewProvider;

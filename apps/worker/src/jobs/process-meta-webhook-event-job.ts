@@ -148,6 +148,13 @@ export class ProcessMetaWebhookEventJob {
       valueKeys: Object.keys(change.value).join(",")
     });
 
+    // Diagnostic logging for webhook identity investigation
+    logInfo("meta_webhook_identity_observed", {
+      requestId,
+      entryId: entry.id,
+      field: change.field
+    });
+
     if (change.field === "comments") {
       await this.processComment(change, entry, requestId);
     }
@@ -198,9 +205,22 @@ export class ProcessMetaWebhookEventJob {
       textLength: normalizedComment.text?.length ?? 0
     });
 
-    const connection = await this.instagramConnectionRepository.findByProfessionalAccountId(
+    // Try to find connection by professional account ID first (webhook entry.id)
+    let connection = await this.instagramConnectionRepository.findByProfessionalAccountId(
       normalizedComment.instagramAccountId
     );
+
+    // If not found, try by Instagram user ID (for cases where entry.id differs from profile.id)
+    if (!connection) {
+      logInfo("meta_webhook_comment_try_instagram_user_id", {
+        requestId,
+        entryId: entry.id,
+        instagramAccountId: normalizedComment.instagramAccountId
+      });
+      connection = await this.instagramConnectionRepository.findByInstagramUserId(
+        normalizedComment.instagramAccountId
+      );
+    }
 
     if (!connection) {
       logInfo("meta_webhook_comment_connection_not_found", {

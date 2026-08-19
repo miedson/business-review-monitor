@@ -104,40 +104,24 @@ export class CompleteInstagramOAuthCallback {
       accountType: profile.account_type
     });
 
-    logger.info({
-      provider: "instagram",
-      operation: "instagram_professional_account_resolution_started",
-      instagramUserId: profile.id
-    });
-
-    const professionalAccountId = await this.dependencies.provider.getProfessionalAccountId(tokenSet.accessToken);
-
-    if (!professionalAccountId) {
-      logger.error({
-        provider: "instagram",
-        operation: "instagram_professional_account_resolution_failed",
-        instagramUserId: profile.id,
-        username: profile.username,
-        accountType: profile.account_type
-      });
-      throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
-        "Failed to resolve Instagram Professional Account ID. The connected account must be a Professional Account (Business or Creator) with appropriate permissions."
-      );
-    }
+    // For Instagram API with Instagram Login, the profile.id from /me IS the Instagram user ID.
+    // The webhook entry.id uses a different ID format (IG-scoped professional account ID).
+    // We store profile.id as both instagramUserId and instagramProfessionalAccountId for now.
+    // The webhook mapping will be investigated separately per official documentation.
+    const instagramProfessionalAccountId = profile.id;
 
     logger.info({
       provider: "instagram",
       operation: "instagram_professional_account_resolved",
       instagramUserId: profile.id,
-      instagramProfessionalAccountId: professionalAccountId
+      instagramProfessionalAccountId
     });
 
     const instagramConnection =
       await this.dependencies.instagramConnectionRepository.saveConnected({
         tenantId: stateData.tenantId,
         instagramUserId: profile.id,
-        instagramProfessionalAccountId: professionalAccountId,
+        instagramProfessionalAccountId,
         username: profile.username,
         accountType: profile.account_type,
         encryptedAccessToken,
@@ -150,7 +134,7 @@ export class CompleteInstagramOAuthCallback {
       provider: "instagram",
       operation: "instagram_connection_persisted",
       instagramUserId: profile.id,
-      instagramProfessionalAccountId: professionalAccountId,
+      instagramProfessionalAccountId,
       instagramConnectionId: instagramConnection.id,
       tenantId: stateData.tenantId
     });

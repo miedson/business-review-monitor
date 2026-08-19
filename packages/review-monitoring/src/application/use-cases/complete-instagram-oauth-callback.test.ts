@@ -4,22 +4,10 @@ import type { InstagramReviewProvider } from "../ports/business-profile-review-p
 import type { InstagramConnectionRepository, StoredInstagramConnection } from "../ports/instagram-connection-repository.js";
 import type { OAuthStateStore, OAuthStateData } from "../ports/oauth-state-store.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
-import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
 import type { BusinessProfileAccount, BusinessProfileLocation } from "../../domain/business-profile.js";
 import type { BusinessReview } from "../../domain/review.js";
 
 class FakeProvider implements InstagramReviewProvider {
-  private shouldFailProfessionalAccount = false;
-  private professionalAccountId = "17841480590934524";
-
-  setShouldFailProfessionalAccount(value: boolean): void {
-    this.shouldFailProfessionalAccount = value;
-  }
-
-  setProfessionalAccountId(id: string): void {
-    this.professionalAccountId = id;
-  }
-
   buildAuthorizationUrl(): string {
     return "https://instagram.com/oauth/authorize?state=test";
   }
@@ -28,7 +16,7 @@ class FakeProvider implements InstagramReviewProvider {
     return {
       accessToken: "long-lived-token",
       expiresInSeconds: 5184000,
-      scope: "instagram_basic,instagram_manage_comments,instagram_manage_messages"
+      scope: "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
     };
   }
 
@@ -56,16 +44,6 @@ class FakeProvider implements InstagramReviewProvider {
       username: "sixsysma",
       account_type: "BUSINESS"
     };
-  }
-
-  async getProfessionalAccountId(): Promise<string> {
-    if (this.shouldFailProfessionalAccount) {
-      throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
-        "Failed to resolve Instagram Professional Account ID"
-      );
-    }
-    return this.professionalAccountId;
   }
 }
 
@@ -169,7 +147,7 @@ describe("CompleteInstagramOAuthCallback", () => {
     });
   });
 
-  it("resolves and persists professional account ID", async () => {
+  it("resolves and persists Instagram profile ID as both user ID and professional account ID", async () => {
     const state = await stateStore.create({ userId: "user-1", tenantId: "tenant-1" });
 
     const result = await callback.execute({
@@ -183,22 +161,8 @@ describe("CompleteInstagramOAuthCallback", () => {
     const connection = await repository.findByTenantId("tenant-1");
     expect(connection).not.toBeNull();
     expect(connection?.instagramUserId).toBe("25928677863496445");
-    expect(connection?.instagramProfessionalAccountId).toBe("17841480590934524");
-  });
-
-  it("fails when professional account ID cannot be resolved", async () => {
-    provider.setShouldFailProfessionalAccount(true);
-
-    const state = await stateStore.create({ userId: "user-2", tenantId: "tenant-2" });
-
-    await expect(
-      callback.execute({
-        code: "valid-code",
-        state
-      })
-    ).rejects.toMatchObject({
-      code: "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED"
-    });
+    expect(connection?.instagramProfessionalAccountId).toBe("25928677863496445");
+    expect(connection?.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
   });
 
   it("fails with invalid state", async () => {

@@ -90,7 +90,7 @@ describe("instagram integration routes", () => {
     expect(instagramConnection.instagramProfessionalAccountId).not.toBe("");
     expect(instagramConnection.username).toBe("mock_username");
     expect(instagramConnection.accountType).toBe("BUSINESS");
-    expect(instagramConnection.scope).toBe("instagram_basic,instagram_manage_comments,instagram_manage_messages");
+    expect(instagramConnection.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
     expect(instagramConnection.tokenExpiresAt).not.toBeNull();
 
     await app.close();
