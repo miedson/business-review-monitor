@@ -7,12 +7,6 @@ const nextConfig = {
   reactStrictMode: true,
   turbopack: {},
   webpack: webpackConfig,
-  webpackDevServer: (config) => {
-    config.watchFiles = {
-      poll: 1000,
-    };
-    return config;
-  },
 };
 
 export default nextConfig;
