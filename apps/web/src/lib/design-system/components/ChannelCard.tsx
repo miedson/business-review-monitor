@@ -151,7 +151,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
                     Desconectar
                   </Button>
                 </>
-              ) : (
+              ) : !comingSoon && (
                 <Button
                   variant="solid"
                   size="sm"
