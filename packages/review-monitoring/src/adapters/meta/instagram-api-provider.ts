@@ -184,6 +184,7 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
         {
           id: profile.id,
           name: profile.username,
+          username: profile.username,
           accountName: profile.username
         }
       ]

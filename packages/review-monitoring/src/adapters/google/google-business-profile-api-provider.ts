@@ -218,6 +218,7 @@ export class GoogleBusinessProfileApiProvider
       accounts: (payload.accounts ?? []).map((account) => ({
         id: account.name,
         name: account.name,
+        username: account.accountName ?? account.name,
         ...(account.accountName ? { accountName: account.accountName } : {})
       })),
       ...(payload.nextPageToken ? { nextPageToken: payload.nextPageToken } : {})

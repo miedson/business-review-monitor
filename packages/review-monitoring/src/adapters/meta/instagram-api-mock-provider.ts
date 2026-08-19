@@ -122,6 +122,7 @@ export class InstagramApiMockProvider implements BusinessProfileReviewProvider {
         {
           id: mockUserId,
           name: mockUsername,
+          username: mockUsername,
           accountName: mockUsername
         }
       ]

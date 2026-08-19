@@ -1,6 +1,7 @@
 export type BusinessProfileAccount = {
   id: string;
   name: string;
+  username: string;
   accountName?: string;
 };
 

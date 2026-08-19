@@ -47,11 +47,13 @@ const defaultAccounts: BusinessProfileAccount[] = [
   {
     id: "accounts/1001",
     name: "accounts/1001",
+    username: "Matriz BRM",
     accountName: "Matriz BRM"
   },
   {
     id: "accounts/1002",
     name: "accounts/1002",
+    username: "Filial BRM",
     accountName: "Filial BRM"
   }
 ];

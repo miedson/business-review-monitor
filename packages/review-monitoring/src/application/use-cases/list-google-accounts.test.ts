@@ -79,6 +79,7 @@ class FakeBusinessProfileReviewProvider implements BusinessProfileReviewProvider
         {
           id: "accounts/1001",
           name: "accounts/1001",
+          username: "Matriz BRM",
           accountName: "Matriz BRM"
         }
       ],
