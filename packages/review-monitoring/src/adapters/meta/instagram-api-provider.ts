@@ -41,14 +41,13 @@ export type InstagramApiProviderOptions = {
 
 type InstagramTokenResponse = {
   access_token: string;
-  token_type: string;
-  expires_in?: number | undefined;
-  user_id?: number | undefined;
+  user_id?: string | number | undefined;
+  permissions?: string[] | undefined;
 };
 
 type LongLivedTokenResponse = {
   access_token: string;
-  token_type: string;
+  token_type?: string | undefined;
   expires_in: number;
 };
 
@@ -272,11 +271,27 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
 
     const payload = await readJson(response);
 
+    this.logger.info({
+      provider: "instagram",
+      operation: "short_lived_token_response_shape",
+      status: response.status,
+      contentType: response.headers.get("content-type") ?? undefined,
+      keys: isObject(payload) ? Object.keys(payload) : [],
+      hasAccessToken: isObject(payload) && "access_token" in payload,
+      hasUserId: isObject(payload) && "user_id" in payload,
+      hasTokenType: isObject(payload) && "token_type" in payload,
+      hasExpiresIn: isObject(payload) && "expires_in" in payload,
+      hasPermissions: isObject(payload) && "permissions" in payload,
+      userIdType: isObject(payload) ? typeof payload.user_id : undefined,
+      ...(isObject(payload) && "error" in payload ? { metaError: sanitizeMetaError(payload.error) } : {})
+    });
+
     if (!response.ok) {
       this.logger.error({
         provider: "instagram",
         operation: "short_lived_token_request_failed",
         httpStatus: response.status,
+        metaError: isObject(payload) && "error" in payload ? sanitizeMetaError(payload.error) : undefined,
         metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
         metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
         metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
@@ -314,11 +329,25 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
 
     const payload = await readJson(response);
 
+    this.logger.info({
+      provider: "instagram",
+      operation: "long_lived_token_response_shape",
+      status: response.status,
+      contentType: response.headers.get("content-type") ?? undefined,
+      keys: isObject(payload) ? Object.keys(payload) : [],
+      hasAccessToken: isObject(payload) && "access_token" in payload,
+      hasTokenType: isObject(payload) && "token_type" in payload,
+      hasExpiresIn: isObject(payload) && "expires_in" in payload,
+      expiresInType: isObject(payload) ? typeof payload.expires_in : undefined,
+      ...(isObject(payload) && "error" in payload ? { metaError: sanitizeMetaError(payload.error) } : {})
+    });
+
     if (!response.ok) {
       this.logger.error({
         provider: "instagram",
         operation: "long_lived_token_exchange_failed",
         httpStatus: response.status,
+        metaError: isObject(payload) && "error" in payload ? sanitizeMetaError(payload.error) : undefined,
         metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
         metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
         metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
@@ -335,6 +364,20 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
   }
 }
 
+function isObject(val: unknown): val is Record<string, unknown> {
+  return typeof val === "object" && val !== null;
+}
+
+function sanitizeMetaError(error: unknown): Record<string, unknown> | undefined {
+  if (!isObject(error)) return undefined;
+  return {
+    type: error.type,
+    code: error.code,
+    error_subcode: error.error_subcode,
+    message: error.message
+  };
+}
+
 async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
@@ -346,23 +389,22 @@ async function readJson(response: Response): Promise<unknown> {
 function normalizeShortLivedTokenResponse(payload: unknown): InstagramTokenResponse {
   if (!isInstagramTokenResponse(payload)) {
     throw new GoogleBusinessProfileProviderError(
-      "INSTAGRAM_REFRESH_FAILED",
+      "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
       "Instagram OAuth token response is invalid"
     );
   }
 
   return {
     access_token: payload.access_token,
-    token_type: payload.token_type,
-    expires_in: payload.expires_in,
-    user_id: payload.user_id
+    user_id: payload.user_id,
+    permissions: payload.permissions
   };
 }
 
 function normalizeLongLivedTokenResponse(payload: unknown): LongLivedTokenResponse {
   if (!isLongLivedTokenResponse(payload)) {
     throw new GoogleBusinessProfileProviderError(
-      "INSTAGRAM_REFRESH_FAILED",
+      "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
       "Instagram long-lived token response is invalid"
     );
   }
@@ -375,35 +417,31 @@ function normalizeLongLivedTokenResponse(payload: unknown): LongLivedTokenRespon
 }
 
 function isInstagramTokenResponse(payload: unknown): payload is InstagramTokenResponse {
-  if (typeof payload !== "object" || payload === null) {
+  if (!isObject(payload)) {
     return false;
   }
 
-  const candidate = payload as Record<string, unknown>;
-
   return (
-    typeof candidate.access_token === "string" &&
-    candidate.access_token.length > 0 &&
-    typeof candidate.token_type === "string" &&
-    (candidate.expires_in === undefined ||
-      typeof candidate.expires_in === "number") &&
-    (candidate.user_id === undefined || typeof candidate.user_id === "number")
+    typeof payload.access_token === "string" &&
+    payload.access_token.length > 0 &&
+    (payload.user_id === undefined ||
+      typeof payload.user_id === "string" ||
+      typeof payload.user_id === "number") &&
+    (payload.permissions === undefined || Array.isArray(payload.permissions))
   );
 }
 
 function isLongLivedTokenResponse(payload: unknown): payload is LongLivedTokenResponse {
-  if (typeof payload !== "object" || payload === null) {
+  if (!isObject(payload)) {
     return false;
   }
 
-  const candidate = payload as Record<string, unknown>;
-
   return (
-    typeof candidate.access_token === "string" &&
-    candidate.access_token.length > 0 &&
-    typeof candidate.token_type === "string" &&
-    typeof candidate.expires_in === "number" &&
-    Number.isFinite(candidate.expires_in)
+    typeof payload.access_token === "string" &&
+    payload.access_token.length > 0 &&
+    (payload.token_type === undefined || typeof payload.token_type === "string") &&
+    typeof payload.expires_in === "number" &&
+    Number.isFinite(payload.expires_in)
   );
 }
 
@@ -425,7 +463,7 @@ function mapTokenError(payload: unknown): GoogleBusinessProfileProviderError {
   }
 
   return new GoogleBusinessProfileProviderError(
-    "INSTAGRAM_REFRESH_FAILED",
+    "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
     "Instagram OAuth token request failed"
   );
 }

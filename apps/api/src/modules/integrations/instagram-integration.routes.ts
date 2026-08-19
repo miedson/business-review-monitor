@@ -233,6 +233,7 @@ export function registerInstagramIntegrationRoutes(
         const redirectOnError = [
           "INSTAGRAM_INVALID_STATE",
           "INSTAGRAM_TOKEN_REVOKED",
+          "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
           "INSTAGRAM_PERMISSION_DENIED",
           "INSTAGRAM_RATE_LIMITED",
           "INSTAGRAM_REFRESH_FAILED",
