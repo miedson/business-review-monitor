@@ -201,8 +201,8 @@ export default function DashboardPage() {
   const anyConnected = providers.length > 0;
 
   return (
-    <Box>
-      <Box css={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 6, flexWrap: "wrap", gap: 3 }}>
+    <Box css={{ maxW: "1200px", mx: "auto", px: 4 }}>
+      <Box css={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 6, flexWrap: "wrap", gap: 4 }}>
         <Text fontSize="2xl" fontWeight="bold" color="text.primary">
           Visão geral
         </Text>
@@ -261,7 +261,7 @@ export default function DashboardPage() {
           </Box>
 
           {providers.includes("google") && (
-            <Card variant="default" padding="lg">
+            <Card variant="default" padding="md">
               <CardHeader>
                 <CardTitle>Google Business Profile</CardTitle>
                 <CardDescription>Gerencie suas contas e empresas conectadas</CardDescription>
@@ -269,16 +269,16 @@ export default function DashboardPage() {
               <CardBody>
                 {loading && <Skeleton variant="text" count={3} />}
 
-                {!loading && googleAccounts.length === 0 ? (
-                  <Box css={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, py: 8 }}>
-                    <Text color="text.tertiary">Nenhuma conta Google conectada</Text>
-                    <Button onClick={handleGoogleConnect} variant="solid" size="sm">Conectar Google</Button>
-                  </Box>
-                ) : (
-                  <>
-                    <Box css={{ mb: 4 }}>
-                      <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={2}>Conta Google</Text>
-                      <Flex css={{ gap: 2, flexWrap: "wrap" }}>
+                 {!loading && googleAccounts.length === 0 ? (
+                   <Box css={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, py: 8 }}>
+                     <Text color="text.tertiary">Nenhuma conta Google conectada</Text>
+                     <Button onClick={handleGoogleConnect} variant="solid" size="sm">Conectar Google</Button>
+                   </Box>
+                 ) : (
+                   <>
+                     <Box css={{ mb: 6 }}>
+                       <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={3}>Conta Google</Text>
+                      <Flex css={{ gap: 3, flexWrap: "wrap", alignItems: "center" }}>
                         {googleAccounts.map((account) => (
                           <Button
                             key={account.id}
@@ -298,11 +298,11 @@ export default function DashboardPage() {
                       </Box>
                     )}
 
-                    {selectedAccountId && googleLocations.length > 0 && (
-                      <>
-                        <Box css={{ mb: 4 }}>
-                          <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={2}>Empresa</Text>
-                          <Flex css={{ gap: 2, flexWrap: "wrap" }}>
+                     {selectedAccountId && googleLocations.length > 0 && (
+                       <>
+                          <Box css={{ mb: 6 }}>
+                            <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={3}>Empresa</Text>
+                           <Flex css={{ gap: 3, flexWrap: "wrap", alignItems: "center" }}>
                             {googleLocations.map((location) => (
                               <Button
                                 key={location.id}
@@ -317,8 +317,8 @@ export default function DashboardPage() {
                         </Box>
 
                         {selectedLocationId && (
-                          <Box>
-                            <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={2}>Avaliações recentes</Text>
+                           <Box>
+                             <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={4}>Avaliações recentes</Text>
                             {loading ? (
                               <Skeleton variant="text" count={5} />
                             ) : googleReviews.length === 0 ? (
@@ -326,15 +326,15 @@ export default function DashboardPage() {
                                 <Text color="text.tertiary">Nenhuma avaliação encontrada</Text>
                               </Box>
                             ) : (
-                              <Flex css={{ flexDirection: "column", gap: 3 }}>
-                                {googleReviews.slice(0, 5).map((review) => (
-                                  <Box key={review.id} css={{ p: 4, bg: "surface.tertiary", borderRadius: "2xl", border: "1px solid", borderColor: "surface.border" }}>
-                                    <Flex css={{ justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 2 }}>
+                            <Flex css={{ flexDirection: "column", gap: 4 }}>
+                                   {googleReviews.slice(0, 5).map((review) => (
+                                      <Box key={review.id} css={{ p: 5, bg: "surface.tertiary", borderRadius: "lg", border: "1px solid", borderColor: "surface.border" }}>
+                                      <Flex css={{ justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                                       <Text fontWeight="semibold" color="text.primary">{starRatingLabel(review.starRating)}</Text>
                                       <Text fontSize="sm" color="text.tertiary">{formatDate(review.updatedAt)}</Text>
                                     </Flex>
-                                    <Text color="text.secondary" fontSize="sm">{review.reviewerName ?? "Cliente Google"}</Text>
-                                    {review.comment && <Text mt={2} color="text.primary">{review.comment}</Text>}
+                                     <Text color="text.secondary" fontSize="sm">{review.reviewerName ?? "Cliente Google"}</Text>
+                                     {review.comment && <Text mt={2.5} color="text.primary">{review.comment}</Text>}
                                   </Box>
                                 ))}
                               </Flex>

@@ -2,19 +2,31 @@
 
 import { Box, Button, Input, Alert, Text, Flex, Link as ChakraLink } from "@/lib/design-system";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, useState, useEffect } from "react";
 
 import { register } from "@/lib/api-client";
-import { storeSession } from "@/lib/auth-session";
+import { storeSession, getStoredSession } from "@/lib/auth-session";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const session = getStoredSession();
+    if (session) {
+      const redirectTo = searchParams.get("next") || "/onboarding";
+      router.replace(redirectTo);
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [router, searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,7 +36,8 @@ export default function RegisterPage() {
     try {
       const result = await register({ email, name, password });
       storeSession({ accessToken: result.accessToken, user: result.user });
-      router.replace("/onboarding");
+      const redirectTo = searchParams.get("next") || "/onboarding";
+      router.replace(redirectTo);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Não foi possível criar sua conta."
@@ -32,6 +45,26 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <Box
+        css={{
+          minH: "100vh",
+          bg: "surface.secondary",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          px: 4,
+          py: 8,
+        }}
+      >
+        <Box css={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Text>Carregando...</Text>
+        </Box>
+      </Box>
+    );
   }
 
   return (
@@ -55,10 +88,10 @@ export default function RegisterPage() {
           borderColor: "surface.border",
           borderRadius: "2xl",
           boxShadow: "sm",
-          p: { base: 6, md: 8 },
+          p: 8,
         }}
       >
-        <Box css={{ textAlign: "center", mb: 8 }}>
+        <Box css={{ textAlign: "center", mb: 6 }}>
           <Box
             css={{
               display: "inline-flex",
@@ -93,12 +126,12 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (
-            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={4}>
+            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={5}>
               {errorMessage}
             </Alert>
           )}
 
-          <Box css={{ display: "flex", flexDirection: "column", gap: 4, mb: 6 }}>
+          <Box css={{ display: "flex", flexDirection: "column", gap: 6, mb: 6 }}>
             <Input
               label="Nome"
               autoComplete="name"

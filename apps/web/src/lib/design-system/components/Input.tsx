@@ -60,6 +60,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
           css={{
             display: "flex",
             alignItems: "center",
+            width: "100%",
             bg: "surface.primary",
             border: "1px solid",
             borderColor: error ? "status.error.border" : "surface.border",
@@ -103,16 +104,22 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
             {...rest}
           />
           {isPassword && showPasswordToggle && (
-            <Box
-              onClick={handleTogglePassword}
-              tabIndex={-1}
-              css={{
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleTogglePassword();
+              }}
+              style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "text.quaternary",
+                color: "var(--colors-text-quaternary)",
                 padding: "0 12px",
                 height: "100%",
+                background: "none",
+                border: "none",
                 cursor: "pointer",
               }}
             >
@@ -127,7 +134,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
                   <circle cx="12" cy="12" r="3" />
                 </svg>
               )}
-            </Box>
+            </button>
           )}
           {rightElement && (
             <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", color: "text.quaternary", padding: "0 12px", height: "100%" }}>

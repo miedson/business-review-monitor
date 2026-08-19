@@ -1,4 +1,92 @@
 export const colors = {
+  light: {
+    surface: {
+      primary: "#ffffff",
+      secondary: "#f8fafc",
+      tertiary: "#f1f5f9",
+      border: "#e2e8f0",
+      borderStrong: "#cbd5e1",
+    },
+    text: {
+      primary: "#0f172a",
+      secondary: "#334155",
+      tertiary: "#64748b",
+      quaternary: "#94a3b8",
+      inverse: "#ffffff",
+      link: "#0d9488",
+      linkHover: "#0f766e",
+    },
+    status: {
+      success: {
+        bg: "#f0fdf4",
+        border: "#86efac",
+        text: "#166534",
+        icon: "#22c55e",
+      },
+      warning: {
+        bg: "#fffbeb",
+        border: "#fcd34d",
+        text: "#92400e",
+        icon: "#f59e0b",
+      },
+      error: {
+        bg: "#fef2f2",
+        border: "#fca5a5",
+        text: "#991b1b",
+        icon: "#ef4444",
+      },
+      info: {
+        bg: "#f0fdfa",
+        border: "#5eead4",
+        text: "#134e4a",
+        icon: "#14b8a6",
+      },
+    },
+  },
+  dark: {
+    surface: {
+      primary: "#0f172a",
+      secondary: "#1e293b",
+      tertiary: "#334155",
+      border: "#475569",
+      borderStrong: "#64748b",
+    },
+    text: {
+      primary: "#f8fafc",
+      secondary: "#e2e8f0",
+      tertiary: "#94a3b8",
+      quaternary: "#64748b",
+      inverse: "#ffffff",
+      link: "#2dd4bf",
+      linkHover: "#34d399",
+    },
+    status: {
+      success: {
+        bg: "#064e3b",
+        border: "#16a34a",
+        text: "#dcfce7",
+        icon: "#22c55e",
+      },
+      warning: {
+        bg: "#78350f",
+        border: "#fbbf24",
+        text: "#fef3c7",
+        icon: "#f59e0b",
+      },
+      error: {
+        bg: "#7f1d1d",
+        border: "#f87171",
+        text: "#fee2e2",
+        icon: "#f87171",
+      },
+      info: {
+        bg: "#134e4a",
+        border: "#2dd4bf",
+        text: "#ccfbf1",
+        icon: "#14b8a6",
+      },
+    },
+  },
   brand: {
     50: "#ecfdf3",
     100: "#d1fae5",
@@ -70,48 +158,6 @@ export const colors = {
     700: "#15803d",
     800: "#166534",
     900: "#14532d",
-  },
-  surface: {
-    primary: "#ffffff",
-    secondary: "#f8fafc",
-    tertiary: "#f1f5f9",
-    border: "#e2e8f0",
-    borderStrong: "#cbd5e1",
-  },
-  text: {
-    primary: "#0f172a",
-    secondary: "#334155",
-    tertiary: "#64748b",
-    quaternary: "#94a3b8",
-    inverse: "#ffffff",
-    link: "#0d9488",
-    linkHover: "#0f766e",
-  },
-  status: {
-    success: {
-      bg: "#f0fdf4",
-      border: "#86efac",
-      text: "#166534",
-      icon: "#22c55e",
-    },
-    warning: {
-      bg: "#fffbeb",
-      border: "#fcd34d",
-      text: "#92400e",
-      icon: "#f59e0b",
-    },
-    error: {
-      bg: "#fef2f2",
-      border: "#fca5a5",
-      text: "#991b1b",
-      icon: "#ef4444",
-    },
-    info: {
-      bg: "#f0fdfa",
-      border: "#5eead4",
-      text: "#134e4a",
-      icon: "#14b8a6",
-    },
   },
   channel: {
     google: {

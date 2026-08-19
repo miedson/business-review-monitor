@@ -23,26 +23,6 @@ const config = defineConfig({
         green: Object.fromEntries(
           Object.entries(colors.green).map(([key, value]) => [key, { value }])
         ),
-        surface: Object.fromEntries(
-          Object.entries(colors.surface).map(([key, value]) => [key, { value }])
-        ),
-        text: Object.fromEntries(
-          Object.entries(colors.text).map(([key, value]) => [key, { value }])
-        ),
-        status: {
-          success: Object.fromEntries(
-            Object.entries(colors.status.success).map(([key, value]) => [key, { value }])
-          ),
-          warning: Object.fromEntries(
-            Object.entries(colors.status.warning).map(([key, value]) => [key, { value }])
-          ),
-          error: Object.fromEntries(
-            Object.entries(colors.status.error).map(([key, value]) => [key, { value }])
-          ),
-          info: Object.fromEntries(
-            Object.entries(colors.status.info).map(([key, value]) => [key, { value }])
-          ),
-        },
         channel: {
           google: Object.fromEntries(
             Object.entries(colors.channel.google).map(([key, value]) => [key, { value }])
@@ -53,6 +33,68 @@ const config = defineConfig({
           facebook: Object.fromEntries(
             Object.entries(colors.channel.facebook).map(([key, value]) => [key, { value }])
           ),
+        },
+        light: {
+          canvas: { value: "#ffffff" },
+          surface: {
+            primary: Object.fromEntries(
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+            ),
+            secondary: Object.fromEntries(
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+            ),
+            tertiary: Object.fromEntries(
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+            ),
+            border: Object.fromEntries(
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+            ),
+          },
+          text: {
+            primary: Object.fromEntries(
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+            ),
+            secondary: Object.fromEntries(
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+            ),
+            tertiary: Object.fromEntries(
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+            ),
+            quaternary: Object.fromEntries(
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+            ),
+          },
+        },
+        dark: {
+          canvas: { value: "#0f172a" },
+          surface: {
+            primary: Object.fromEntries(
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+            ),
+            secondary: Object.fromEntries(
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+            ),
+            tertiary: Object.fromEntries(
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+            ),
+            border: Object.fromEntries(
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+            ),
+          },
+          text: {
+            primary: Object.fromEntries(
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+            ),
+            secondary: Object.fromEntries(
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+            ),
+            tertiary: Object.fromEntries(
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+            ),
+            quaternary: Object.fromEntries(
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+            ),
+          },
         },
       },
       spacing: Object.fromEntries(
@@ -114,14 +156,6 @@ const config = defineConfig({
           tooltip: 700,
         }).map(([key, value]) => [key, { value }])
       ),
-    },
-    semanticTokens: {
-      colors: {
-        "chakra-body-text": { value: "{colors.text.primary}" },
-        "chakra-body-bg": { value: "{colors.surface.secondary}" },
-        "chakra-border-color": { value: "{colors.surface.border}" },
-        "chakra-placeholder-color": { value: "{colors.text.quaternary}" },
-      },
     },
   },
 });

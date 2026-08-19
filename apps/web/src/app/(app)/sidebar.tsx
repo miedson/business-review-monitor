@@ -61,8 +61,11 @@ const LogoutIcon = () => (
 const navigationItems = [
   { href: "/dashboard", label: "Visão geral", Icon: HomeIcon },
   { href: "/reviews", label: "Avaliações", Icon: StarIcon },
+] as const;
+
+const settingsSubItems = [
   { href: "/settings/integrations", label: "Integrações", Icon: SettingsIcon },
-  { href: "/settings", label: "Configurações", Icon: CogIcon },
+  { href: "/settings", label: "Configurações gerais", Icon: CogIcon },
 ] as const;
 
 const futureItems = [
@@ -108,7 +111,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         }}
         aria-label="Navegação principal"
       >
-        <Box css={{ display: "flex", alignItems: "center", gap: 3, p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}>
+        <Box css={{ display: "flex", alignItems: "center", gap: 3, px: 5, h: "64px", borderBottom: "1px solid", borderColor: "surface.border" }}>
           <Box
             css={{
               display: "flex",
@@ -161,6 +164,62 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
                   </Link>
                 );
               })}
+
+              <Menu.Root>
+                <MenuTrigger asChild>
+                  <Link
+                    href="/settings"
+                    onClick={onClose}
+                    css={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 3,
+                      px: 3,
+                      py: 2.5,
+                      borderRadius: "lg",
+                      fontWeight: "medium",
+                      fontSize: "sm",
+                      color: pathname.startsWith("/settings") ? "white" : "text.secondary",
+                      bg: pathname.startsWith("/settings") ? "brand.600" : "transparent",
+                      _hover: { bg: pathname.startsWith("/settings") ? "brand.700" : "surface.tertiary", color: "text.primary" },
+                      transition: "all 0.15s ease",
+                    }}
+                    aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+                  >
+                    <CogIcon />
+                    Configurações
+                    <Box css={{ marginLeft: "auto" }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </Box>
+                  </Link>
+                </MenuTrigger>
+                <MenuPositioner>
+                  <MenuContent css={{ minW: "200px", borderRadius: "lg", boxShadow: "lg", border: "1px solid", borderColor: "surface.border", mt: 1, ml: -4 }}>
+                    {settingsSubItems.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                      return (
+                        <MenuItem
+                          key={item.href}
+                          value={item.href}
+                          asChild
+                          css={{ px: 3, py: 2, fontSize: "sm", color: isActive ? "brand.600" : "text.secondary", _hover: { bg: isActive ? "brand.50" : "surface.tertiary", color: "text.primary" }, fontWeight: isActive ? "semibold" : "medium" }}
+                        >
+                          <Link
+                            href={item.href}
+                            onClick={onClose}
+                            css={{ display: "flex", alignItems: "center", gap: 2, width: "full" }}
+                          >
+                            <item.Icon />
+                            {item.label}
+                          </Link>
+                        </MenuItem>
+                      );
+                    })}
+                  </MenuContent>
+                </MenuPositioner>
+              </Menu.Root>
             </Flex>
           </nav>
 
