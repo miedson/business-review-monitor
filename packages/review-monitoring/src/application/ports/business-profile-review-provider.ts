@@ -60,6 +60,12 @@ export type ListBusinessReviewsResult = ReviewSummary & {
   nextPageToken?: string;
 };
 
+export type InstagramUserProfile = {
+  id: string;
+  username: string;
+  account_type: string;
+};
+
 export interface BusinessProfileReviewProvider {
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string;
   exchangeAuthorizationCode(
@@ -76,6 +82,11 @@ export interface BusinessProfileReviewProvider {
     input: ListBusinessProfileLocationsInput
   ): Promise<ListBusinessProfileLocationsResult>;
   listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult>;
+}
+
+export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
+  getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
+  getProfessionalAccountId(accessToken: string): Promise<string>;
 }
 
 export type GoogleBusinessProfileProvider = BusinessProfileReviewProvider;

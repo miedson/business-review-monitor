@@ -8,6 +8,8 @@ export type StoredInstagramConnection = {
   encryptedAccessToken: string | null;
   scope: string;
   status: "CONNECTED" | "DISCONNECTED" | "REAUTH_REQUIRED" | "ERROR";
+  connectedAt: Date | null;
+  disconnectedAt: Date | null;
   tokenExpiresAt: Date | null;
 };
 

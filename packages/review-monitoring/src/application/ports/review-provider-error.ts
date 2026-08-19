@@ -19,7 +19,8 @@ export const reviewProviderErrorCodes = [
   "INSTAGRAM_PERMISSION_DENIED",
   "INSTAGRAM_RATE_LIMITED",
   "INSTAGRAM_API_UNAVAILABLE",
-  "INSTAGRAM_ACCOUNT_NOT_FOUND"
+  "INSTAGRAM_ACCOUNT_NOT_FOUND",
+  "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED"
 ] as const;
 
 export type ReviewProviderErrorCode = (typeof reviewProviderErrorCodes)[number];

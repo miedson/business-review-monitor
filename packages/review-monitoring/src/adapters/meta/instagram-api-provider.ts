@@ -1,6 +1,6 @@
 import type {
   ListBusinessProfileAccountsInput,
-  BusinessProfileReviewProvider,
+  InstagramReviewProvider,
   ListBusinessProfileAccountsResult,
   ListBusinessProfileLocationsResult,
   ListBusinessReviewsResult,
@@ -64,7 +64,7 @@ type InstagramProfessionalAccountResponse = {
   } | null;
 };
 
-export class InstagramApiProvider implements BusinessProfileReviewProvider {
+export class InstagramApiProvider implements InstagramReviewProvider {
   private readonly appId: string;
   private readonly appSecret: string;
   private readonly redirectUri: string;
@@ -256,7 +256,7 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     return payload;
   }
 
-  async getProfessionalAccountId(accessToken: string): Promise<string | null> {
+  async getProfessionalAccountId(accessToken: string): Promise<string> {
     this.logger.info({
       provider: "instagram",
       operation: "professional_account_id_fetch_started"
@@ -274,7 +274,7 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
 
     if (!response.ok) {
       const payload = await readJson(response);
-      this.logger.warn({
+      this.logger.error({
         provider: "instagram",
         operation: "professional_account_id_fetch_failed",
         httpStatus: response.status,
@@ -282,11 +282,26 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
         metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
         metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
       });
-      return null;
+      throw new GoogleBusinessProfileProviderError(
+        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
+        "Failed to resolve Instagram Professional Account ID from Meta API"
+      );
     }
 
     const payload = (await response.json()) as InstagramProfessionalAccountResponse;
-    const professionalAccountId = payload.instagram_business_account?.id ?? null;
+    const professionalAccountId = payload.instagram_business_account?.id;
+
+    if (!professionalAccountId) {
+      this.logger.error({
+        provider: "instagram",
+        operation: "professional_account_id_missing_in_response",
+        instagramUserId: "unknown"
+      });
+      throw new GoogleBusinessProfileProviderError(
+        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
+        "Instagram Professional Account ID not found in API response. The connected account must be a Professional Account (Business or Creator)."
+      );
+    }
 
     this.logger.info({
       provider: "instagram",

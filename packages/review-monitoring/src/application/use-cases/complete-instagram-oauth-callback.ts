@@ -1,4 +1,4 @@
-import type { BusinessProfileReviewProvider } from "../ports/business-profile-review-provider.js";
+import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
 import type { InstagramConnectionRepository } from "../ports/instagram-connection-repository.js";
 import type { OAuthStateStore } from "../ports/oauth-state-store.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
@@ -21,7 +21,7 @@ export type CompleteInstagramOAuthCallbackResult = {
 };
 
 export type CompleteInstagramOAuthCallbackDependencies = {
-  provider: BusinessProfileReviewProvider;
+  provider: InstagramReviewProvider;
   stateStore: OAuthStateStore;
   tokenCipher: TokenCipher;
   instagramConnectionRepository: InstagramConnectionRepository;
@@ -89,46 +89,57 @@ export class CompleteInstagramOAuthCallback {
       ? new Date(Date.now() + tokenSet.expiresInSeconds * 1000)
       : undefined;
 
-    let profile: { id: string; username: string; account_type: string } | null = null;
-
-    const provider = this.dependencies.provider as BusinessProfileReviewProvider & {
-      getUserProfile?: (accessToken: string) => Promise<{ id: string; username: string; account_type: string }>;
-    };
-
-    if (typeof provider.getUserProfile === "function") {
-      profile = await provider.getUserProfile(tokenSet.accessToken);
-    }
-
     logger.info({
       provider: "instagram",
-      operation: "user_profile_fetched",
-      instagramUserId: profile?.id,
-      username: profile?.username,
-      accountType: profile?.account_type
+      operation: "instagram_profile_resolution_started"
     });
 
-    let professionalAccountId: string | null = null;
-    const providerWithProfessionalAccount = this.dependencies.provider as BusinessProfileReviewProvider & {
-      getProfessionalAccountId?: (accessToken: string) => Promise<string | null>;
-    };
-    if (typeof providerWithProfessionalAccount.getProfessionalAccountId === "function") {
-      professionalAccountId = await providerWithProfessionalAccount.getProfessionalAccountId(tokenSet.accessToken);
+    const profile = await this.dependencies.provider.getUserProfile(tokenSet.accessToken);
+
+    logger.info({
+      provider: "instagram",
+      operation: "instagram_profile_resolved",
+      instagramUserId: profile.id,
+      username: profile.username,
+      accountType: profile.account_type
+    });
+
+    logger.info({
+      provider: "instagram",
+      operation: "instagram_professional_account_resolution_started",
+      instagramUserId: profile.id
+    });
+
+    const professionalAccountId = await this.dependencies.provider.getProfessionalAccountId(tokenSet.accessToken);
+
+    if (!professionalAccountId) {
+      logger.error({
+        provider: "instagram",
+        operation: "instagram_professional_account_resolution_failed",
+        instagramUserId: profile.id,
+        username: profile.username,
+        accountType: profile.account_type
+      });
+      throw new GoogleBusinessProfileProviderError(
+        "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
+        "Failed to resolve Instagram Professional Account ID. The connected account must be a Professional Account (Business or Creator) with appropriate permissions."
+      );
     }
 
     logger.info({
       provider: "instagram",
-      operation: "professional_account_id_resolved",
-      instagramUserId: profile?.id,
-      professionalAccountId
+      operation: "instagram_professional_account_resolved",
+      instagramUserId: profile.id,
+      instagramProfessionalAccountId: professionalAccountId
     });
 
     const instagramConnection =
       await this.dependencies.instagramConnectionRepository.saveConnected({
         tenantId: stateData.tenantId,
-        instagramUserId: profile?.id ?? "unknown",
-        instagramProfessionalAccountId: professionalAccountId ?? undefined,
-        username: profile?.username,
-        accountType: profile?.account_type,
+        instagramUserId: profile.id,
+        instagramProfessionalAccountId: professionalAccountId,
+        username: profile.username,
+        accountType: profile.account_type,
         encryptedAccessToken,
         scope: tokenSet.scope,
         connectedAt: this.dependencies.now(),
@@ -137,7 +148,9 @@ export class CompleteInstagramOAuthCallback {
 
     logger.info({
       provider: "instagram",
-      operation: "connection_persisted",
+      operation: "instagram_connection_persisted",
+      instagramUserId: profile.id,
+      instagramProfessionalAccountId: professionalAccountId,
       instagramConnectionId: instagramConnection.id,
       tenantId: stateData.tenantId
     });

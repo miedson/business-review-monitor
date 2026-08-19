@@ -129,6 +129,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       encryptedAccessToken: "encrypted_token",
       scope: "instagram_basic,instagram_manage_comments",
       status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
       tokenExpiresAt: new Date(Date.now() + 86400000)
     };
     connectionRepo.setConnection(connection);
@@ -191,6 +193,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       encryptedAccessToken: "encrypted_token",
       scope: "instagram_basic,instagram_manage_comments",
       status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
       tokenExpiresAt: new Date(Date.now() + 86400000)
     };
     connectionRepo.setConnection(connection);
@@ -264,6 +268,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       encryptedAccessToken: "encrypted_token",
       scope: "instagram_basic,instagram_manage_comments",
       status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
       tokenExpiresAt: new Date(Date.now() + 86400000)
     };
     connectionRepo.setConnection(connection);
@@ -307,6 +313,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       encryptedAccessToken: "encrypted_token",
       scope: "instagram_basic,instagram_manage_comments",
       status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
       tokenExpiresAt: new Date(Date.now() + 86400000)
     };
     connectionRepo.setConnection(connection);
