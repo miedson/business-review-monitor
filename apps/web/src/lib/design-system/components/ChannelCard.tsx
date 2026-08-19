@@ -132,17 +132,37 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
               {icon}
             </Box>
             <Box css={{ flex: 1, minWidth: 0 }}>
-              <Text css={{ fontSize: "lg", fontWeight: "semibold", color: "text.primary", lineHeight: "snug" }}>
-                {title}
-              </Text>
+              <Box css={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
+                <Text css={{ fontSize: "lg", fontWeight: "semibold", color: "text.primary", lineHeight: "snug" }}>
+                  {title}
+                </Text>
+                <Badge variant="subtle" colorScheme={statusVariants[status] as "success" | "default" | "info" | "warning"} size="sm">
+                  {statusLabels[status]}
+                </Badge>
+                {accountLabel && <Badge variant="subtle" colorScheme="slate" size="sm">{accountLabel}</Badge>}
+              </Box>
               {subtitle && <Text css={{ fontSize: "sm", color: "text.tertiary", lineHeight: "normal", mt: 1 }}>{subtitle}</Text>}
             </Box>
-            <Box css={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
-              <Badge variant="subtle" colorScheme={statusVariants[status] as "success" | "default" | "info" | "warning"} size="md">
-                {statusLabels[status]}
-              </Badge>
-              {accountLabel && <Badge variant="subtle" colorScheme="slate" size="sm">{accountLabel}</Badge>}
-            </Box>
+            {
+                isConnected ? (
+                <>
+                  {onManage && <Button variant="ghost" size="sm" onClick={onManage}>Gerenciar</Button>}
+                  <Button variant="outline" size="sm" onClick={handleDisconnect} colorScheme="red">
+                    Desconectar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="solid"
+                  size="sm"
+                  onClick={onConnect}
+                  loading={isConnecting}
+                  disabled={(disabled ?? false) || isConnecting}
+                >
+                  {isConnecting ? "Conectando..." : `Conectar`}
+                </Button>
+              )
+            }
           </Box>
 
           <Box css={{ flex: 1 }}>
@@ -160,8 +180,8 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
             css={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "flexEnd",
-              gap: 3,
+              justifyContent: "flexStart",
+              gap: 2,
               mt: 6,
               pt: 4,
               borderTop: "1px solid",
@@ -169,29 +189,11 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
               flexWrap: "wrap",
             }}
           >
-            {comingSoon ? (
+            {comingSoon &&
               <Button variant="ghost" size="sm" disabled>
                 Em breve
               </Button>
-            ) : isConnected ? (
-              <>
-                {onManage && <Button variant="ghost" size="sm" onClick={onManage}>Gerenciar</Button>}
-                <Button variant="outline" size="sm" onClick={handleDisconnect} colorScheme="red">
-                  Desconectar
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="solid"
-                size="md"
-                onClick={onConnect}
-                loading={isConnecting}
-                disabled={(disabled ?? false) || isConnecting}
-                w="full"
-              >
-                {isConnecting ? "Conectando..." : `Conectar ${title}`}
-              </Button>
-            )}
+              }
           </Box>
         </Box>
 
