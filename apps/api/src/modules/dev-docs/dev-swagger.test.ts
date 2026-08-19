@@ -61,6 +61,7 @@ expect(Object.keys(document.paths).sort()).toEqual([
         "/business-locations/select",
         "/business-locations/{id}/select",
         "/health",
+        "/instagram/comments",
         "/integrations/google/accounts",
         "/integrations/google/callback",
         "/integrations/google/connect",

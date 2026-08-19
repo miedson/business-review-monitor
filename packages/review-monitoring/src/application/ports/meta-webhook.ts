@@ -16,6 +16,14 @@ export type MetaWebhookChange = {
   value: MetaWebhookChangeValue;
 };
 
+export type MetaWebhookCommentValue = {
+  media_id?: string;
+  comment_id?: string;
+  from?: MetaWebhookFrom;
+  created_time?: number;
+  text?: string;
+};
+
 export type MetaWebhookChangeValue = {
   media_id?: string;
   comment_id?: string;
@@ -24,6 +32,7 @@ export type MetaWebhookChangeValue = {
   created_time?: number;
   item?: string;
   verb?: string;
+  text?: string;
 };
 
 export type MetaWebhookFrom = {

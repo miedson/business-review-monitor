@@ -134,6 +134,7 @@ export type {
 
 export { PrismaBusinessLocationRepository } from "./adapters/database/prisma-business-location-repository.js";
 export { PrismaReviewCacheRepository } from "./adapters/database/prisma-review-cache-repository.js";
+export { PrismaInstagramCommentRepository } from "./adapters/database/prisma-instagram-comment-repository.js";
 
 export {
   INSTAGRAM_SCOPES,
@@ -187,10 +188,18 @@ export type {
 } from "./application/ports/instagram-connection-repository.js";
 
 export type {
+  InstagramCommentRepository,
+  UpsertInstagramCommentInput,
+  FindInstagramCommentsInput,
+  FindInstagramCommentByIdInput
+} from "./application/ports/instagram-comment-repository.js";
+
+export type {
   MetaWebhookVerifyQuery,
   MetaWebhookEntry,
   MetaWebhookChange,
   MetaWebhookChangeValue,
+  MetaWebhookCommentValue,
   MetaWebhookFrom,
   MetaWebhookMessage,
   MetaWebhookMessaging,
@@ -205,9 +214,31 @@ export {
 } from "./application/ports/meta-webhook.js";
 
 export {
+  DefaultInstagramCommentWebhookNormalizer,
+  type InstagramCommentWebhookNormalizer
+} from "./application/normalizers/instagram-comment-webhook-normalizer.js";
+
+export type {
+  NormalizedInstagramComment,
+  NormalizedInstagramCommentInput,
+  InstagramComment,
+  InstagramCommentStatus,
+  createNormalizedInstagramComment
+} from "./domain/instagram-comment.js";
+
+export {
   ListInstagramAccounts
 } from "./application/use-cases/list-instagram-accounts.js";
 export type {
   ListInstagramAccountsDependencies,
   ListInstagramAccountsInput
 } from "./application/use-cases/list-instagram-accounts.js";
+
+export {
+  ListInstagramComments
+} from "./application/use-cases/list-instagram-comments.js";
+export type {
+  ListInstagramCommentsDependencies,
+  ListInstagramCommentsInput,
+  ListInstagramCommentsResult
+} from "./application/use-cases/list-instagram-comments.js";

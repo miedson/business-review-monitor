@@ -26,6 +26,11 @@ enum InstagramConnectionStatus {
   ERROR
 }
 
+enum InstagramCommentStatus {
+  NEW
+  READ
+}
+
 model User {
   id           String       @id @default(cuid())
   name         String
@@ -46,6 +51,7 @@ model Tenant {
   users                 TenantUser[]
   googleConnections     GoogleConnection[]
   instagramConnections  InstagramConnection[]
+  instagramComments     InstagramComment[]
   businessLocations     BusinessLocation[]
   reviewCaches          ReviewCache[]
 
@@ -102,11 +108,35 @@ model InstagramConnection {
   createdAt              DateTime                  @default(now()) @db.Timestamptz(3)
   updatedAt              DateTime                  @updatedAt @db.Timestamptz(3)
   tenant                 Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  comments               InstagramComment[]
 
   @@unique([tenantId])
   @@index([tenantId])
   @@index([status])
   @@map("instagram_connections")
+}
+
+model InstagramComment {
+  id                     String                  @id @default(cuid())
+  tenantId               String
+  instagramConnectionId  String
+  externalCommentId      String
+  externalMediaId        String?
+  authorExternalId       String?
+  authorUsername         String?
+  text                   String?
+  createdAtExternal      DateTime?               @db.Timestamptz(3)
+  status                 InstagramCommentStatus  @default(NEW)
+  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instagramConnection    InstagramConnection     @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+
+  @@unique([instagramConnectionId, externalCommentId])
+  @@index([tenantId])
+  @@index([instagramConnectionId])
+  @@index([createdAtExternal])
+  @@map("instagram_comments")
 }
 
 model BusinessLocation {

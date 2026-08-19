@@ -1,6 +1,7 @@
 import {
   CleanupExpiredReviewCache,
-  PrismaInstagramConnectionRepository
+  PrismaInstagramConnectionRepository,
+  PrismaInstagramCommentRepository
 } from "@brm/review-monitoring";
 import { prisma } from "@brm/database";
 import {
@@ -53,6 +54,7 @@ export function createCleanupExpiredReviewCacheJob(): CleanupExpiredReviewCacheJ
 
 export function createProcessMetaWebhookEventJob(): ProcessMetaWebhookEventJob {
   return new ProcessMetaWebhookEventJob(
-    new PrismaInstagramConnectionRepository(prisma)
+    new PrismaInstagramConnectionRepository(prisma),
+    new PrismaInstagramCommentRepository(prisma)
   );
 }

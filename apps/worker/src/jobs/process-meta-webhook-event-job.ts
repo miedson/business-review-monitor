@@ -1,6 +1,19 @@
 import type { Job } from "bullmq";
 import { z } from "zod";
 import { logInfo } from "../worker-logger.js";
+import type {
+  MetaWebhookEntry,
+  MetaWebhookChange
+} from "@brm/review-monitoring";
+import {
+  DefaultInstagramCommentWebhookNormalizer,
+  type InstagramCommentWebhookNormalizer
+} from "@brm/review-monitoring";
+import type {
+  InstagramCommentRepository,
+  UpsertInstagramCommentInput
+} from "@brm/review-monitoring";
+import type { StoredInstagramConnection } from "@brm/review-monitoring";
 
 const processMetaWebhookEventJobDataSchema = z
   .object({
@@ -68,11 +81,10 @@ export type ProcessMetaWebhookEventUseCase = {
 export class ProcessMetaWebhookEventJob {
   constructor(
     private readonly instagramConnectionRepository: {
-      findByInstagramUserId: (instagramUserId: string) => Promise<{
-        tenantId: string;
-        instagramUserId: string;
-      } | null>;
-    }
+      findByInstagramUserId: (instagramUserId: string) => Promise<StoredInstagramConnection | null>;
+    },
+    private readonly instagramCommentRepository: InstagramCommentRepository,
+    private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer()
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -112,7 +124,7 @@ export class ProcessMetaWebhookEventJob {
   private async processEntry(entry: JobEntry, requestId: string): Promise<void> {
     if (entry.changes) {
       for (const change of entry.changes) {
-        await this.processChange(change, entry.id, requestId);
+        await this.processChange(change as MetaWebhookChange, entry as MetaWebhookEntry, requestId);
       }
     }
 
@@ -124,40 +136,111 @@ export class ProcessMetaWebhookEventJob {
   }
 
   private async processChange(
-    change: { field: string; value: Record<string, unknown> },
-    entryId: string,
+    change: MetaWebhookChange,
+    entry: MetaWebhookEntry,
     requestId: string
   ): Promise<void> {
     logInfo("process_meta_webhook_event_change", {
       requestId,
-      entryId,
+      entryId: entry.id,
       field: change.field,
       valueKeys: Object.keys(change.value).join(",")
     });
 
     if (change.field === "comments") {
-      const value = change.value as Record<string, unknown>;
-      const mediaId = value.media_id as string | undefined;
-      const commentId = value.comment_id as string | undefined;
-      const from = value.from as { id: string; username?: string } | undefined;
-
-      logInfo("meta_webhook_comment_received", {
-        requestId,
-        entryId,
-        mediaId: mediaId ?? "unknown",
-        commentId: commentId ?? "unknown",
-        fromUserId: from?.id ?? "unknown",
-        fromUsername: from?.username ?? "unknown"
-      });
+      await this.processComment(change, entry, requestId);
     }
 
     if (change.field === "mentions") {
       logInfo("meta_webhook_mention_received", {
         requestId,
-        entryId,
+        entryId: entry.id,
         valueKeys: Object.keys(change.value).join(",")
       });
     }
+
+    if (change.field !== "comments" && change.field !== "mentions") {
+      logInfo("meta_webhook_unsupported_event", {
+        requestId,
+        entryId: entry.id,
+        field: change.field,
+        valueKeys: Object.keys(change.value).join(",")
+      });
+    }
+  }
+
+  private async processComment(
+    change: MetaWebhookChange,
+    entry: MetaWebhookEntry,
+    requestId: string
+  ): Promise<void> {
+    const normalizedComment = this.commentNormalizer.normalize(entry, change);
+
+    if (!normalizedComment) {
+      logInfo("meta_webhook_comment_normalization_failed", {
+        requestId,
+        entryId: entry.id,
+        field: change.field,
+        valueKeys: Object.keys(change.value).join(",")
+      });
+      return;
+    }
+
+    logInfo("instagram_comment_normalized", {
+      requestId,
+      externalCommentId: normalizedComment.externalCommentId,
+      externalMediaId: normalizedComment.externalMediaId ?? "unknown",
+      instagramAccountId: normalizedComment.instagramAccountId,
+      authorExternalId: normalizedComment.authorExternalId ?? "unknown",
+      authorUsername: normalizedComment.authorUsername ?? "unknown",
+      hasText: !!normalizedComment.text,
+      textLength: normalizedComment.text?.length ?? 0
+    });
+
+    const connection = await this.instagramConnectionRepository.findByInstagramUserId(
+      normalizedComment.instagramAccountId
+    );
+
+    if (!connection) {
+      logInfo("meta_webhook_comment_connection_not_found", {
+        requestId,
+        entryId: entry.id,
+        instagramAccountId: normalizedComment.instagramAccountId,
+        externalCommentId: normalizedComment.externalCommentId
+      });
+      return;
+    }
+
+    logInfo("instagram_connection_resolved", {
+      requestId,
+      tenantId: connection.tenantId,
+      instagramConnectionId: connection.id,
+      instagramUserId: connection.instagramUserId,
+      username: connection.username ?? "unknown"
+    });
+
+    const upsertInput: UpsertInstagramCommentInput = {
+      tenantId: connection.tenantId,
+      instagramConnectionId: connection.id,
+      externalCommentId: normalizedComment.externalCommentId,
+      status: "NEW"
+    };
+    if (normalizedComment.externalMediaId !== undefined) upsertInput.externalMediaId = normalizedComment.externalMediaId;
+    if (normalizedComment.authorExternalId !== undefined) upsertInput.authorExternalId = normalizedComment.authorExternalId;
+    if (normalizedComment.authorUsername !== undefined) upsertInput.authorUsername = normalizedComment.authorUsername;
+    if (normalizedComment.text !== undefined) upsertInput.text = normalizedComment.text;
+    if (normalizedComment.createdAtExternal !== undefined) upsertInput.createdAtExternal = normalizedComment.createdAtExternal;
+
+    const comment = await this.instagramCommentRepository.upsert(upsertInput);
+
+    logInfo("instagram_comment_persisted", {
+      requestId,
+      commentId: comment.id,
+      externalCommentId: comment.externalCommentId,
+      tenantId: comment.tenantId,
+      instagramConnectionId: comment.instagramConnectionId,
+      status: comment.status
+    });
   }
 
   private async processMessage(

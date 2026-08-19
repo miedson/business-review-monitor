@@ -81,6 +81,27 @@ const instagramAccountsResponseSchema = z.object({
   accounts: z.array(instagramAccountSchema),
 });
 
+const instagramCommentAuthorSchema = z.object({
+  id: z.string().nullable().optional(),
+  username: z.string().nullable().optional(),
+});
+
+const instagramCommentSchema = z.object({
+  id: z.string(),
+  provider: z.literal("instagram"),
+  commentId: z.string(),
+  mediaId: z.string().nullable().optional(),
+  author: instagramCommentAuthorSchema,
+  text: z.string().nullable().optional(),
+  createdAt: z.string(),
+  status: z.enum(["NEW", "READ"]),
+});
+
+const instagramCommentsResponseSchema = z.object({
+  comments: z.array(instagramCommentSchema),
+  nextCursor: z.string().nullable().optional(),
+});
+
 type RequestOptions = {
   accessToken?: string;
   body?: unknown;
@@ -95,6 +116,9 @@ export type GoogleReview = z.infer<typeof googleReviewSchema>;
 export type GoogleReviewsResponse = z.infer<typeof googleReviewsResponseSchema>;
 export type GoogleSyncResponse = z.infer<typeof googleSyncResponseSchema>;
 export type InstagramAccount = z.infer<typeof instagramAccountSchema>;
+export type InstagramCommentAuthor = z.infer<typeof instagramCommentAuthorSchema>;
+export type InstagramComment = z.infer<typeof instagramCommentSchema>;
+export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponseSchema>;
 
 export async function register(input: {
   name: string;
@@ -226,6 +250,26 @@ export async function listInstagramAccounts(
 ): Promise<{ accounts: InstagramAccount[] }> {
   return instagramAccountsResponseSchema.parse(
     await requestJson("/integrations/instagram/accounts", { accessToken })
+  );
+}
+
+export async function listInstagramComments(input: {
+  accessToken: string;
+  instagramConnectionId?: string;
+  status?: "NEW" | "READ";
+  limit?: number;
+  cursor?: string;
+}): Promise<InstagramCommentsResponse> {
+  const params = new URLSearchParams();
+  if (input.instagramConnectionId) params.set("instagramConnectionId", input.instagramConnectionId);
+  if (input.status) params.set("status", input.status);
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.cursor) params.set("cursor", input.cursor);
+
+  return instagramCommentsResponseSchema.parse(
+    await requestJson(`/instagram/comments?${params.toString()}`, {
+      accessToken: input.accessToken,
+    })
   );
 }
 

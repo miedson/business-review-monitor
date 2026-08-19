@@ -22,14 +22,10 @@ export class PrismaInstagramConnectionRepository
     return connection;
   }
 
-  async findByInstagramUserId(instagramUserId: string): Promise<{ tenantId: string; instagramUserId: string } | null> {
+  async findByInstagramUserId(instagramUserId: string): Promise<StoredInstagramConnection | null> {
     const connection = await this.prisma.instagramConnection.findFirst({
       where: {
         instagramUserId
-      },
-      select: {
-        tenantId: true,
-        instagramUserId: true
       }
     });
 

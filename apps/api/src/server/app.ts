@@ -26,7 +26,9 @@ import {
   InstagramApiMockProvider,
   InstagramApiProvider,
   ListInstagramAccounts,
+  ListInstagramComments,
   PrismaInstagramConnectionRepository,
+  PrismaInstagramCommentRepository,
   StartInstagramOAuthConnection
 } from "@brm/review-monitoring";
 import { createEncryptionServiceFromBase64Key } from "@brm/shared";
@@ -42,6 +44,7 @@ import {
 } from "../modules/integrations/bullmq-review-sync-job-scheduler.js";
 import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-integration.routes.js";
 import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
+import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
 import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
@@ -252,6 +255,10 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     provider: instagramProvider,
     tokenCipher
   });
+  const instagramCommentRepository = new PrismaInstagramCommentRepository(prisma);
+  const listInstagramComments = new ListInstagramComments({
+    instagramCommentRepository
+  });
   const disconnectInstagramConnection = new DisconnectInstagramConnection({
     instagramConnectionRepository,
     provider: instagramProvider,
@@ -307,6 +314,10 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     listInstagramAccounts,
     disconnectInstagramConnection,
     webUrl: config.WEB_URL
+  });
+  registerInstagramCommentsRoutes(app, {
+    authService,
+    listInstagramComments
   });
 
   registerMvpManagementRoutes(app, {
