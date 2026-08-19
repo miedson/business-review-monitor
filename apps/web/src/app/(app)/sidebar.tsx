@@ -3,7 +3,7 @@
 import { Box, Text, Flex, Link, Avatar, AvatarFallback, Menu, MenuTrigger, MenuPositioner, MenuContent, MenuItem, MenuSeparator, Badge } from "@/lib/design-system";
 import { usePathname } from "next/navigation";
 import { forwardRef } from "react";
-import { Button as DesignButton, type ChannelProvider } from "@/lib/design-system";
+import { type ChannelProvider } from "@/lib/design-system";
 
 const HomeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
@@ -47,14 +47,6 @@ const ChartIcon = () => (
     <line x1="18" y1="20" x2="18" y2="10" />
     <line x1="12" y1="20" x2="12" y2="4" />
     <line x1="6" y1="20" x2="6" y2="14" />
-  </svg>
-);
-
-const LogoutIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
@@ -261,63 +253,79 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           )}
         </Flex>
 
-        <Box css={{ borderTop: "1px solid", borderColor: "surface.border", p: 4, gap: 3, display: "flex", flexDirection: "column" }}>
-          <Box css={{ display: "flex", alignItems: "center", gap: 3, px: 1 }}>
-            <Avatar.Root size="sm" css={{ bg: "brand.100", color: "brand.700" }}>
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar.Root>
-            <Box css={{ flex: 1, minWidth: 0 }}>
-              <Text css={{ fontWeight: "medium", fontSize: "sm", color: "text.primary", lineHeight: "snug", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {userName}
-              </Text>
-              <Text css={{ fontSize: "xs", color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {userEmail}
-              </Text>
-            </Box>
+<Box css={{ borderTop: "1px solid", borderColor: "surface.border", p: 4, gap: 3, display: "flex", flexDirection: "column" }}>
+            <Menu.Root>
+              <MenuTrigger asChild>
+                <Box
+                  css={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 3,
+                    px: 1,
+                    cursor: "pointer",
+                    borderRadius: "md",
+                    py: 1,
+                    _hover: { bg: "surface.tertiary" },
+                  }}
+                >
+                  <Avatar.Root size="sm" css={{ bg: "brand.100", color: "brand.700" }}>
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                  </Avatar.Root>
+                  <Box css={{ flex: 1, minWidth: 0 }}>
+                    <Text css={{ fontWeight: "medium", fontSize: "sm", color: "text.primary", lineHeight: "snug", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {userName}
+                    </Text>
+                    <Text css={{ fontSize: "xs", color: "text.tertiary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {userEmail}
+                    </Text>
+                  </Box>
+                  <Box css={{ display: "flex", alignItems: "center", color: "text.quaternary" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </Box>
+                </Box>
+              </MenuTrigger>
+              <MenuPositioner>
+                <MenuContent css={{ minW: "220px", borderRadius: "lg", boxShadow: "lg", border: "1px solid", borderColor: "surface.border" }}>
+                  <MenuItem value="user-info" css={{ px: 3, py: 2, fontSize: "sm", color: "text.secondary", cursor: "default" }}>
+                    <Text fontWeight="medium" color="text.primary">{userName}</Text>
+                    <Text fontSize="xs" color="text.tertiary">{userEmail}</Text>
+                  </MenuItem>
+                  <MenuSeparator />
+                  {connectedProviders.length > 0 && (
+                    <>
+                      <MenuItem value="providers" css={{ px: 3, py: 2, fontSize: "sm", color: "text.secondary", cursor: "default" }}>
+                        <Text fontWeight="medium" color="text.primary" fontSize="xs" mb={1}>Conectados</Text>
+                        <Box css={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                          {["google", "instagram", "facebook"].map((provider) => {
+                            const isConnected = connectedProviders.includes(provider as ChannelProvider);
+                            if (!isConnected) return null;
+                            const configs: Record<string, { label: string; color: string }> = {
+                              google: { label: "Google", color: "blue" },
+                              instagram: { label: "Instagram", color: "pink" },
+                              facebook: { label: "Facebook", color: "blue" },
+                            };
+                            const config = configs[provider];
+                            if (!config) return null;
+                            return (
+                              <Badge key={provider} variant="subtle" colorScheme={config.color as "blue" | "pink"} size="xs" dot>
+                                {config.label}
+                              </Badge>
+                            );
+                          })}
+                        </Box>
+                      </MenuItem>
+                      <MenuSeparator />
+                    </>
+                  )}
+                  <MenuItem value="signout" onClick={onSignOut} css={{ px: 3, py: 2, fontSize: "sm", color: "status.error.text", _hover: { bg: "status.error.bg" } }}>
+                    Sair da conta
+                  </MenuItem>
+                </MenuContent>
+              </MenuPositioner>
+            </Menu.Root>
           </Box>
-
-          <Box css={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            {["google", "instagram", "facebook"].map((provider) => {
-              const isConnected = connectedProviders.includes(provider as ChannelProvider);
-              if (!isConnected) return null;
-              const configs: Record<string, { label: string; color: string }> = {
-                google: { label: "Google", color: "blue" },
-                instagram: { label: "Instagram", color: "pink" },
-                facebook: { label: "Facebook", color: "blue" },
-              };
-              const config = configs[provider];
-              if (!config) return null;
-              return (
-                <Badge key={provider} variant="subtle" colorScheme={config.color as "blue" | "pink"} size="sm" dot>
-                  {config.label}
-                </Badge>
-              );
-            })}
-          </Box>
-
-          <Menu.Root>
-            <MenuTrigger asChild>
-              <DesignButton variant="ghost" size="sm" w="full" justifyContent="flex-start">
-                <Flex css={{ alignItems: "center", gap: 2, width: "full", justifyContent: "flex-start" }}>
-                  <LogoutIcon />
-                  <Text>Sair</Text>
-                </Flex>
-              </DesignButton>
-            </MenuTrigger>
-            <MenuPositioner>
-              <MenuContent css={{ minW: "180px", borderRadius: "lg", boxShadow: "lg", border: "1px solid", borderColor: "surface.border" }}>
-                <MenuItem value="user-info" css={{ px: 3, py: 2, fontSize: "sm", color: "text.secondary", cursor: "default" }}>
-                  <Text fontWeight="medium" color="text.primary">{userName}</Text>
-                  <Text fontSize="xs" color="text.tertiary">{userEmail}</Text>
-                </MenuItem>
-                <MenuSeparator />
-                <MenuItem value="signout" onClick={onSignOut} css={{ px: 3, py: 2, fontSize: "sm", color: "status.error.text", _hover: { bg: "status.error.bg" } }}>
-                  Sair da conta
-                </MenuItem>
-              </MenuContent>
-            </MenuPositioner>
-          </Menu.Root>
-        </Box>
       </Box>
     );
   }
