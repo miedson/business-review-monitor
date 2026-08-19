@@ -23,6 +23,7 @@ import {
 import {
   CompleteInstagramOAuthCallback,
   DisconnectInstagramConnection,
+  InstagramApiMockProvider,
   InstagramApiProvider,
   ListInstagramAccounts,
   PrismaInstagramConnectionRepository,
@@ -66,7 +67,18 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   const isProduction = config.NODE_ENV === "production";
 
   const app = Fastify({
-    logger: true,
+    logger: {
+      redact: {
+        paths: [
+          "req.query.code",
+          "req.query.state",
+          "req.headers.authorization",
+          "req.headers.cookie",
+          "res.headers['set-cookie']"
+        ],
+        censor: "[REDACTED]"
+      }
+    },
     genReqId: () => crypto.randomUUID()
   });
 
@@ -158,12 +170,18 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
           clientSecret: config.GOOGLE_CLIENT_SECRET,
           redirectUri: config.GOOGLE_REDIRECT_URI
         });
-  const instagramProvider = new InstagramApiProvider({
-    appId: config.META_APP_ID,
-    appSecret: config.META_APP_SECRET,
-    redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
-    graphApiVersion: config.META_GRAPH_API_VERSION
-  });
+  const instagramProvider =
+    config.META_PROVIDER === "mock"
+      ? new InstagramApiMockProvider({
+          redirectUri: config.META_INSTAGRAM_REDIRECT_URI
+        })
+      : new InstagramApiProvider({
+          appId: config.META_APP_ID,
+          appSecret: config.META_APP_SECRET,
+          redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
+          graphApiVersion: config.META_GRAPH_API_VERSION,
+          logger: app.log
+        });
   const stateStore = new InMemoryOAuthStateStore({
     ttlMs: 10 * 60 * 1000
   });
@@ -209,7 +227,8 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     stateStore,
     tokenCipher,
     instagramConnectionRepository,
-    now: () => new Date()
+    now: () => new Date(),
+    logger: app.log
   });
   const listInstagramAccounts = new ListInstagramAccounts({
     instagramConnectionRepository,

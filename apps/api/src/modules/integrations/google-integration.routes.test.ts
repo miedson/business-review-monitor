@@ -20,6 +20,7 @@ const testConfig = {
   WEB_URL: "http://localhost:3000",
   API_URL: "http://localhost:3333",
   GOOGLE_PROVIDER: "mock",
+  META_PROVIDER: "mock",
   META_APP_ID: "meta-app-id",
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
@@ -122,7 +123,10 @@ describe("google integration routes", () => {
       url: `/integrations/google/callback?code=mock-code&state=${stateValue}`
     });
 
-    expect(secondCallbackResponse.statusCode).toBe(400);
+    expect(secondCallbackResponse.statusCode).toBe(302);
+    expect(secondCallbackResponse.headers.location).toBe(
+      "http://localhost:3000/settings/integrations?google=error"
+    );
 
     await app.close();
   });

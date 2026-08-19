@@ -4,6 +4,12 @@ import type { OAuthStateStore } from "../ports/oauth-state-store.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
 
+type Logger = {
+  info: (meta: Record<string, unknown>, msg?: string) => void;
+  warn: (meta: Record<string, unknown>, msg?: string) => void;
+  error: (meta: Record<string, unknown>, msg?: string) => void;
+};
+
 export type CompleteInstagramOAuthCallbackInput = {
   code: string;
   state: string;
@@ -20,6 +26,7 @@ export type CompleteInstagramOAuthCallbackDependencies = {
   tokenCipher: TokenCipher;
   instagramConnectionRepository: InstagramConnectionRepository;
   now: () => Date;
+  logger?: Logger;
 };
 
 export class CompleteInstagramOAuthCallback {
@@ -30,17 +37,39 @@ export class CompleteInstagramOAuthCallback {
   async execute(
     input: CompleteInstagramOAuthCallbackInput
   ): Promise<CompleteInstagramOAuthCallbackResult> {
+    const logger = this.dependencies.logger ?? console;
+
+    logger.info({
+      provider: "instagram",
+      operation: "oauth_callback_started"
+    });
+
     const stateData = await this.dependencies.stateStore.consume(input.state);
 
     if (!stateData) {
+      logger.warn({
+        provider: "instagram",
+        operation: "oauth_state_invalid_or_expired"
+      });
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_INVALID_STATE",
         "Instagram OAuth state is invalid or expired"
       );
     }
 
+    logger.info({
+      provider: "instagram",
+      operation: "oauth_state_validated",
+      tenantId: stateData.tenantId
+    });
+
     const tokenSet = await this.dependencies.provider.exchangeAuthorizationCode({
       code: input.code
+    });
+
+    logger.info({
+      provider: "instagram",
+      operation: "authorization_code_exchange_completed"
     });
 
     await this.dependencies.instagramConnectionRepository.findByTenantId(
@@ -51,15 +80,32 @@ export class CompleteInstagramOAuthCallback {
       tokenSet.accessToken
     );
 
+    logger.info({
+      provider: "instagram",
+      operation: "token_encrypted"
+    });
+
     const tokenExpiresAt = tokenSet.expiresInSeconds
       ? new Date(Date.now() + tokenSet.expiresInSeconds * 1000)
       : undefined;
 
     let profile: { id: string; username: string; account_type: string } | null = null;
 
-    if (this.dependencies.provider instanceof InstagramApiProvider) {
-      profile = await this.dependencies.provider.getUserProfile(tokenSet.accessToken);
+    const provider = this.dependencies.provider as BusinessProfileReviewProvider & {
+      getUserProfile?: (accessToken: string) => Promise<{ id: string; username: string; account_type: string }>;
+    };
+
+    if (typeof provider.getUserProfile === "function") {
+      profile = await provider.getUserProfile(tokenSet.accessToken);
     }
+
+    logger.info({
+      provider: "instagram",
+      operation: "user_profile_fetched",
+      instagramUserId: profile?.id,
+      username: profile?.username,
+      accountType: profile?.account_type
+    });
 
     const instagramConnection =
       await this.dependencies.instagramConnectionRepository.saveConnected({
@@ -73,11 +119,16 @@ export class CompleteInstagramOAuthCallback {
         tokenExpiresAt
       });
 
+    logger.info({
+      provider: "instagram",
+      operation: "connection_persisted",
+      instagramConnectionId: instagramConnection.id,
+      tenantId: stateData.tenantId
+    });
+
     return {
       tenantId: stateData.tenantId,
       instagramConnectionId: instagramConnection.id
     };
   }
 }
-
-import { InstagramApiProvider } from "../../adapters/meta/instagram-api-provider.js";

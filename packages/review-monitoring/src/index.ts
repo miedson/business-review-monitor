@@ -145,6 +145,13 @@ export {
 export type {
   InstagramApiProviderOptions
 } from "./adapters/meta/instagram-api-provider.js";
+export {
+  InstagramApiMockProvider
+} from "./adapters/meta/instagram-api-mock-provider.js";
+export type {
+  InstagramApiMockProviderOptions,
+  InstagramApiMockScenario
+} from "./adapters/meta/instagram-api-mock-provider.js";
 
 export {
   PrismaInstagramConnectionRepository

@@ -17,6 +17,7 @@ const baseConfig: AppConfig = {
   WEB_URL: "http://localhost:3000",
   API_URL: "http://localhost:3333",
   GOOGLE_PROVIDER: "mock",
+  META_PROVIDER: "mock",
   META_APP_ID: "meta-app-id",
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
@@ -51,23 +52,28 @@ describe("development Swagger documentation", () => {
         >;
       }>();
 
-      expect(Object.keys(document.paths).sort()).toEqual([
+expect(Object.keys(document.paths).sort()).toEqual([
         "/auth/login",
         "/auth/logout",
         "/auth/me",
         "/auth/refresh",
-      "/auth/register",
-      "/business-locations/select",
-      "/business-locations/{id}/select",
+        "/auth/register",
+        "/business-locations/select",
+        "/business-locations/{id}/select",
         "/health",
         "/integrations/google/accounts",
         "/integrations/google/callback",
-      "/integrations/google/connect",
-      "/integrations/google/connect-url",
-      "/integrations/google/disconnect",
+        "/integrations/google/connect",
+        "/integrations/google/connect-url",
+        "/integrations/google/disconnect",
         "/integrations/google/locations",
         "/integrations/google/reviews",
-        "/integrations/google/reviews/cache"
+        "/integrations/google/reviews/cache",
+        "/integrations/instagram/accounts",
+        "/integrations/instagram/callback",
+        "/integrations/instagram/connect",
+        "/integrations/instagram/connect-url",
+        "/integrations/instagram/disconnect"
       ]);
       expect(document.paths["/auth/register"]?.post?.requestBody).toBeDefined();
       expect(document.paths["/auth/login"]?.post?.requestBody).toBeDefined();

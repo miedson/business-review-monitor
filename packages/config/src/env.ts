@@ -26,6 +26,7 @@ const envSchema = z.object({
   WEB_URL: z.string().url(),
   API_URL: z.string().url(),
   GOOGLE_PROVIDER: z.enum(["real", "mock"]).default("mock"),
+  META_PROVIDER: z.enum(["real", "mock"]).default("mock"),
   META_APP_ID: z.string().min(1),
   META_APP_SECRET: z.string().min(1),
   META_INSTAGRAM_REDIRECT_URI: z.string().url(),
@@ -36,6 +37,7 @@ const envSchema = z.object({
 export type AppConfig = z.infer<typeof envSchema>;
 export type NodeEnv = AppConfig["NODE_ENV"];
 export type GoogleProvider = AppConfig["GOOGLE_PROVIDER"];
+export type MetaProvider = AppConfig["META_PROVIDER"];
 
 export class ConfigValidationError extends Error {
   readonly issues: string[];

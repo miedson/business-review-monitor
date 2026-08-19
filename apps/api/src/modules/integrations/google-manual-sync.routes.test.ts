@@ -18,6 +18,7 @@ const testConfig = {
   WEB_URL: "http://localhost:3000",
   API_URL: "http://localhost:3333",
   GOOGLE_PROVIDER: "mock",
+  META_PROVIDER: "mock",
   META_APP_ID: "meta-app-id",
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",

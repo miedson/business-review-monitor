@@ -20,6 +20,12 @@ const instagramRevokeEndpoint = "https://api.instagram.com/oauth/revoke";
 
 type FetchFunction = typeof fetch;
 
+type Logger = {
+  info: (meta: Record<string, unknown>, msg?: string) => void;
+  warn: (meta: Record<string, unknown>, msg?: string) => void;
+  error: (meta: Record<string, unknown>, msg?: string) => void;
+};
+
 export type InstagramApiProviderOptions = {
   appId: string;
   appSecret: string;
@@ -30,6 +36,7 @@ export type InstagramApiProviderOptions = {
   tokenEndpoint?: string;
   graphApiBase?: string;
   revokeEndpoint?: string;
+  logger?: Logger;
 };
 
 type InstagramTokenResponse = {
@@ -62,6 +69,7 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
   private readonly tokenEndpoint: string;
   private readonly graphApiBase: string;
   private readonly revokeEndpoint: string;
+  private readonly logger: Logger;
 
   constructor(options: InstagramApiProviderOptions) {
     this.appId = options.appId;
@@ -72,8 +80,10 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     this.authorizationEndpoint =
       options.authorizationEndpoint ?? instagramAuthorizationEndpoint;
     this.tokenEndpoint = options.tokenEndpoint ?? instagramTokenEndpoint;
-    this.graphApiBase = options.graphApiBase ?? instagramGraphApiBase;
+    const base = options.graphApiBase ?? instagramGraphApiBase;
+    this.graphApiBase = `${base}/${options.graphApiVersion}`;
     this.revokeEndpoint = options.revokeEndpoint ?? instagramRevokeEndpoint;
+    this.logger = options.logger ?? console;
   }
 
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
@@ -98,8 +108,24 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
       );
     }
 
+    this.logger.info({
+      provider: "instagram",
+      operation: "authorization_code_exchange_started"
+    });
+
     const shortLivedToken = await this.requestShortLivedToken(input.code);
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "short_lived_token_received"
+    });
+
     const longLivedToken = await this.exchangeForLongLivedToken(shortLivedToken.access_token);
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "long_lived_token_exchange_completed"
+    });
 
     return {
       accessToken: longLivedToken.access_token,
@@ -180,6 +206,11 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
   }
 
   async getUserProfile(accessToken: string): Promise<InstagramUserProfile> {
+    this.logger.info({
+      provider: "instagram",
+      operation: "user_profile_fetch_started"
+    });
+
     const url = new URL(`${this.graphApiBase}/me`);
     url.searchParams.set("fields", "id,username,account_type,media_count");
     url.searchParams.set("access_token", accessToken);
@@ -191,6 +222,15 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     });
 
     if (!response.ok) {
+      const payload = await readJson(response);
+      this.logger.error({
+        provider: "instagram",
+        operation: "user_profile_fetch_failed",
+        httpStatus: response.status,
+        metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
+        metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
+        metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
+      });
       throw new GoogleBusinessProfileProviderError(
         mapInstagramApiErrorStatus(response.status),
         "Instagram Graph API request failed"
@@ -198,10 +238,24 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     }
 
     const payload = (await response.json()) as InstagramUserProfile;
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "user_profile_fetch_completed",
+      instagramUserId: payload.id,
+      username: payload.username,
+      accountType: payload.account_type
+    });
+
     return payload;
   }
 
   private async requestShortLivedToken(code: string): Promise<InstagramTokenResponse> {
+    this.logger.info({
+      provider: "instagram",
+      operation: "short_lived_token_request_started"
+    });
+
     const response = await this.fetchFn(this.tokenEndpoint, {
       method: "POST",
       headers: {
@@ -219,8 +273,21 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     const payload = await readJson(response);
 
     if (!response.ok) {
+      this.logger.error({
+        provider: "instagram",
+        operation: "short_lived_token_request_failed",
+        httpStatus: response.status,
+        metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
+        metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
+        metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
+      });
       throw mapTokenError(payload);
     }
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "short_lived_token_request_completed"
+    });
 
     return normalizeShortLivedTokenResponse(payload);
   }
@@ -228,6 +295,11 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
   private async exchangeForLongLivedToken(
     shortLivedToken: string
   ): Promise<LongLivedTokenResponse> {
+    this.logger.info({
+      provider: "instagram",
+      operation: "long_lived_token_exchange_started"
+    });
+
     const url = new URL(`${this.graphApiBase}/access_token`);
     url.searchParams.set("grant_type", "ig_exchange_token");
     url.searchParams.set("client_secret", this.appSecret);
@@ -243,8 +315,21 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     const payload = await readJson(response);
 
     if (!response.ok) {
+      this.logger.error({
+        provider: "instagram",
+        operation: "long_lived_token_exchange_failed",
+        httpStatus: response.status,
+        metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
+        metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
+        metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
+      });
       throw mapTokenError(payload);
     }
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "long_lived_token_exchange_completed"
+    });
 
     return normalizeLongLivedTokenResponse(payload);
   }

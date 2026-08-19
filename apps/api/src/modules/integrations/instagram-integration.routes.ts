@@ -186,15 +186,29 @@ export function registerInstagramIntegrationRoutes(
   app.get("/integrations/instagram/callback", { schema: instagramCallbackRouteSchema }, async (request, reply) => {
     const query = callbackQuerySchema.parse(request.query);
 
+    request.log.info({
+      provider: "instagram",
+      operation: "oauth_callback_received",
+      hasCode: !!query.code,
+      hasState: !!query.state,
+      hasError: !!query.error
+    });
+
     if (query.error) {
+      request.log.warn({
+        provider: "instagram",
+        operation: "oauth_callback_error_from_meta",
+        metaError: query.error
+      });
       return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
     }
 
     if (!query.code || !query.state) {
-      throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_INVALID_CALLBACK",
-        "Instagram OAuth callback is invalid"
-      );
+      request.log.warn({
+        provider: "instagram",
+        operation: "oauth_callback_invalid_missing_params"
+      });
+      return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
     }
 
     try {
@@ -202,8 +216,33 @@ export function registerInstagramIntegrationRoutes(
         code: query.code,
         state: query.state
       });
+
+      request.log.info({
+        provider: "instagram",
+        operation: "oauth_callback_completed_success"
+      });
     } catch (error) {
       if (error instanceof GoogleBusinessProfileProviderError) {
+        request.log.error({
+          provider: "instagram",
+          operation: "oauth_callback_provider_error",
+          errorCode: error.code,
+          errorMessage: error.message
+        });
+
+        const redirectOnError = [
+          "INSTAGRAM_INVALID_STATE",
+          "INSTAGRAM_TOKEN_REVOKED",
+          "INSTAGRAM_PERMISSION_DENIED",
+          "INSTAGRAM_RATE_LIMITED",
+          "INSTAGRAM_REFRESH_FAILED",
+          "INSTAGRAM_API_UNAVAILABLE"
+        ].includes(error.code);
+
+        if (redirectOnError) {
+          return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
+        }
+
         return reply.status(mapProviderErrorStatus(error)).send({
           error: error.message,
           code: error.code,
@@ -211,6 +250,12 @@ export function registerInstagramIntegrationRoutes(
         });
       }
 
+      request.log.error({
+        provider: "instagram",
+        operation: "oauth_callback_unexpected_error",
+        errorName: error instanceof Error ? error.name : "Unknown",
+        errorMessage: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
 

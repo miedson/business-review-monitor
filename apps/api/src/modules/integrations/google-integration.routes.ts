@@ -329,15 +329,29 @@ export function registerGoogleIntegrationRoutes(
   app.get("/integrations/google/callback", { schema: googleCallbackRouteSchema }, async (request, reply) => {
     const query = callbackQuerySchema.parse(request.query);
 
+    request.log.info({
+      provider: "google",
+      operation: "oauth_callback_received",
+      hasCode: !!query.code,
+      hasState: !!query.state,
+      hasError: !!query.error
+    });
+
     if (query.error) {
+      request.log.warn({
+        provider: "google",
+        operation: "oauth_callback_error_from_meta",
+        metaError: query.error
+      });
       return reply.redirect(buildGoogleRedirectUrl(options.webUrl, "error"));
     }
 
     if (!query.code || !query.state) {
-      throw new GoogleBusinessProfileProviderError(
-        "GOOGLE_INVALID_CALLBACK",
-        "Google OAuth callback is invalid"
-      );
+      request.log.warn({
+        provider: "google",
+        operation: "oauth_callback_invalid_missing_params"
+      });
+      return reply.redirect(buildGoogleRedirectUrl(options.webUrl, "error"));
     }
 
     try {
@@ -345,8 +359,33 @@ export function registerGoogleIntegrationRoutes(
         code: query.code,
         state: query.state
       });
+
+      request.log.info({
+        provider: "google",
+        operation: "oauth_callback_completed_success"
+      });
     } catch (error) {
       if (error instanceof GoogleBusinessProfileProviderError) {
+        request.log.error({
+          provider: "google",
+          operation: "oauth_callback_provider_error",
+          errorCode: error.code,
+          errorMessage: error.message
+        });
+
+        const redirectOnError = [
+          "GOOGLE_INVALID_STATE",
+          "GOOGLE_TOKEN_REVOKED",
+          "GOOGLE_PERMISSION_DENIED",
+          "GOOGLE_RATE_LIMITED",
+          "GOOGLE_REFRESH_FAILED",
+          "GOOGLE_API_UNAVAILABLE"
+        ].includes(error.code);
+
+        if (redirectOnError) {
+          return reply.redirect(buildGoogleRedirectUrl(options.webUrl, "error"));
+        }
+
         return reply.status(mapProviderErrorStatus(error)).send({
           error: error.message,
           code: error.code,
@@ -354,6 +393,12 @@ export function registerGoogleIntegrationRoutes(
         });
       }
 
+      request.log.error({
+        provider: "google",
+        operation: "oauth_callback_unexpected_error",
+        errorName: error instanceof Error ? error.name : "Unknown",
+        errorMessage: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
 
