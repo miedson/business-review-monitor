@@ -6,19 +6,24 @@ import {
   cleanupExpiredReviewCacheJobName,
   googleReviewSyncQueueName,
   maintenanceQueueName,
+  metaWebhookQueueName,
+  processMetaWebhookEventJobName,
   syncGoogleReviewsJobName
 } from "./queue-names.js";
 import { createBullMqConnection } from "./redis-connection.js";
 import {
   createCleanupExpiredReviewCacheJob,
+  createProcessMetaWebhookEventJob,
   createSyncGoogleReviewsJob
 } from "./worker-composition.js";
 import { logError, logInfo } from "./worker-logger.js";
+import type { ProcessMetaWebhookEventJobData } from "./jobs/process-meta-webhook-event-job.js";
 
 const workerAppName = "business-review-monitor-worker";
 const config = loadConfig();
 const syncGoogleReviewsJob = createSyncGoogleReviewsJob(config);
 const cleanupExpiredReviewCacheJob = createCleanupExpiredReviewCacheJob();
+const processMetaWebhookEventJob = createProcessMetaWebhookEventJob();
 
 const connection = createBullMqConnection(config.REDIS_URL);
 const googleReviewSyncQueue = new Queue(googleReviewSyncQueueName, {
@@ -26,6 +31,10 @@ const googleReviewSyncQueue = new Queue(googleReviewSyncQueueName, {
   prefix: config.BRM_QUEUE_PREFIX
 });
 const maintenanceQueue = new Queue(maintenanceQueueName, {
+  connection,
+  prefix: config.BRM_QUEUE_PREFIX
+});
+const metaWebhookQueue = new Queue(metaWebhookQueueName, {
   connection,
   prefix: config.BRM_QUEUE_PREFIX
 });
@@ -44,6 +53,10 @@ const workers = [
     prefix: config.BRM_QUEUE_PREFIX
   }),
   new Worker(maintenanceQueueName, handleMaintenanceQueueJob, {
+    connection,
+    prefix: config.BRM_QUEUE_PREFIX
+  }),
+  new Worker(metaWebhookQueueName, handleMetaWebhookQueueJob, {
     connection,
     prefix: config.BRM_QUEUE_PREFIX
   })
@@ -96,9 +109,21 @@ async function handleMaintenanceQueueJob(job: Job<unknown>): Promise<void> {
   });
 }
 
+async function handleMetaWebhookQueueJob(job: Job<unknown>): Promise<void> {
+  if (job.name !== processMetaWebhookEventJobName) {
+    logInfo("worker_job_received", {
+      jobId: String(job.id),
+      jobName: job.name
+    });
+    return;
+  }
+
+  await processMetaWebhookEventJob.handle(job as Job<ProcessMetaWebhookEventJobData>);
+}
+
 async function shutdown(): Promise<void> {
   await Promise.all(workers.map((worker) => worker.close()));
-  await Promise.all([googleReviewSyncQueue.close(), maintenanceQueue.close()]);
+  await Promise.all([googleReviewSyncQueue.close(), maintenanceQueue.close(), metaWebhookQueue.close()]);
 }
 
 process.on("SIGINT", () => {

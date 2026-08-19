@@ -73,7 +73,8 @@ expect(Object.keys(document.paths).sort()).toEqual([
         "/integrations/instagram/callback",
         "/integrations/instagram/connect",
         "/integrations/instagram/connect-url",
-        "/integrations/instagram/disconnect"
+        "/integrations/instagram/disconnect",
+        "/webhooks/meta"
       ]);
       expect(document.paths["/auth/register"]?.post?.requestBody).toBeDefined();
       expect(document.paths["/auth/login"]?.post?.requestBody).toBeDefined();

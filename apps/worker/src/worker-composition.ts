@@ -1,5 +1,6 @@
 import {
   CleanupExpiredReviewCache,
+  PrismaInstagramConnectionRepository
 } from "@brm/review-monitoring";
 import { prisma } from "@brm/database";
 import {
@@ -15,6 +16,7 @@ import { createEncryptionServiceFromBase64Key } from "@brm/shared";
 import type { AppConfig } from "@brm/config";
 import { SyncGoogleReviewsJob } from "./jobs/sync-google-reviews-job.js";
 import { CleanupExpiredReviewCacheJob } from "./jobs/cleanup-expired-review-cache-job.js";
+import { ProcessMetaWebhookEventJob } from "./jobs/process-meta-webhook-event-job.js";
 
 export function createSyncGoogleReviewsJob(
   config: AppConfig
@@ -46,5 +48,11 @@ export function createCleanupExpiredReviewCacheJob(): CleanupExpiredReviewCacheJ
     new CleanupExpiredReviewCache({
       reviewCacheRepository: new PrismaReviewCacheRepository(prisma)
     })
+  );
+}
+
+export function createProcessMetaWebhookEventJob(): ProcessMetaWebhookEventJob {
+  return new ProcessMetaWebhookEventJob(
+    new PrismaInstagramConnectionRepository(prisma)
   );
 }

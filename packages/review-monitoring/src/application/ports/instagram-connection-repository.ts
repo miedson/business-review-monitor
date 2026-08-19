@@ -28,6 +28,7 @@ export type DisconnectInstagramConnectionInput = {
 
 export interface InstagramConnectionRepository {
   findByTenantId(tenantId: string): Promise<StoredInstagramConnection | null>;
+  findByInstagramUserId(instagramUserId: string): Promise<{ tenantId: string; instagramUserId: string } | null>;
   saveConnected(
     input: SaveConnectedInstagramConnectionInput
   ): Promise<StoredInstagramConnection>;

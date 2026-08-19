@@ -42,6 +42,7 @@ import {
 } from "../modules/integrations/bullmq-review-sync-job-scheduler.js";
 import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-integration.routes.js";
 import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
+import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
 import {
@@ -61,6 +62,7 @@ import {
   RequestGoogleReviewSync
 } from "@brm/review-monitoring";
 import { Queue } from "bullmq";
+import { metaWebhookQueueName } from "../modules/integrations/queue-names.js";
 
 export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
@@ -125,6 +127,21 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
       error: message,
       requestId: request.id
     });
+  });
+
+  app.addHook("preParsing", async (request, _reply, payload) => {
+    if (request.url.startsWith("/webhooks/meta") && request.method === "POST") {
+      const chunks: Buffer[] = [];
+      for await (const chunk of payload) {
+        chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+      }
+      const rawBody = Buffer.concat(chunks).toString("utf8");
+      (request as unknown as Record<string, unknown>).rawBody = rawBody;
+
+      const { Readable } = await import("node:stream");
+      return Readable.from([rawBody]);
+    }
+    return payload;
   });
 
   if (!isProduction) {
@@ -245,8 +262,13 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     connection: createBullMqConnection(config.REDIS_URL),
     prefix: config.BRM_QUEUE_PREFIX
   });
+  const metaWebhookQueue = new Queue(metaWebhookQueueName, {
+    connection: createBullMqConnection(config.REDIS_URL),
+    prefix: config.BRM_QUEUE_PREFIX
+  });
   app.addHook("onClose", async () => {
     await googleReviewSyncQueue.close();
+    await metaWebhookQueue.close();
     redis.disconnect();
   });
   const requestGoogleReviewSync = new RequestGoogleReviewSync({
@@ -291,6 +313,14 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     authService,
     disconnectGoogleConnection,
     selectBusinessLocation
+  });
+
+  registerMetaWebhookRoutes(app, {
+    config: {
+      metaWebhookVerifyToken: config.META_WEBHOOK_VERIFY_TOKEN,
+      metaAppSecret: config.META_APP_SECRET
+    },
+    metaWebhookQueue
   });
 
   return app;

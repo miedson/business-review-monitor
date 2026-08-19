@@ -186,6 +186,24 @@ export type {
   StoredInstagramConnection
 } from "./application/ports/instagram-connection-repository.js";
 
+export type {
+  MetaWebhookVerifyQuery,
+  MetaWebhookEntry,
+  MetaWebhookChange,
+  MetaWebhookChangeValue,
+  MetaWebhookFrom,
+  MetaWebhookMessage,
+  MetaWebhookMessaging,
+  MetaWebhookPostback,
+  MetaWebhookPayload,
+  MetaWebhookErrorCode,
+  MetaWebhookVerifyResult,
+  MetaWebhookProcessResult
+} from "./application/ports/meta-webhook.js";
+export {
+  MetaWebhookError
+} from "./application/ports/meta-webhook.js";
+
 export {
   ListInstagramAccounts
 } from "./application/use-cases/list-instagram-accounts.js";
