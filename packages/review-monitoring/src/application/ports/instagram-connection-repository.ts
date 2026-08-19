@@ -2,6 +2,7 @@ export type StoredInstagramConnection = {
   id: string;
   tenantId: string;
   instagramUserId: string;
+  instagramProfessionalAccountId: string | null;
   username: string | null;
   accountType: string | null;
   encryptedAccessToken: string | null;
@@ -13,6 +14,7 @@ export type StoredInstagramConnection = {
 export type SaveConnectedInstagramConnectionInput = {
   tenantId: string;
   instagramUserId: string;
+  instagramProfessionalAccountId: string | undefined;
   username: string | undefined;
   accountType: string | undefined;
   encryptedAccessToken: string;
@@ -29,6 +31,7 @@ export type DisconnectInstagramConnectionInput = {
 export interface InstagramConnectionRepository {
   findByTenantId(tenantId: string): Promise<StoredInstagramConnection | null>;
   findByInstagramUserId(instagramUserId: string): Promise<StoredInstagramConnection | null>;
+  findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null>;
   saveConnected(
     input: SaveConnectedInstagramConnectionInput
   ): Promise<StoredInstagramConnection>;

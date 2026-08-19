@@ -107,10 +107,26 @@ export class CompleteInstagramOAuthCallback {
       accountType: profile?.account_type
     });
 
+    let professionalAccountId: string | null = null;
+    const providerWithProfessionalAccount = this.dependencies.provider as BusinessProfileReviewProvider & {
+      getProfessionalAccountId?: (accessToken: string) => Promise<string | null>;
+    };
+    if (typeof providerWithProfessionalAccount.getProfessionalAccountId === "function") {
+      professionalAccountId = await providerWithProfessionalAccount.getProfessionalAccountId(tokenSet.accessToken);
+    }
+
+    logger.info({
+      provider: "instagram",
+      operation: "professional_account_id_resolved",
+      instagramUserId: profile?.id,
+      professionalAccountId
+    });
+
     const instagramConnection =
       await this.dependencies.instagramConnectionRepository.saveConnected({
         tenantId: stateData.tenantId,
         instagramUserId: profile?.id ?? "unknown",
+        instagramProfessionalAccountId: professionalAccountId ?? undefined,
         username: profile?.username,
         accountType: profile?.account_type,
         encryptedAccessToken,

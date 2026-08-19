@@ -8,14 +8,22 @@ import type { Job } from "bullmq";
 import type { ProcessMetaWebhookEventJobData } from "./process-meta-webhook-event-job.js";
 
 class FakeInstagramConnectionRepository {
-  private connections: Map<string, StoredInstagramConnection> = new Map();
+  private connectionsByUserId: Map<string, StoredInstagramConnection> = new Map();
+  private connectionsByProfessionalAccountId: Map<string, StoredInstagramConnection> = new Map();
 
   setConnection(connection: StoredInstagramConnection): void {
-    this.connections.set(connection.instagramUserId, connection);
+    this.connectionsByUserId.set(connection.instagramUserId, connection);
+    if (connection.instagramProfessionalAccountId) {
+      this.connectionsByProfessionalAccountId.set(connection.instagramProfessionalAccountId, connection);
+    }
   }
 
   async findByInstagramUserId(instagramUserId: string): Promise<StoredInstagramConnection | null> {
-    return this.connections.get(instagramUserId) ?? null;
+    return this.connectionsByUserId.get(instagramUserId) ?? null;
+  }
+
+  async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
+    return this.connectionsByProfessionalAccountId.get(professionalAccountId) ?? null;
   }
 }
 
@@ -114,7 +122,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     const connection: StoredInstagramConnection = {
       id: "conn_1",
       tenantId: "tenant_1",
-      instagramUserId: "instagram_account_123",
+      instagramUserId: "instagram_user_123",
+      instagramProfessionalAccountId: "instagram_account_123",
       username: "testaccount",
       accountType: "BUSINESS",
       encryptedAccessToken: "encrypted_token",
@@ -175,7 +184,8 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     const connection: StoredInstagramConnection = {
       id: "conn_1",
       tenantId: "tenant_1",
-      instagramUserId: "instagram_account_123",
+      instagramUserId: "instagram_user_123",
+      instagramProfessionalAccountId: "instagram_account_123",
       username: "testaccount",
       accountType: "BUSINESS",
       encryptedAccessToken: "encrypted_token",
@@ -241,5 +251,82 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     await job.handle(mockJob);
 
     expect(commentRepo.upserted).toHaveLength(0);
+  });
+
+  it("resolves connection using professional account ID when OAuth user ID differs (real-world scenario)", async () => {
+    const connection: StoredInstagramConnection = {
+      id: "conn_1",
+      tenantId: "tenant_1",
+      instagramUserId: "25928677863496445",
+      instagramProfessionalAccountId: "17841480590934524",
+      username: "sixsysma",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted_token",
+      scope: "instagram_basic,instagram_manage_comments",
+      status: "CONNECTED",
+      tokenExpiresAt: new Date(Date.now() + 86400000)
+    };
+    connectionRepo.setConnection(connection);
+
+    normalizer.result = {
+      externalCommentId: "18026418377682085",
+      externalMediaId: "17920550793200385",
+      instagramAccountId: "17841480590934524",
+      authorExternalId: "1107520471692069",
+      authorUsername: "miedsonfernandes",
+      text: "Real comment from webhook",
+      createdAtExternal: new Date(1700000000 * 1000),
+      rawEventId: "17841480590934524"
+    };
+
+    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+
+    await job.handle(mockJob);
+
+    expect(commentRepo.upserted).toHaveLength(1);
+    expect(commentRepo.upserted[0]!).toMatchObject({
+      tenantId: "tenant_1",
+      instagramConnectionId: "conn_1",
+      externalCommentId: "18026418377682085",
+      externalMediaId: "17920550793200385",
+      authorExternalId: "1107520471692069",
+      authorUsername: "miedsonfernandes",
+      text: "Real comment from webhook",
+      status: "NEW"
+    });
+  });
+
+  it("does not find connection when searching by OAuth user ID for webhook entry ID", async () => {
+    const connection: StoredInstagramConnection = {
+      id: "conn_1",
+      tenantId: "tenant_1",
+      instagramUserId: "25928677863496445",
+      instagramProfessionalAccountId: "17841480590934524",
+      username: "sixsysma",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted_token",
+      scope: "instagram_basic,instagram_manage_comments",
+      status: "CONNECTED",
+      tokenExpiresAt: new Date(Date.now() + 86400000)
+    };
+    connectionRepo.setConnection(connection);
+
+    normalizer.result = {
+      externalCommentId: "18026418377682085",
+      externalMediaId: "17920550793200385",
+      instagramAccountId: "17841480590934524",
+      authorExternalId: "1107520471692069",
+      authorUsername: "miedsonfernandes",
+      text: "Real comment from webhook",
+      createdAtExternal: new Date(1700000000 * 1000),
+      rawEventId: "17841480590934524"
+    };
+
+    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+
+    await job.handle(mockJob);
+
+    expect(commentRepo.upserted).toHaveLength(1);
+    expect(commentRepo.upserted[0]!.tenantId).toBe("tenant_1");
   });
 });

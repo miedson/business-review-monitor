@@ -6,31 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum TenantUserRole {
-  OWNER
-  ADMIN
-  MEMBER
-}
-
-enum GoogleConnectionStatus {
-  CONNECTED
-  DISCONNECTED
-  REAUTH_REQUIRED
-  ERROR
-}
-
-enum InstagramConnectionStatus {
-  CONNECTED
-  DISCONNECTED
-  REAUTH_REQUIRED
-  ERROR
-}
-
-enum InstagramCommentStatus {
-  NEW
-  READ
-}
-
 model User {
   id           String       @id @default(cuid())
   name         String
@@ -44,16 +19,16 @@ model User {
 }
 
 model Tenant {
-  id                    String                  @id @default(cuid())
-  name                  String
-  createdAt             DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt             DateTime                @updatedAt @db.Timestamptz(3)
-  users                 TenantUser[]
-  googleConnections     GoogleConnection[]
-  instagramConnections  InstagramConnection[]
-  instagramComments     InstagramComment[]
-  businessLocations     BusinessLocation[]
-  reviewCaches          ReviewCache[]
+  id                   String               @id @default(cuid())
+  name                 String
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
+  businessLocations    BusinessLocation[]
+  googleConnections    GoogleConnection[]
+  instagramComments    InstagramComment[]
+  instagramConnections InstagramConnection?
+  reviewCaches         ReviewCache[]
+  users                TenantUser[]
 
   @@map("tenants")
 }
@@ -85,8 +60,8 @@ model GoogleConnection {
   disconnectedAt        DateTime?              @db.Timestamptz(3)
   createdAt             DateTime               @default(now()) @db.Timestamptz(3)
   updatedAt             DateTime               @updatedAt @db.Timestamptz(3)
-  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   businessLocations     BusinessLocation[]
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([status])
@@ -94,43 +69,44 @@ model GoogleConnection {
 }
 
 model InstagramConnection {
-  id                     String                    @id @default(cuid())
-  tenantId               String
-  instagramUserId        String
-  username               String?
-  accountType            String?
-  encryptedAccessToken   String?
-  scope                  String
-  status                 InstagramConnectionStatus @default(DISCONNECTED)
-  connectedAt            DateTime?                 @db.Timestamptz(3)
-  disconnectedAt         DateTime?                 @db.Timestamptz(3)
-  tokenExpiresAt         DateTime?                 @db.Timestamptz(3)
-  createdAt              DateTime                  @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                  @updatedAt @db.Timestamptz(3)
-  tenant                 Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  comments               InstagramComment[]
+  id                              String                    @id @default(cuid())
+  tenantId                        String                    @unique
+  instagramUserId                 String
+  instagramProfessionalAccountId  String?                   @unique
+  username                        String?
+  accountType                     String?
+  encryptedAccessToken            String?
+  scope                           String
+  status                          InstagramConnectionStatus @default(DISCONNECTED)
+  connectedAt                     DateTime?                 @db.Timestamptz(3)
+  disconnectedAt                  DateTime?                 @db.Timestamptz(3)
+  tokenExpiresAt                  DateTime?                 @db.Timestamptz(3)
+  createdAt                       DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt                       DateTime                  @updatedAt @db.Timestamptz(3)
+  comments                        InstagramComment[]
+  tenant                          Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId])
   @@index([tenantId])
   @@index([status])
+  @@index([instagramProfessionalAccountId])
   @@map("instagram_connections")
 }
 
 model InstagramComment {
-  id                     String                  @id @default(cuid())
-  tenantId               String
-  instagramConnectionId  String
-  externalCommentId      String
-  externalMediaId        String?
-  authorExternalId       String?
-  authorUsername         String?
-  text                   String?
-  createdAtExternal      DateTime?               @db.Timestamptz(3)
-  status                 InstagramCommentStatus  @default(NEW)
-  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
-  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  instagramConnection    InstagramConnection     @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  id                    String                 @id @default(cuid())
+  tenantId              String
+  instagramConnectionId String
+  externalCommentId     String
+  externalMediaId       String?
+  authorExternalId      String?
+  authorUsername        String?
+  text                  String?
+  createdAtExternal     DateTime?              @db.Timestamptz(3)
+  status                InstagramCommentStatus @default(NEW)
+  createdAt             DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime               @updatedAt @db.Timestamptz(3)
+  instagramConnection   InstagramConnection    @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([instagramConnectionId, externalCommentId])
   @@index([tenantId])
@@ -152,8 +128,8 @@ model BusinessLocation {
   lastSyncedAt       DateTime?        @db.Timestamptz(3)
   createdAt          DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
-  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   googleConnection   GoogleConnection @relation(fields: [googleConnectionId], references: [id], onDelete: Cascade)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   reviewCaches       ReviewCache[]
 
   @@unique([googleConnectionId, googleLocationId])
@@ -177,12 +153,37 @@ model ReviewCache {
   expiresAt          DateTime         @db.Timestamptz(3)
   createdAt          DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt          DateTime         @updatedAt @db.Timestamptz(3)
-  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   businessLocation   BusinessLocation @relation(fields: [businessLocationId], references: [id], onDelete: Cascade)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([businessLocationId, googleReviewId])
   @@index([tenantId])
   @@index([businessLocationId])
   @@index([expiresAt])
   @@map("review_cache")
+}
+
+enum TenantUserRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum GoogleConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  REAUTH_REQUIRED
+  ERROR
+}
+
+enum InstagramConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  REAUTH_REQUIRED
+  ERROR
+}
+
+enum InstagramCommentStatus {
+  NEW
+  READ
 }

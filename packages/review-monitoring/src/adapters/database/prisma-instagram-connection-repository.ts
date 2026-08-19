@@ -32,6 +32,16 @@ export class PrismaInstagramConnectionRepository
     return connection;
   }
 
+  async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
+    const connection = await this.prisma.instagramConnection.findFirst({
+      where: {
+        instagramProfessionalAccountId: professionalAccountId
+      }
+    });
+
+    return connection;
+  }
+
   async saveConnected(
     input: SaveConnectedInstagramConnectionInput
   ): Promise<StoredInstagramConnection> {
@@ -48,6 +58,7 @@ export class PrismaInstagramConnectionRepository
         },
         data: {
           instagramUserId: input.instagramUserId,
+          instagramProfessionalAccountId: input.instagramProfessionalAccountId ?? null,
           encryptedAccessToken: input.encryptedAccessToken,
           scope: input.scope,
           status: "CONNECTED",
@@ -64,6 +75,7 @@ export class PrismaInstagramConnectionRepository
       data: {
         tenantId: input.tenantId,
         instagramUserId: input.instagramUserId,
+        instagramProfessionalAccountId: input.instagramProfessionalAccountId ?? null,
         encryptedAccessToken: input.encryptedAccessToken,
         scope: input.scope,
         status: "CONNECTED",

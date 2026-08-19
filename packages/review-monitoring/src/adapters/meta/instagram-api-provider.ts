@@ -58,6 +58,12 @@ type InstagramUserProfile = {
   media_count?: number;
 };
 
+type InstagramProfessionalAccountResponse = {
+  instagram_business_account?: {
+    id: string;
+  } | null;
+};
+
 export class InstagramApiProvider implements BusinessProfileReviewProvider {
   private readonly appId: string;
   private readonly appSecret: string;
@@ -248,6 +254,47 @@ export class InstagramApiProvider implements BusinessProfileReviewProvider {
     });
 
     return payload;
+  }
+
+  async getProfessionalAccountId(accessToken: string): Promise<string | null> {
+    this.logger.info({
+      provider: "instagram",
+      operation: "professional_account_id_fetch_started"
+    });
+
+    const url = new URL(`${this.graphApiBase}/me`);
+    url.searchParams.set("fields", "instagram_business_account");
+    url.searchParams.set("access_token", accessToken);
+
+    const response = await this.fetchFn(url, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      const payload = await readJson(response);
+      this.logger.warn({
+        provider: "instagram",
+        operation: "professional_account_id_fetch_failed",
+        httpStatus: response.status,
+        metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
+        metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
+        metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
+      });
+      return null;
+    }
+
+    const payload = (await response.json()) as InstagramProfessionalAccountResponse;
+    const professionalAccountId = payload.instagram_business_account?.id ?? null;
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "professional_account_id_fetch_completed",
+      professionalAccountId
+    });
+
+    return professionalAccountId;
   }
 
   private async requestShortLivedToken(code: string): Promise<InstagramTokenResponse> {

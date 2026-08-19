@@ -82,6 +82,7 @@ export class ProcessMetaWebhookEventJob {
   constructor(
     private readonly instagramConnectionRepository: {
       findByInstagramUserId: (instagramUserId: string) => Promise<StoredInstagramConnection | null>;
+      findByProfessionalAccountId: (professionalAccountId: string) => Promise<StoredInstagramConnection | null>;
     },
     private readonly instagramCommentRepository: InstagramCommentRepository,
     private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer()
@@ -197,7 +198,7 @@ export class ProcessMetaWebhookEventJob {
       textLength: normalizedComment.text?.length ?? 0
     });
 
-    const connection = await this.instagramConnectionRepository.findByInstagramUserId(
+    const connection = await this.instagramConnectionRepository.findByProfessionalAccountId(
       normalizedComment.instagramAccountId
     );
 
@@ -216,6 +217,7 @@ export class ProcessMetaWebhookEventJob {
       tenantId: connection.tenantId,
       instagramConnectionId: connection.id,
       instagramUserId: connection.instagramUserId,
+      instagramProfessionalAccountId: connection.instagramProfessionalAccountId ?? "unknown",
       username: connection.username ?? "unknown"
     });
 
