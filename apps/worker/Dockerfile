@@ -22,7 +22,7 @@ COPY packages/review-monitoring/package.json packages/review-monitoring/package.
 COPY packages/shared/package.json packages/shared/package.json
 RUN pnpm install --frozen-lockfile
 
-FROM deps AS build
+FROM dev-deps AS build
 ENV NODE_ENV=production
 COPY apps apps
 COPY packages packages
@@ -34,13 +34,13 @@ RUN pnpm --filter @brm/review-monitoring build
 RUN pnpm --filter @brm/worker typecheck
 RUN pnpm --filter @brm/worker build
 
-FROM base AS runner
-ENV NODE_ENV=production
-COPY --from=build /app /app
-CMD ["pnpm", "--filter", "@brm/worker", "start"]
-
 FROM dev-deps AS development
 ENV NODE_ENV=development
 COPY apps/worker apps/worker
 COPY packages packages
 CMD ["sh", "-c", "pnpm --filter @brm/database db:generate && pnpm --filter @brm/config build && pnpm --filter @brm/database build && pnpm --filter @brm/shared build && pnpm --filter @brm/review-monitoring build && pnpm --filter @brm/worker dev"]
+
+FROM base AS runner
+ENV NODE_ENV=production
+COPY --from=build /app /app
+CMD ["pnpm", "--filter", "@brm/worker", "start"]

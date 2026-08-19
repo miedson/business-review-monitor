@@ -20,7 +20,7 @@ COPY packages/shared/package.json packages/shared/package.json
 COPY packages/ui/package.json packages/ui/package.json
 RUN pnpm install --frozen-lockfile
 
-FROM deps AS build
+FROM dev-deps AS build
 ENV NODE_ENV=production
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
@@ -28,13 +28,13 @@ COPY apps apps
 COPY packages packages
 RUN pnpm --filter @brm/web build
 
+FROM dev-deps AS development
+ENV NODE_ENV=development
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@brm/web", "dev"]
+
 FROM base AS runner
 ENV NODE_ENV=production
 COPY --from=build /app /app
 EXPOSE 3000
 CMD ["pnpm", "--filter", "@brm/web", "start"]
-
-FROM dev-deps AS development
-ENV NODE_ENV=development
-EXPOSE 3000
-CMD ["pnpm", "--filter", "@brm/web", "dev"]

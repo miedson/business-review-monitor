@@ -4,11 +4,13 @@ import { Box, Button, Input, Alert, Text, Flex, Link as ChakraLink } from "@/lib
 import NextLink from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState, useEffect } from "react";
+import { unstable_noStore } from "next/cache";
 
 import { login } from "@/lib/api-client";
 import { storeSession, getStoredSession } from "@/lib/auth-session";
 
 export default function LoginPage() {
+  unstable_noStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
