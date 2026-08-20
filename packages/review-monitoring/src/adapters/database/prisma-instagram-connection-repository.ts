@@ -4,6 +4,7 @@ import type {
   DisconnectInstagramConnectionInput,
   InstagramConnectionRepository,
   SaveConnectedInstagramConnectionInput,
+  SetProfessionalAccountIdInput,
   StoredInstagramConnection
 } from "../../application/ports/instagram-connection-repository.js";
 
@@ -40,6 +41,29 @@ export class PrismaInstagramConnectionRepository
     });
 
     return connection;
+  }
+
+  async findConnectedWithoutProfessionalAccountId(): Promise<StoredInstagramConnection[]> {
+    return this.prisma.instagramConnection.findMany({
+      where: {
+        status: "CONNECTED",
+        instagramProfessionalAccountId: null
+      }
+    });
+  }
+
+  async setProfessionalAccountId(
+    input: SetProfessionalAccountIdInput
+  ): Promise<void> {
+    await this.prisma.instagramConnection.updateMany({
+      where: {
+        id: input.connectionId,
+        instagramProfessionalAccountId: null
+      },
+      data: {
+        instagramProfessionalAccountId: input.professionalAccountId
+      }
+    });
   }
 
   async saveConnected(

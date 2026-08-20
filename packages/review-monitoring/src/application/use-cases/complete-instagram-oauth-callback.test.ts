@@ -45,6 +45,10 @@ class FakeProvider implements InstagramReviewProvider {
       account_type: "BUSINESS"
     };
   }
+
+  async resolveWebhookAccountId(): Promise<{ id: string; username?: string; accountType?: string }> {
+    return { id: "25928677863496445" };
+  }
 }
 
 class FakeStateStore implements OAuthStateStore {
@@ -91,6 +95,10 @@ class FakeRepository implements InstagramConnectionRepository {
     return null;
   }
 
+  async findConnectedWithoutProfessionalAccountId(): Promise<StoredInstagramConnection[]> {
+    return [];
+  }
+
   async saveConnected(input: {
     tenantId: string;
     instagramUserId: string;
@@ -118,6 +126,10 @@ class FakeRepository implements InstagramConnectionRepository {
     };
     this.connections.set(input.tenantId, connection);
     return connection;
+  }
+
+  async setProfessionalAccountId(): Promise<void> {
+    return;
   }
 
   async disconnectByTenantId(): Promise<StoredInstagramConnection | null> {

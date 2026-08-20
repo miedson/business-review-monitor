@@ -11,6 +11,7 @@ export type {
 export type {
   BusinessProfileReviewProvider,
   GoogleBusinessProfileProvider,
+  InstagramReviewProvider,
   ListBusinessProfileAccountsInput,
   ListBusinessProfileAccountsResult,
   ListBusinessProfileLocationsInput,
@@ -21,7 +22,9 @@ export type {
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
   RefreshProviderAccessTokenInput,
-  RevokeProviderAuthorizationInput
+  RevokeProviderAuthorizationInput,
+  ResolveWebhookAccountIdInput,
+  ResolveWebhookAccountIdResult
 } from "./application/ports/business-profile-review-provider.js";
 export type {
   BusinessProfileAccount,
@@ -184,6 +187,7 @@ export type {
 export type {
   InstagramConnectionRepository,
   SaveConnectedInstagramConnectionInput,
+  SetProfessionalAccountIdInput,
   StoredInstagramConnection
 } from "./application/ports/instagram-connection-repository.js";
 
@@ -250,3 +254,11 @@ export type {
   DiagnoseInstagramIdentityDependencies,
   InstagramIdentityDiagnosisResult
 } from "./application/use-cases/diagnose-instagram-identity.js";
+export {
+  ResolveInstagramWebhookIdentity
+} from "./application/use-cases/resolve-instagram-webhook-identity.js";
+export type {
+  ResolveInstagramWebhookIdentityInput,
+  ResolveInstagramWebhookIdentityDependencies,
+  ResolveInstagramWebhookIdentityResult
+} from "./application/use-cases/resolve-instagram-webhook-identity.js";

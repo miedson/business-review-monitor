@@ -66,6 +66,17 @@ export type InstagramUserProfile = {
   account_type: string;
 };
 
+export type ResolveWebhookAccountIdInput = {
+  webhookAccountId: string;
+  accessToken: string;
+};
+
+export type ResolveWebhookAccountIdResult = {
+  id: string;
+  username?: string;
+  accountType?: string;
+};
+
 export interface BusinessProfileReviewProvider {
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string;
   exchangeAuthorizationCode(
@@ -86,6 +97,9 @@ export interface BusinessProfileReviewProvider {
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
+  resolveWebhookAccountId(
+    input: ResolveWebhookAccountIdInput
+  ): Promise<ResolveWebhookAccountIdResult>;
 }
 
 export type GoogleBusinessProfileProvider = BusinessProfileReviewProvider;

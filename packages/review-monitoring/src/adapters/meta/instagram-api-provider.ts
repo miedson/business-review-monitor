@@ -250,6 +250,72 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     return payload;
   }
 
+  async resolveWebhookAccountId(
+    input: { webhookAccountId: string; accessToken: string }
+  ): Promise<{ id: string; username?: string; accountType?: string }> {
+    this.logger.info({
+      provider: "instagram",
+      operation: "webhook_account_id_resolution_started",
+      webhookAccountId: input.webhookAccountId
+    });
+
+    const url = new URL(`${this.graphApiBase}/${input.webhookAccountId}`);
+    url.searchParams.set("fields", "id,username,account_type");
+    url.searchParams.set("access_token", input.accessToken);
+
+    const response = await this.fetchFn(url, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      const payload = await readJson(response);
+      this.logger.error({
+        provider: "instagram",
+        operation: "webhook_account_id_resolution_failed",
+        webhookAccountId: input.webhookAccountId,
+        httpStatus: response.status,
+        metaErrorType: payload && typeof payload === "object" && "error_type" in payload ? (payload as Record<string, unknown>).error_type : undefined,
+        metaErrorCode: payload && typeof payload === "object" && "error_code" in payload ? (payload as Record<string, unknown>).error_code : undefined,
+        metaErrorMessage: payload && typeof payload === "object" && "error_message" in payload ? (payload as Record<string, unknown>).error_message : undefined
+      });
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram webhook account ID resolution failed"
+      );
+    }
+
+    const payload = (await response.json()) as {
+      id: string;
+      username?: string;
+      account_type?: string;
+    };
+
+    this.logger.info({
+      provider: "instagram",
+      operation: "webhook_account_id_resolution_completed",
+      webhookAccountId: input.webhookAccountId,
+      resolvedId: payload.id,
+      username: payload.username,
+      accountType: payload.account_type
+    });
+
+    const result: { id: string; username?: string; accountType?: string } = {
+      id: payload.id
+    };
+
+    if (payload.username !== undefined) {
+      result.username = payload.username;
+    }
+
+    if (payload.account_type !== undefined) {
+      result.accountType = payload.account_type;
+    }
+
+    return result;
+  }
+
   private async requestShortLivedToken(code: string): Promise<InstagramTokenResponse> {
     this.logger.info({
       provider: "instagram",
@@ -493,9 +559,13 @@ function readErrorCode(payload: unknown): string | undefined {
 
 function mapInstagramApiErrorStatus(
   status: number
-): "INSTAGRAM_PERMISSION_DENIED" | "INSTAGRAM_RATE_LIMITED" | "INSTAGRAM_API_UNAVAILABLE" {
+): "INSTAGRAM_PERMISSION_DENIED" | "INSTAGRAM_RATE_LIMITED" | "INSTAGRAM_API_UNAVAILABLE" | "INSTAGRAM_ACCOUNT_NOT_FOUND" {
   if (status === 401 || status === 403) {
     return "INSTAGRAM_PERMISSION_DENIED";
+  }
+
+  if (status === 404) {
+    return "INSTAGRAM_ACCOUNT_NOT_FOUND";
   }
 
   if (status === 429) {

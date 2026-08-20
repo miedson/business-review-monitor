@@ -85,6 +85,12 @@ export class ProcessMetaWebhookEventJob {
       findByProfessionalAccountId: (professionalAccountId: string) => Promise<StoredInstagramConnection | null>;
     },
     private readonly instagramCommentRepository: InstagramCommentRepository,
+    private readonly resolveInstagramWebhookIdentity: {
+      execute: (input: { webhookAccountId: string }) => Promise<{
+        connection: StoredInstagramConnection;
+        resolvedInstagramUserId: string;
+      } | null>;
+    },
     private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer()
   ) {}
 
@@ -210,16 +216,22 @@ export class ProcessMetaWebhookEventJob {
       normalizedComment.instagramAccountId
     );
 
-    // If not found, try by Instagram user ID (for cases where entry.id differs from profile.id)
+    // If not found, run identity discovery against Meta API
     if (!connection) {
-      logInfo("meta_webhook_comment_try_instagram_user_id", {
+      logInfo("meta_webhook_comment_try_discovery", {
         requestId,
         entryId: entry.id,
         instagramAccountId: normalizedComment.instagramAccountId
       });
-      connection = await this.instagramConnectionRepository.findByInstagramUserId(
-        normalizedComment.instagramAccountId
-      );
+
+      const resolved =
+        await this.resolveInstagramWebhookIdentity.execute({
+          webhookAccountId: normalizedComment.instagramAccountId
+        });
+
+      if (resolved) {
+        connection = resolved.connection;
+      }
     }
 
     if (!connection) {

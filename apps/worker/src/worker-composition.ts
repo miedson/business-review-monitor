@@ -1,13 +1,16 @@
 import {
   CleanupExpiredReviewCache,
   PrismaInstagramConnectionRepository,
-  PrismaInstagramCommentRepository
+  PrismaInstagramCommentRepository,
+  ResolveInstagramWebhookIdentity
 } from "@brm/review-monitoring";
 import { prisma } from "@brm/database";
 import {
   EncryptionTokenCipher,
   GoogleBusinessProfileApiProvider,
   GoogleBusinessProfileMockProvider,
+  InstagramApiProvider,
+  InstagramApiMockProvider,
   PrismaBusinessLocationRepository,
   PrismaGoogleConnectionRepository,
   PrismaReviewCacheRepository,
@@ -52,9 +55,33 @@ export function createCleanupExpiredReviewCacheJob(): CleanupExpiredReviewCacheJ
   );
 }
 
-export function createProcessMetaWebhookEventJob(): ProcessMetaWebhookEventJob {
+export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMetaWebhookEventJob {
+  const instagramProvider =
+    config.META_PROVIDER === "real"
+      ? new InstagramApiProvider({
+          appId: config.META_APP_ID,
+          appSecret: config.META_APP_SECRET,
+          redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
+          graphApiVersion: config.META_GRAPH_API_VERSION
+        })
+      : new InstagramApiMockProvider();
+
+  const tokenCipher = new EncryptionTokenCipher(
+    createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY)
+  );
+
+  const connectionRepository = new PrismaInstagramConnectionRepository(prisma);
+  const commentRepository = new PrismaInstagramCommentRepository(prisma);
+
+  const resolveWebhookIdentity = new ResolveInstagramWebhookIdentity({
+    instagramConnectionRepository: connectionRepository,
+    provider: instagramProvider,
+    tokenCipher
+  });
+
   return new ProcessMetaWebhookEventJob(
-    new PrismaInstagramConnectionRepository(prisma),
-    new PrismaInstagramCommentRepository(prisma)
+    connectionRepository,
+    commentRepository,
+    resolveWebhookIdentity
   );
 }

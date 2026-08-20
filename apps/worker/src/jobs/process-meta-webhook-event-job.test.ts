@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ProcessMetaWebhookEventJob } from "./process-meta-webhook-event-job.js";
 import type { StoredInstagramConnection } from "@brm/review-monitoring";
 import type { InstagramCommentRepository, UpsertInstagramCommentInput } from "@brm/review-monitoring";
@@ -10,6 +10,7 @@ import type { ProcessMetaWebhookEventJobData } from "./process-meta-webhook-even
 class FakeInstagramConnectionRepository {
   private connectionsByUserId: Map<string, StoredInstagramConnection> = new Map();
   private connectionsByProfessionalAccountId: Map<string, StoredInstagramConnection> = new Map();
+  private professionalAccountIdUpdates: Array<{ connectionId: string; professionalAccountId: string }> = [];
 
   setConnection(connection: StoredInstagramConnection): void {
     this.connectionsByUserId.set(connection.instagramUserId, connection);
@@ -24,6 +25,10 @@ class FakeInstagramConnectionRepository {
 
   async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
     return this.connectionsByProfessionalAccountId.get(professionalAccountId) ?? null;
+  }
+
+  getProfessionalAccountIdUpdates() {
+    return this.professionalAccountIdUpdates;
   }
 }
 
@@ -78,17 +83,37 @@ class FakeNormalizer implements InstagramCommentWebhookNormalizer {
   }
 }
 
+class FakeResolveInstagramWebhookIdentity {
+  private readonly scenarios: Map<string, { connection?: StoredInstagramConnection; throwError?: Error }> = new Map();
+  execute = vi.fn(async (input: { webhookAccountId: string }): Promise<{ connection: StoredInstagramConnection; resolvedInstagramUserId: string } | null> => {
+    const scenario = this.scenarios.get(input.webhookAccountId);
+    if (scenario?.throwError) {
+      throw scenario.throwError;
+    }
+    if (scenario?.connection) {
+      return { connection: scenario.connection, resolvedInstagramUserId: scenario.connection.instagramUserId };
+    }
+    return null;
+  });
+
+  setScenario(webhookAccountId: string, scenario: { connection?: StoredInstagramConnection; throwError?: Error }): void {
+    this.scenarios.set(webhookAccountId, scenario);
+  }
+}
+
 describe("ProcessMetaWebhookEventJob - comments", () => {
   let connectionRepo: FakeInstagramConnectionRepository;
   let commentRepo: FakeInstagramCommentRepository;
   let normalizer: FakeNormalizer;
+  let resolveWebhookIdentity: FakeResolveInstagramWebhookIdentity;
   let job: ProcessMetaWebhookEventJob;
 
   beforeEach(() => {
     connectionRepo = new FakeInstagramConnectionRepository();
     commentRepo = new FakeInstagramCommentRepository();
     normalizer = new FakeNormalizer();
-    job = new ProcessMetaWebhookEventJob(connectionRepo, commentRepo, normalizer);
+    resolveWebhookIdentity = new FakeResolveInstagramWebhookIdentity();
+    job = new ProcessMetaWebhookEventJob(connectionRepo, commentRepo, resolveWebhookIdentity, normalizer);
   });
 
   const createJobData = (overrides: Partial<ProcessMetaWebhookEventJobData> = {}): ProcessMetaWebhookEventJobData => ({
@@ -257,18 +282,12 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     expect(commentRepo.upserted).toHaveLength(0);
   });
 
-  it("resolves connection using professional account ID when OAuth user ID differs (real-world scenario)", async () => {
-    // This test documents the real-world scenario where:
-    // - OAuth profile.id (from graph.instagram.com/me) = 25928677863496445
-    // - Webhook entry.id = 17841480590934524
-    // These are different IDs. The correct mapping needs official documentation investigation.
-    // For now, we store the profile.id as both userId and professionalAccountId.
-    // The webhook processor tries both findByProfessionalAccountId and findByInstagramUserId.
+  it("resolves connection via discovery when OAuth user ID differs from webhook entry ID", async () => {
     const connection: StoredInstagramConnection = {
       id: "conn_1",
       tenantId: "tenant_1",
       instagramUserId: "25928677863496445",
-      instagramProfessionalAccountId: "25928677863496445",
+      instagramProfessionalAccountId: null,
       username: "sixsysma",
       accountType: "BUSINESS",
       encryptedAccessToken: "encrypted_token",
@@ -280,8 +299,6 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     };
     connectionRepo.setConnection(connection);
 
-    // Webhook entry.id is 17841480590934524 - different from profile.id
-    // The normalizer uses entry.id as instagramAccountId
     normalizer.result = {
       externalCommentId: "18026418377682085",
       externalMediaId: "17920550793200385",
@@ -293,22 +310,32 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       rawEventId: "17841480590934524"
     };
 
+    resolveWebhookIdentity.setScenario("17841480590934524", {
+      connection
+    });
+
     const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
-    // With current implementation (storing profile.id for both), this will NOT find the connection
-    // because webhook entry.id (178...) != stored professionalAccountId (259...)
-    // This test documents the gap that needs official documentation investigation
-    expect(commentRepo.upserted).toHaveLength(0);
+    expect(commentRepo.upserted).toHaveLength(1);
+    expect(commentRepo.upserted[0]!).toMatchObject({
+      tenantId: "tenant_1",
+      instagramConnectionId: "conn_1",
+      externalCommentId: "18026418377682085",
+      authorExternalId: "1107520471692069",
+      authorUsername: "miedsonfernandes",
+      text: "Real comment from webhook",
+      status: "NEW"
+    });
   });
 
-  it("does not find connection when searching by OAuth user ID for webhook entry ID", async () => {
+  it("uses fast path when professionalAccountId is already mapped", async () => {
     const connection: StoredInstagramConnection = {
       id: "conn_1",
       tenantId: "tenant_1",
       instagramUserId: "25928677863496445",
-      instagramProfessionalAccountId: "25928677863496445",
+      instagramProfessionalAccountId: "17841480590934524",
       username: "sixsysma",
       accountType: "BUSINESS",
       encryptedAccessToken: "encrypted_token",
@@ -335,7 +362,44 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
 
     await job.handle(mockJob);
 
-    // With current implementation, connection not found because webhook entry.id differs from stored IDs
+    expect(commentRepo.upserted).toHaveLength(1);
+    expect(resolveWebhookIdentity.execute).not.toHaveBeenCalled();
+  });
+
+  it("does not persist when discovery returns null", async () => {
+    const connection: StoredInstagramConnection = {
+      id: "conn_1",
+      tenantId: "tenant_1",
+      instagramUserId: "111111",
+      instagramProfessionalAccountId: null,
+      username: "other",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted_token",
+      scope: "instagram_business_basic,instagram_business_manage_comments",
+      status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
+      tokenExpiresAt: new Date(Date.now() + 86400000)
+    };
+    connectionRepo.setConnection(connection);
+
+    normalizer.result = {
+      externalCommentId: "18026418377682085",
+      externalMediaId: "17920550793200385",
+      instagramAccountId: "17841480590934524",
+      authorExternalId: "1107520471692069",
+      authorUsername: "miedsonfernandes",
+      text: "Real comment from webhook",
+      createdAtExternal: new Date(1700000000 * 1000),
+      rawEventId: "17841480590934524"
+    };
+
+    resolveWebhookIdentity.setScenario("17841480590934524", {});
+
+    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+
+    await job.handle(mockJob);
+
     expect(commentRepo.upserted).toHaveLength(0);
   });
 });

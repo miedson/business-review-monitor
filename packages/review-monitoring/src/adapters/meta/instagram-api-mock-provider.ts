@@ -155,6 +155,18 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     };
   }
 
+  async resolveWebhookAccountId(
+    input: { webhookAccountId: string; accessToken: string }
+  ): Promise<{ id: string; username?: string; accountType?: string }> {
+    this.assertUsableAccessToken(input.accessToken);
+
+    return {
+      id: mockUserId,
+      username: mockUsername,
+      accountType: mockAccountType
+    };
+  }
+
   private assertUsableAccessToken(accessToken: string): void {
     if (accessToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(

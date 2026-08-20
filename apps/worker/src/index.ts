@@ -23,7 +23,7 @@ const workerAppName = "business-review-monitor-worker";
 const config = loadConfig();
 const syncGoogleReviewsJob = createSyncGoogleReviewsJob(config);
 const cleanupExpiredReviewCacheJob = createCleanupExpiredReviewCacheJob();
-const processMetaWebhookEventJob = createProcessMetaWebhookEventJob();
+const processMetaWebhookEventJob = createProcessMetaWebhookEventJob(config);
 
 const connection = createBullMqConnection(config.REDIS_URL);
 const googleReviewSyncQueue = new Queue(googleReviewSyncQueueName, {
