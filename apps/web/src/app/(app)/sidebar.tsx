@@ -118,9 +118,9 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
                     borderRadius: "lg",
                     fontWeight: "medium",
                     fontSize: "sm",
-                    color: pathname === "/settings" ? "white" : "text.secondary",
-                    bg: pathname === "/settings" ? "brand.600" : "transparent",
-                    _hover: { bg: pathname === "/settings" ? "brand.700" : "surface.tertiary", color: "text.primary" },
+                    color: isSettingsExpanded ? "white" : "text.secondary",
+                    bg: isSettingsExpanded ? "brand.600" : "transparent",
+                    _hover: { bg: isSettingsExpanded ? "brand.700" : "surface.tertiary", color: "text.primary" },
                     transition: "all 0.2s ease",
                     cursor: "pointer",
                   }}
