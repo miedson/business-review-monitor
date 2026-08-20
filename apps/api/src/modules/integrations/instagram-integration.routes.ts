@@ -124,10 +124,20 @@ const instagramAccountsRouteSchema = {
   }
 };
 
+const instagramDisconnectBodySchema = z.object({
+  deleteData: z.boolean().default(false).optional()
+});
+
 const instagramDisconnectRouteSchema = {
   tags: ["Instagram Integration"],
   summary: "Disconnect Instagram integration",
   security: [{ bearerAuth: [] }],
+  body: {
+    type: "object",
+    properties: {
+      deleteData: { type: "boolean", default: false }
+    }
+  },
   response: {
     200: {
       type: "object",
@@ -291,10 +301,12 @@ export function registerInstagramIntegrationRoutes(
   app.post("/integrations/instagram/disconnect", { schema: instagramDisconnectRouteSchema }, async (request, reply) => {
     const userId = await getAuthenticatedUserId(request);
     const session = await options.authService.getCurrentSession(userId);
+    const body = instagramDisconnectBodySchema.parse(request.body);
 
     try {
       const result = await options.disconnectInstagramConnection.execute({
-        tenantId: session.tenant.id
+        tenantId: session.tenant.id,
+        deleteData: body.deleteData ?? false
       });
 
       return reply.send(result);

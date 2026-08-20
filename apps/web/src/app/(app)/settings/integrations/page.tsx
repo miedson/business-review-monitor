@@ -10,7 +10,9 @@ import {
   listGoogleAccounts,
   listInstagramAccounts,
 } from "@/lib/api-client";
-import { Box, Text, Alert, ChannelCard } from "@/lib/design-system";
+import { Box, Text, Alert, ChannelCard, Modal, Button } from "@/lib/design-system";
+
+type InstagramDisconnectChoice = "keep" | "delete" | null;
 
 export default function IntegrationsPage() {
   const [session, setSession] = useState<ReturnType<typeof getStoredSession>>(null);
@@ -46,6 +48,13 @@ export default function IntegrationsPage() {
   const [instagramAccount, setInstagramAccount] = useState<{ username?: string | undefined } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [instagramLoading, setInstagramLoading] = useState(false);
+
+  const [showInstagramDisconnectModal, setShowInstagramDisconnectModal] = useState(false);
+  const [instagramDisconnectChoice, setInstagramDisconnectChoice] = useState<InstagramDisconnectChoice>(null);
+  const [instagramDisconnectLoading, setInstagramDisconnectLoading] = useState(false);
+  const [showInstagramDeleteConfirm, setShowInstagramDeleteConfirm] = useState(false);
+  const [showGoogleDisconnectModal, setShowGoogleDisconnectModal] = useState(false);
+  const [googleDisconnectLoading, setGoogleDisconnectLoading] = useState(false);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -99,13 +108,18 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleGoogleDisconnectClick = () => {
+    setShowGoogleDisconnectModal(true);
+  };
+
   const handleGoogleDisconnect = async () => {
     if (!session?.accessToken) return;
 
     try {
-      setGoogleLoading(true);
+      setGoogleDisconnectLoading(true);
       await disconnectGoogle({ accessToken: session.accessToken });
       setGoogleAccount(null);
+      setShowGoogleDisconnectModal(false);
       setMessage({ type: "success", text: "Google Business Profile desconectado com sucesso!" });
     } catch (error) {
       setMessage({
@@ -113,7 +127,7 @@ export default function IntegrationsPage() {
         text: error instanceof Error ? error.message : "Erro ao desconectar Google"
       });
     } finally {
-      setGoogleLoading(false);
+      setGoogleDisconnectLoading(false);
     }
   };
 
@@ -133,21 +147,39 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleInstagramDisconnectClick = () => {
+    setInstagramDisconnectChoice(null);
+    setShowInstagramDeleteConfirm(false);
+    setShowInstagramDisconnectModal(true);
+  };
+
   const handleInstagramDisconnect = async () => {
-    if (!session?.accessToken) return;
+    if (!session?.accessToken || !instagramDisconnectChoice) return;
 
     try {
-      setInstagramLoading(true);
-      await disconnectInstagram({ accessToken: session.accessToken });
+      setInstagramDisconnectLoading(true);
+      const deleteData = instagramDisconnectChoice === "delete";
+      await disconnectInstagram({
+        accessToken: session.accessToken,
+        deleteData
+      });
       setInstagramAccount(null);
-      setMessage({ type: "success", text: "Instagram desconectado com sucesso!" });
+      setShowInstagramDisconnectModal(false);
+      setShowInstagramDeleteConfirm(false);
+      setInstagramDisconnectChoice(null);
+      setMessage({
+        type: "success",
+        text: deleteData
+          ? "Instagram desconectado e dados excluídos com sucesso!"
+          : "Instagram desconectado com sucesso!"
+      });
     } catch (error) {
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Erro ao desconectar Instagram"
       });
     } finally {
-      setInstagramLoading(false);
+      setInstagramDisconnectLoading(false);
     }
   };
 
@@ -177,7 +209,7 @@ export default function IntegrationsPage() {
           accountLabel={googleAccountLabel}
           subtitle={googleAccount ? "Conta conectada" : undefined}
           onConnect={handleGoogleConnect}
-          onDisconnect={handleGoogleDisconnect}
+          onDisconnectClick={handleGoogleDisconnectClick}
           isLoading={googleLoading}
           disabled={googleLoading}
         />
@@ -190,7 +222,7 @@ export default function IntegrationsPage() {
           accountLabel={instagramAccountLabel}
           subtitle={instagramAccount ? "Conta conectada" : undefined}
           onConnect={handleInstagramConnect}
-          onDisconnect={handleInstagramDisconnect}
+          onDisconnectClick={handleInstagramDisconnectClick}
           isLoading={instagramLoading}
           disabled={instagramLoading}
         />
@@ -203,6 +235,200 @@ export default function IntegrationsPage() {
           comingSoon
         />
       </Box>
+
+      <Modal
+        isOpen={showGoogleDisconnectModal}
+        onClose={() => setShowGoogleDisconnectModal(false)}
+        title="Desconectar Google Business Profile"
+        description="Ao continuar, o Business Reputation Hub perderá acesso ao seu Perfil da Empresa no Google e os dados obtidos através dessa integração serão removidos do BRH. Esta ação é permanente para os dados armazenados pelo BRH. Para voltar a utilizar a integração será necessário conectar sua conta Google novamente."
+        size="md"
+        actionButtons={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowGoogleDisconnectModal(false)}
+              disabled={googleDisconnectLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="solid"
+              colorScheme="red"
+              size="sm"
+              onClick={handleGoogleDisconnect}
+              loading={googleDisconnectLoading}
+            >
+              Desconectar e excluir dados
+            </Button>
+          </>
+        }
+      >
+        <Box />
+      </Modal>
+
+      <Modal
+        isOpen={showInstagramDisconnectModal}
+        onClose={() => {
+          setShowInstagramDisconnectModal(false);
+          setShowInstagramDeleteConfirm(false);
+          setInstagramDisconnectChoice(null);
+        }}
+        title="Desconectar Instagram"
+        {...(instagramAccountLabel ? { description: `A conexão com ${instagramAccountLabel} será removida e o BRH deixará de receber novos comentários e mensagens desta conta.` } : {})}
+        size="md"
+        actionButtons={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setShowInstagramDisconnectModal(false);
+                setShowInstagramDeleteConfirm(false);
+                setInstagramDisconnectChoice(null);
+              }}
+              disabled={instagramDisconnectLoading}
+            >
+              Cancelar
+            </Button>
+            {instagramDisconnectChoice === "delete" && !showInstagramDeleteConfirm ? (
+              <Button
+                variant="solid"
+                colorScheme="red"
+                size="sm"
+                onClick={() => setShowInstagramDeleteConfirm(true)}
+                disabled={instagramDisconnectLoading}
+              >
+                Desconectar
+              </Button>
+            ) : (
+              <Button
+                variant="solid"
+                colorScheme="brand"
+                size="sm"
+                onClick={handleInstagramDisconnect}
+                disabled={instagramDisconnectLoading || !instagramDisconnectChoice}
+                loading={instagramDisconnectLoading}
+              >
+                Desconectar
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Box css={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <Text css={{ fontSize: "sm", color: "text.secondary", mb: 2 }}>
+            Escolha o que deseja fazer com os dados já coletados.
+          </Text>
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "flexStart",
+              gap: 3,
+              p: 3,
+              borderRadius: "lg",
+              border: "2px solid",
+              borderColor: instagramDisconnectChoice === "keep" ? "brand.600" : "surface.border",
+              bg: instagramDisconnectChoice === "keep" ? "brand.50" : "transparent",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => {
+              setInstagramDisconnectChoice("keep");
+              setShowInstagramDeleteConfirm(false);
+            }}
+          >
+            <Box
+              css={{
+                w: 5,
+                h: 5,
+                borderRadius: "full",
+                border: "2px solid",
+                borderColor: instagramDisconnectChoice === "keep" ? "brand.600" : "surface.border",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                mt: 0.5,
+              }}
+            >
+              {instagramDisconnectChoice === "keep" && (
+                <Box css={{ w: 2.5, h: 2.5, borderRadius: "full", bg: "brand.600" }} />
+              )}
+            </Box>
+            <Box>
+              <Text css={{ fontWeight: "medium", fontSize: "sm", color: "text.primary" }}>
+                Manter dados existentes
+              </Text>
+              <Text css={{ fontSize: "xs", color: "text.tertiary", mt: 1, lineHeight: "normal" }}>
+                Comentários, mensagens e histórico já recebidos continuarão disponíveis no BRH.
+              </Text>
+            </Box>
+          </Box>
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "flexStart",
+              gap: 3,
+              p: 3,
+              borderRadius: "lg",
+              border: "2px solid",
+              borderColor: instagramDisconnectChoice === "delete" ? "red.600" : "surface.border",
+              bg: instagramDisconnectChoice === "delete" ? "red.50" : "transparent",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => {
+              setInstagramDisconnectChoice("delete");
+              if (!showInstagramDeleteConfirm) {
+                setShowInstagramDeleteConfirm(true);
+              }
+            }}
+          >
+            <Box
+              css={{
+                w: 5,
+                h: 5,
+                borderRadius: "full",
+                border: "2px solid",
+                borderColor: instagramDisconnectChoice === "delete" ? "red.600" : "surface.border",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                mt: 0.5,
+              }}
+            >
+              {instagramDisconnectChoice === "delete" && (
+                <Box css={{ w: 2.5, h: 2.5, borderRadius: "full", bg: "red.600" }} />
+              )}
+            </Box>
+            <Box>
+              <Text css={{ fontWeight: "medium", fontSize: "sm", color: instagramDisconnectChoice === "delete" ? "status.error.text" : "text.primary" }}>
+                Excluir dados da integração
+              </Text>
+              <Text css={{ fontSize: "xs", color: "text.tertiary", mt: 1, lineHeight: "normal" }}>
+                Comentários, mensagens e demais dados associados a esta conta serão excluídos permanentemente.
+              </Text>
+            </Box>
+          </Box>
+          {showInstagramDeleteConfirm && instagramDisconnectChoice === "delete" && (
+            <Box
+              css={{
+                p: 3,
+                borderRadius: "lg",
+                bg: "red.50",
+                border: "1px solid",
+                borderColor: "red.200",
+              }}
+            >
+              <Text css={{ fontSize: "xs", color: "status.error.text", fontWeight: "medium" }}>
+                Esta ação excluirá permanentemente os dados coletados desta conta Instagram no Business Reputation Hub.
+              </Text>
+            </Box>
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 }

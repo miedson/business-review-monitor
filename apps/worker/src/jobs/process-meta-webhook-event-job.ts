@@ -3,17 +3,30 @@ import { z } from "zod";
 import { logInfo } from "../worker-logger.js";
 import type {
   MetaWebhookEntry,
-  MetaWebhookChange
+  MetaWebhookChange,
+  MetaWebhookMessaging
 } from "@brm/review-monitoring";
 import {
   DefaultInstagramCommentWebhookNormalizer,
   type InstagramCommentWebhookNormalizer
 } from "@brm/review-monitoring";
+import {
+  DefaultInstagramMessageWebhookNormalizer,
+  type InstagramMessageWebhookNormalizer
+} from "@brm/review-monitoring";
 import type {
   InstagramCommentRepository,
   UpsertInstagramCommentInput
 } from "@brm/review-monitoring";
+import type {
+  InstagramConversationRepository,
+  InstagramMessageRepository
+} from "@brm/review-monitoring";
 import type { StoredInstagramConnection } from "@brm/review-monitoring";
+import {
+  ProcessInstagramDirectMessage,
+  type ProcessInstagramDirectMessageInput
+} from "@brm/review-monitoring";
 
 const processMetaWebhookEventJobDataSchema = z
   .object({
@@ -91,7 +104,11 @@ export class ProcessMetaWebhookEventJob {
         resolvedInstagramUserId: string;
       } | null>;
     },
-    private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer()
+    private readonly instagramConversationRepository: InstagramConversationRepository,
+    private readonly instagramMessageRepository: InstagramMessageRepository,
+    private readonly processInstagramDirectMessage: ProcessInstagramDirectMessage,
+    private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer(),
+    private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer()
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -282,25 +299,71 @@ export class ProcessMetaWebhookEventJob {
     requestId: string
   ): Promise<void> {
     const senderId = message.sender.id;
+    const recipientId = message.recipient.id;
 
-    const connection = await this.instagramConnectionRepository.findByInstagramUserId(senderId);
+    let connection = await this.instagramConnectionRepository.findByInstagramUserId(senderId);
+
+    if (!connection) {
+      connection = await this.instagramConnectionRepository.findByInstagramUserId(recipientId);
+    }
 
     if (!connection) {
       logInfo("meta_webhook_message_unknown_sender", {
         requestId,
         senderId,
-        recipientId: message.recipient.id
+        recipientId
       });
       return;
     }
 
-    logInfo("meta_webhook_message_received", {
+    logInfo("meta_instagram_messaging_event_observed", {
       requestId,
-      tenantId: connection.tenantId,
-      senderId,
+      entryId: message.sender.id,
+      messagingCount: 1,
+      messagingKeys: Object.keys(message).join(","),
+      senderId: message.sender.id,
       recipientId: message.recipient.id,
       hasMessage: message.message ? "true" : "false",
-      hasPostback: message.postback ? "true" : "false"
+      hasMid: message.message?.id ? "true" : "false",
+      hasText: message.message?.text ? "true" : "false"
+    });
+
+    const normalizedMessage = this.messageNormalizer.normalize(
+      { id: senderId, time: message.timestamp } as MetaWebhookEntry,
+      message as MetaWebhookMessaging
+    );
+
+    if (!normalizedMessage) {
+      logInfo("meta_webhook_message_normalization_failed", {
+        requestId,
+        senderId,
+        recipientId
+      });
+      return;
+    }
+
+    logInfo("instagram_message_normalized", {
+      requestId,
+      externalMessageId: normalizedMessage.externalMessageId,
+      instagramAccountId: normalizedMessage.instagramAccountId,
+      senderExternalId: normalizedMessage.senderExternalId,
+      recipientExternalId: normalizedMessage.recipientExternalId,
+      direction: normalizedMessage.direction,
+      hasText: !!normalizedMessage.text,
+      textLength: normalizedMessage.text?.length ?? 0
+    });
+
+    const result = await this.processInstagramDirectMessage.execute({
+      connection,
+      normalizedMessage
+    } as ProcessInstagramDirectMessageInput);
+
+    logInfo("instagram_direct_message_processed", {
+      requestId,
+      tenantId: connection.tenantId,
+      conversationId: result.conversationId,
+      messageId: result.messageId,
+      isNew: result.isNew
     });
   }
 }

@@ -196,6 +196,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 function getPageTitle(pathname: string): string {
   const titles: Record<string, string> = {
     "/dashboard": "Visão geral",
+    "/inbox": "Inbox",
     "/reviews": "Avaliações",
     "/settings/integrations": "Integrações",
     "/settings": "Configurações",

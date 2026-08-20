@@ -135,6 +135,9 @@ class FakeRepository implements InstagramConnectionRepository {
   async disconnectByTenantId(): Promise<StoredInstagramConnection | null> {
     return null;
   }
+
+  async deleteByTenantId(): Promise<void> {
+  }
 }
 
 describe("CompleteInstagramOAuthCallback", () => {

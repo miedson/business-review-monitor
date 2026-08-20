@@ -55,6 +55,9 @@ class FakeInstagramConnectionRepository implements InstagramConnectionRepository
     throw new Error("Not implemented in fake");
   }
 
+  async deleteByTenantId(): Promise<void> {
+  }
+
   getProfessionalAccountIdUpdates() {
     return this.professionalAccountIdUpdates;
   }

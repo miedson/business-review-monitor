@@ -234,12 +234,14 @@ export async function buildInstagramConnectUrl(accessToken: string): Promise<str
 
 export async function disconnectInstagram(input: {
   accessToken: string;
+  deleteData?: boolean;
 }): Promise<{ disconnected: boolean }> {
   return z
     .object({ disconnected: z.boolean() })
     .parse(
       await requestJson("/integrations/instagram/disconnect", {
         accessToken: input.accessToken,
+        body: { deleteData: input.deleteData ?? false },
         method: "POST"
       })
     );
@@ -271,6 +273,116 @@ export async function listInstagramComments(input: {
       accessToken: input.accessToken,
     })
   );
+}
+
+export type InboxConversation = {
+  id: string;
+  provider: "instagram";
+  participant: {
+    externalId: string;
+    username: string | null;
+    name: string | null;
+    profilePictureUrl: string | null;
+  };
+  lastMessagePreview: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+};
+
+export type InboxMessage = {
+  id: string;
+  provider: "instagram";
+  direction: "INBOUND" | "OUTBOUND";
+  sender: string;
+  recipient: string;
+  text: string | null;
+  sentAt: string;
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED";
+};
+
+export async function listInboxConversations(input: {
+  accessToken: string;
+  limit: number | undefined;
+  cursor: string | undefined;
+}): Promise<{ conversations: InboxConversation[]; nextCursor: string | null }> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.cursor) params.set("cursor", input.cursor);
+
+  return z
+    .object({
+      conversations: z.array(
+        z.object({
+          id: z.string(),
+          provider: z.literal("instagram"),
+          participant: z.object({
+            externalId: z.string(),
+            username: z.string().nullable().optional(),
+            name: z.string().nullable().optional(),
+            profilePictureUrl: z.string().nullable().optional()
+          }),
+          lastMessagePreview: z.string().nullable().optional(),
+          lastMessageAt: z.string().nullable().optional(),
+          unreadCount: z.number()
+        })
+      ),
+      nextCursor: z.string().nullable().optional()
+    })
+    .parse(
+      await requestJson(`/inbox/conversations?${params.toString()}`, {
+        accessToken: input.accessToken,
+      })
+    ) as { conversations: InboxConversation[]; nextCursor: string | null };
+}
+
+export async function listInboxConversationMessages(input: {
+  accessToken: string;
+  conversationId: string;
+  limit: number | undefined;
+  cursor: string | undefined;
+}): Promise<{ messages: InboxMessage[]; nextCursor: string | null }> {
+  const params = new URLSearchParams();
+  if (input.limit) params.set("limit", String(input.limit));
+  if (input.cursor) params.set("cursor", input.cursor);
+
+  return z
+    .object({
+      messages: z.array(
+        z.object({
+          id: z.string(),
+          provider: z.literal("instagram"),
+          direction: z.enum(["INBOUND", "OUTBOUND"]),
+          sender: z.string(),
+          recipient: z.string(),
+          text: z.string().nullable().optional(),
+          sentAt: z.string(),
+          status: z.enum(["SENT", "DELIVERED", "READ", "FAILED"])
+        })
+      ),
+      nextCursor: z.string().nullable().optional()
+    })
+    .parse(
+      await requestJson(`/inbox/conversations/${input.conversationId}/messages?${params.toString()}`, {
+        accessToken: input.accessToken,
+      })
+    ) as { messages: InboxMessage[]; nextCursor: string | null };
+}
+
+export async function markInboxConversationAsRead(input: {
+  accessToken: string;
+  conversationId: string;
+}): Promise<{ id: string; unreadCount: number }> {
+  return z
+    .object({
+      id: z.string(),
+      unreadCount: z.number()
+    })
+    .parse(
+      await requestJson(`/inbox/conversations/${input.conversationId}/read`, {
+        accessToken: input.accessToken,
+        method: "POST"
+      })
+    );
 }
 
 async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {

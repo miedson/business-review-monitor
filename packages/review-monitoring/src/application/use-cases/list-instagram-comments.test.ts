@@ -48,6 +48,9 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
     return this.comments.find((c) => c.id === input.id && c.tenantId === input.tenantId) ?? null;
   }
 
+  async deleteByConnectionId(): Promise<void> {
+  }
+
   seed(comments: InstagramComment[]): void {
     this.comments = comments;
   }

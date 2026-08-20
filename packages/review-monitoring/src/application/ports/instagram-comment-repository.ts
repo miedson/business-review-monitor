@@ -27,8 +27,13 @@ export type FindInstagramCommentByIdInput = {
   tenantId: string;
 };
 
+export type DeleteInstagramCommentsByConnectionIdInput = {
+  connectionId: string;
+};
+
 export interface InstagramCommentRepository {
   upsert(input: UpsertInstagramCommentInput): Promise<InstagramComment>;
   findByTenant(input: FindInstagramCommentsInput): Promise<InstagramComment[]>;
   findByIdForTenant(input: FindInstagramCommentByIdInput): Promise<InstagramComment | null>;
+  deleteByConnectionId(input: DeleteInstagramCommentsByConnectionIdInput): Promise<void>;
 }

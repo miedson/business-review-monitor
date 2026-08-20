@@ -22,6 +22,7 @@ interface ChannelCardProps {
   comingSoon?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  onDisconnectClick?: () => void;
 }
 
 const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string }> = {
@@ -88,6 +89,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
       comingSoon,
       className,
       style,
+      onDisconnectClick,
     },
     ref
   ) => {
@@ -98,6 +100,10 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
     const [showDisconnectModal, setShowDisconnectModal] = useState(false);
 
     const handleDisconnect = () => {
+      if (onDisconnectClick) {
+        onDisconnectClick();
+        return;
+      }
       if (onDisconnect) {
         setShowDisconnectModal(true);
       }

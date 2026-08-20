@@ -26,7 +26,9 @@ model Tenant {
   businessLocations    BusinessLocation[]
   googleConnections    GoogleConnection[]
   instagramComments    InstagramComment[]
-  instagramConnections InstagramConnection?
+  instagramConnections InstagramConnection[]
+  instagramConversations InstagramConversation[]
+  instagramMessages    InstagramMessage[]
   reviewCaches         ReviewCache[]
   users                TenantUser[]
 
@@ -84,6 +86,7 @@ model InstagramConnection {
   createdAt                       DateTime                  @default(now()) @db.Timestamptz(3)
   updatedAt                       DateTime                  @updatedAt @db.Timestamptz(3)
   comments                        InstagramComment[]
+  conversations                   InstagramConversation[]
   tenant                          Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
@@ -113,6 +116,53 @@ model InstagramComment {
   @@index([instagramConnectionId])
   @@index([createdAtExternal])
   @@map("instagram_comments")
+}
+
+model InstagramConversation {
+  id                          String                        @id @default(cuid())
+  tenantId                    String
+  instagramConnectionId       String
+  participantExternalId       String
+  participantUsername         String?
+  participantName             String?
+  participantProfilePictureUrl String?
+  lastMessageAt               DateTime?                     @db.Timestamptz(3)
+  lastMessagePreview          String?
+  unreadCount                 Int                           @default(0)
+  createdAt                   DateTime                      @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                      @updatedAt @db.Timestamptz(3)
+  messages                    InstagramMessage[]
+  instagramConnection         InstagramConnection           @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  tenant                      Tenant                        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([instagramConnectionId, participantExternalId])
+  @@index([tenantId])
+  @@index([instagramConnectionId])
+  @@index([lastMessageAt])
+  @@map("instagram_conversations")
+}
+
+model InstagramMessage {
+  id                      String                    @id @default(cuid())
+  tenantId                String
+  instagramConversationId String
+  externalMessageId       String
+  senderExternalId        String
+  recipientExternalId     String
+  direction               InstagramMessageDirection
+  text                    String?
+  sentAtExternal          DateTime?                 @db.Timestamptz(3)
+  status                  InstagramMessageStatus    @default(DELIVERED)
+  createdAt               DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @db.Timestamptz(3)
+  instagramConversation   InstagramConversation     @relation(fields: [instagramConversationId], references: [id], onDelete: Cascade)
+  tenant                  Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([instagramConversationId, externalMessageId])
+  @@index([tenantId])
+  @@index([instagramConversationId])
+  @@index([sentAtExternal])
+  @@map("instagram_messages")
 }
 
 model BusinessLocation {
@@ -186,4 +236,16 @@ enum InstagramConnectionStatus {
 enum InstagramCommentStatus {
   NEW
   READ
+}
+
+enum InstagramMessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum InstagramMessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }

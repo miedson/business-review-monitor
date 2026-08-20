@@ -4,6 +4,7 @@ import type { TokenCipher } from "../ports/token-cipher.js";
 
 export type DisconnectInstagramConnectionInput = {
   tenantId: string;
+  deleteData: boolean;
 };
 
 export type DisconnectInstagramConnectionResult = {
@@ -16,6 +17,10 @@ export type DisconnectInstagramConnectionDependencies = {
       disconnectedAt: Date;
       tenantId: string;
     }): Promise<StoredInstagramConnection | null>;
+    deleteByTenantId(tenantId: string): Promise<void>;
+  };
+  instagramCommentRepository: {
+    deleteByConnectionId(input: { connectionId: string }): Promise<void>;
   };
   provider: BusinessProfileReviewProvider;
   tokenCipher: TokenCipher;
@@ -34,8 +39,17 @@ export class DisconnectInstagramConnection {
       tenantId: input.tenantId
     });
 
-    if (!connection?.encryptedAccessToken) {
+    if (!connection) {
       return { disconnected: false };
+    }
+
+    if (input.deleteData) {
+      await this.dependencies.instagramCommentRepository.deleteByConnectionId({ connectionId: connection.id });
+      await this.dependencies.instagramConnectionRepository.deleteByTenantId(input.tenantId);
+    }
+
+    if (!connection.encryptedAccessToken) {
+      return { disconnected: true };
     }
 
     try {

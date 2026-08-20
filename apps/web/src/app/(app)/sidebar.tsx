@@ -52,6 +52,7 @@ const ChartIcon = () => (
 
 const navigationItems = [
   { href: "/dashboard", label: "Visão geral", Icon: HomeIcon },
+  { href: "/inbox", label: "Inbox", Icon: InboxIcon },
   { href: "/reviews", label: "Avaliações", Icon: StarIcon },
   { href: "/instagram/comments", label: "Comentários Instagram", Icon: InboxIcon },
 ] as const;

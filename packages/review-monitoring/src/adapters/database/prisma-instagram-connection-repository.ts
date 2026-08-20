@@ -129,4 +129,12 @@ export class PrismaInstagramConnectionRepository
 
     return connection;
   }
+
+  async deleteByTenantId(tenantId: string): Promise<void> {
+    await this.prisma.instagramConnection.deleteMany({
+      where: {
+        tenantId
+      }
+    });
+  }
 }

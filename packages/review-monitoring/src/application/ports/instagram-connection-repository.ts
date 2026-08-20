@@ -49,4 +49,5 @@ export interface InstagramConnectionRepository {
   disconnectByTenantId(
     input: DisconnectInstagramConnectionInput
   ): Promise<StoredInstagramConnection | null>;
+  deleteByTenantId(tenantId: string): Promise<void>;
 }

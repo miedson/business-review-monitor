@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ProcessMetaWebhookEventJob } from "./process-meta-webhook-event-job.js";
+import { ProcessInstagramDirectMessage } from "@brm/review-monitoring";
 import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import type { InstagramCommentRepository, UpsertInstagramCommentInput } from "@brm/review-monitoring";
+import type { InstagramCommentRepository, UpsertInstagramCommentInput, DeleteInstagramCommentsByConnectionIdInput } from "@brm/review-monitoring";
 import type { InstagramCommentWebhookNormalizer } from "@brm/review-monitoring";
 import type { NormalizedInstagramComment } from "@brm/review-monitoring";
+import type { InstagramConversationRepository, InstagramMessageRepository } from "@brm/review-monitoring";
 import type { Job } from "bullmq";
 import type { ProcessMetaWebhookEventJobData } from "./process-meta-webhook-event-job.js";
 
@@ -73,6 +75,42 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
   async findByIdForTenant(): Promise<null> {
     return null;
   }
+
+  async deleteByConnectionId(_input: DeleteInstagramCommentsByConnectionIdInput): Promise<void> {
+    void _input;
+  }
+}
+
+class FakeInstagramConversationRepository {
+  async save() { return {} as never; }
+  async update() { return {} as never; }
+  async findByTenant() { return { conversations: [], nextCursor: null }; }
+  async findByIdForTenant() { return null; }
+  async findByConnectionAndParticipant() { return null; }
+  async incrementUnreadCount() { return null; }
+  async markAsRead() { return null; }
+  async deleteByConnectionId() { void 0; }
+}
+
+class FakeInstagramMessageRepository {
+  async save() { return {} as never; }
+  async findByConversation() { return { messages: [], nextCursor: null }; }
+  async findByIdForTenant() { return null; }
+  async findByExternalId() { return null; }
+  async deleteByConnectionId() { void 0; }
+}
+
+class FakeProcessInstagramDirectMessage extends ProcessInstagramDirectMessage {
+  constructor() {
+    super({
+      instagramConversationRepository: {} as InstagramConversationRepository,
+      instagramMessageRepository: {} as InstagramMessageRepository
+    });
+  }
+
+  async execute(): Promise<{ conversationId: string; messageId: string; isNew: boolean }> {
+    return { conversationId: "conv_1", messageId: "msg_1", isNew: true };
+  }
 }
 
 class FakeNormalizer implements InstagramCommentWebhookNormalizer {
@@ -113,7 +151,15 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     commentRepo = new FakeInstagramCommentRepository();
     normalizer = new FakeNormalizer();
     resolveWebhookIdentity = new FakeResolveInstagramWebhookIdentity();
-    job = new ProcessMetaWebhookEventJob(connectionRepo, commentRepo, resolveWebhookIdentity, normalizer);
+    job = new ProcessMetaWebhookEventJob(
+      connectionRepo,
+      commentRepo,
+      resolveWebhookIdentity,
+      new FakeInstagramConversationRepository(),
+      new FakeInstagramMessageRepository(),
+      new FakeProcessInstagramDirectMessage(),
+      normalizer
+    );
   });
 
   const createJobData = (overrides: Partial<ProcessMetaWebhookEventJobData> = {}): ProcessMetaWebhookEventJobData => ({

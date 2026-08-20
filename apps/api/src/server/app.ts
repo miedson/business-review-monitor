@@ -31,6 +31,13 @@ import {
   PrismaInstagramCommentRepository,
   StartInstagramOAuthConnection
 } from "@brm/review-monitoring";
+import {
+  ListInstagramConversations,
+  ListInstagramConversationMessages,
+  MarkInstagramConversationAsRead,
+  PrismaInstagramConversationRepository,
+  PrismaInstagramMessageRepository
+} from "@brm/review-monitoring";
 import { createEncryptionServiceFromBase64Key } from "@brm/shared";
 import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
@@ -46,6 +53,7 @@ import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-
 import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
 import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
 import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
+import { registerInboxRoutes } from "../modules/integrations/inbox.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
 import {
@@ -256,11 +264,23 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     tokenCipher
   });
   const instagramCommentRepository = new PrismaInstagramCommentRepository(prisma);
+  const instagramConversationRepository = new PrismaInstagramConversationRepository(prisma);
+  const instagramMessageRepository = new PrismaInstagramMessageRepository(prisma);
   const listInstagramComments = new ListInstagramComments({
     instagramCommentRepository
   });
+  const listInstagramConversations = new ListInstagramConversations({
+    instagramConversationRepository
+  });
+  const listInstagramConversationMessages = new ListInstagramConversationMessages({
+    instagramMessageRepository
+  });
+  const markInstagramConversationAsRead = new MarkInstagramConversationAsRead({
+    instagramConversationRepository
+  });
   const disconnectInstagramConnection = new DisconnectInstagramConnection({
     instagramConnectionRepository,
+    instagramCommentRepository,
     provider: instagramProvider,
     tokenCipher
   });
@@ -318,6 +338,13 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   registerInstagramCommentsRoutes(app, {
     authService,
     listInstagramComments
+  });
+
+  registerInboxRoutes(app, {
+    authService,
+    listInstagramConversations,
+    listInstagramConversationMessages,
+    markInstagramConversationAsRead
   });
 
   registerMvpManagementRoutes(app, {

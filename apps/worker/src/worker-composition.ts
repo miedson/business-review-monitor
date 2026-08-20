@@ -2,7 +2,10 @@ import {
   CleanupExpiredReviewCache,
   PrismaInstagramConnectionRepository,
   PrismaInstagramCommentRepository,
-  ResolveInstagramWebhookIdentity
+  ResolveInstagramWebhookIdentity,
+  PrismaInstagramConversationRepository,
+  PrismaInstagramMessageRepository,
+  ProcessInstagramDirectMessage
 } from "@brm/review-monitoring";
 import { prisma } from "@brm/database";
 import {
@@ -72,6 +75,8 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
 
   const connectionRepository = new PrismaInstagramConnectionRepository(prisma);
   const commentRepository = new PrismaInstagramCommentRepository(prisma);
+  const conversationRepository = new PrismaInstagramConversationRepository(prisma);
+  const messageRepository = new PrismaInstagramMessageRepository(prisma);
 
   const resolveWebhookIdentity = new ResolveInstagramWebhookIdentity({
     instagramConnectionRepository: connectionRepository,
@@ -79,9 +84,17 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
     tokenCipher
   });
 
+  const processDirectMessage = new ProcessInstagramDirectMessage({
+    instagramConversationRepository: conversationRepository,
+    instagramMessageRepository: messageRepository
+  });
+
   return new ProcessMetaWebhookEventJob(
     connectionRepository,
     commentRepository,
-    resolveWebhookIdentity
+    resolveWebhookIdentity,
+    conversationRepository,
+    messageRepository,
+    processDirectMessage
   );
 }

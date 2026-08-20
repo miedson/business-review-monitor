@@ -4,7 +4,8 @@ import type {
   InstagramCommentRepository,
   UpsertInstagramCommentInput,
   FindInstagramCommentsInput,
-  FindInstagramCommentByIdInput
+  FindInstagramCommentByIdInput,
+  DeleteInstagramCommentsByConnectionIdInput
 } from "../../application/ports/instagram-comment-repository.js";
 import type { InstagramComment, InstagramCommentStatus } from "../../domain/instagram-comment.js";
 
@@ -86,6 +87,14 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     });
 
     return comment ? this.mapToDomain(comment) : null;
+  }
+
+  async deleteByConnectionId(input: DeleteInstagramCommentsByConnectionIdInput): Promise<void> {
+    await this.prisma.instagramComment.deleteMany({
+      where: {
+        instagramConnectionId: input.connectionId
+      }
+    });
   }
 
   private mapToDomain(comment: {

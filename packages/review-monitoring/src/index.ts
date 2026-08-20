@@ -160,6 +160,12 @@ export type {
 export {
   PrismaInstagramConnectionRepository
 } from "./adapters/database/prisma-instagram-connection-repository.js";
+export {
+  PrismaInstagramConversationRepository
+} from "./adapters/database/prisma-instagram-conversation-repository.js";
+export {
+  PrismaInstagramMessageRepository
+} from "./adapters/database/prisma-instagram-message-repository.js";
 
 export {
   CompleteInstagramOAuthCallback
@@ -195,7 +201,8 @@ export type {
   InstagramCommentRepository,
   UpsertInstagramCommentInput,
   FindInstagramCommentsInput,
-  FindInstagramCommentByIdInput
+  FindInstagramCommentByIdInput,
+  DeleteInstagramCommentsByConnectionIdInput
 } from "./application/ports/instagram-comment-repository.js";
 
 export type {
@@ -222,13 +229,30 @@ export {
   type InstagramCommentWebhookNormalizer
 } from "./application/normalizers/instagram-comment-webhook-normalizer.js";
 
+export {
+  DefaultInstagramMessageWebhookNormalizer,
+  type InstagramMessageWebhookNormalizer
+} from "./application/normalizers/instagram-message-webhook-normalizer.js";
+
 export type {
   NormalizedInstagramComment,
   NormalizedInstagramCommentInput,
   InstagramComment,
   InstagramCommentStatus,
-  createNormalizedInstagramComment
 } from "./domain/instagram-comment.js";
+
+export { createNormalizedInstagramComment } from "./domain/instagram-comment.js";
+
+export type {
+  InstagramMessageDirection,
+  InstagramMessageStatus,
+  NormalizedInstagramMessage,
+  NormalizedInstagramMessageInput,
+  InstagramMessage,
+  InstagramConversation
+} from "./domain/instagram-message.js";
+
+export { createNormalizedInstagramMessage } from "./domain/instagram-message.js";
 
 export {
   ListInstagramAccounts
@@ -262,3 +286,46 @@ export type {
   ResolveInstagramWebhookIdentityDependencies,
   ResolveInstagramWebhookIdentityResult
 } from "./application/use-cases/resolve-instagram-webhook-identity.js";
+
+export {
+  ProcessInstagramDirectMessage,
+  type ProcessInstagramDirectMessageInput,
+  type ProcessInstagramDirectMessageResult,
+  type ProcessInstagramDirectMessageDependencies
+} from "./application/use-cases/process-instagram-direct-message.js";
+
+export {
+  ListInstagramConversations,
+  type ListInstagramConversationsInput,
+  type ListInstagramConversationsResult,
+  type ListInstagramConversationsDependencies
+} from "./application/use-cases/list-instagram-conversations.js";
+
+export {
+  ListInstagramConversationMessages,
+  type ListInstagramConversationMessagesInput,
+  type ListInstagramConversationMessagesResult,
+  type ListInstagramConversationMessagesDependencies
+} from "./application/use-cases/list-instagram-conversation-messages.js";
+
+export {
+  MarkInstagramConversationAsRead,
+  type MarkInstagramConversationAsReadInput,
+  type MarkInstagramConversationAsReadResult,
+  type MarkInstagramConversationAsReadDependencies
+} from "./application/use-cases/mark-instagram-conversation-as-read.js";
+
+export type {
+  InstagramConversationRepository,
+  SaveInstagramConversationInput,
+  UpdateInstagramConversationInput,
+  FindInstagramConversationsInput,
+  FindInstagramConversationByIdInput
+} from "./application/ports/instagram-conversation-repository.js";
+
+export type {
+  InstagramMessageRepository,
+  SaveInstagramMessageInput,
+  FindInstagramMessagesInput,
+  FindInstagramMessageByIdInput
+} from "./application/ports/instagram-message-repository.js";
