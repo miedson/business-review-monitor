@@ -102,7 +102,7 @@ class FakeRepository implements InstagramConnectionRepository {
   async saveConnected(input: {
     tenantId: string;
     instagramUserId: string;
-    instagramProfessionalAccountId: string;
+    instagramProfessionalAccountId: string | undefined;
     username: string | undefined;
     accountType: string | undefined;
     encryptedAccessToken: string;
@@ -114,7 +114,7 @@ class FakeRepository implements InstagramConnectionRepository {
       id: "conn-1",
       tenantId: input.tenantId,
       instagramUserId: input.instagramUserId,
-      instagramProfessionalAccountId: input.instagramProfessionalAccountId,
+      instagramProfessionalAccountId: input.instagramProfessionalAccountId ?? null,
       username: input.username ?? null,
       accountType: input.accountType ?? null,
       encryptedAccessToken: input.encryptedAccessToken,
@@ -159,7 +159,7 @@ describe("CompleteInstagramOAuthCallback", () => {
     });
   });
 
-  it("resolves and persists Instagram profile ID as both user ID and professional account ID", async () => {
+  it("creates new connection with instagramUserId and null professionalAccountId", async () => {
     const state = await stateStore.create({ userId: "user-1", tenantId: "tenant-1" });
 
     const result = await callback.execute({
@@ -173,8 +173,110 @@ describe("CompleteInstagramOAuthCallback", () => {
     const connection = await repository.findByTenantId("tenant-1");
     expect(connection).not.toBeNull();
     expect(connection?.instagramUserId).toBe("25928677863496445");
-    expect(connection?.instagramProfessionalAccountId).toBe("25928677863496445");
+    expect(connection?.instagramProfessionalAccountId).toBeNull();
     expect(connection?.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
+  });
+
+  it("preserves professionalAccountId when reconnecting the same Instagram account", async () => {
+    const state = await stateStore.create({ userId: "user-1", tenantId: "tenant-1" });
+
+    await repository.saveConnected({
+      tenantId: "tenant-1",
+      instagramUserId: "25928677863496445",
+      instagramProfessionalAccountId: "17841480590934524",
+      username: "sixsysma",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted-old-token",
+      scope: "instagram_business_basic",
+      connectedAt: new Date("2024-01-01T00:00:00Z"),
+      tokenExpiresAt: undefined
+    });
+
+    const result = await callback.execute({
+      code: "valid-code",
+      state
+    });
+
+    expect(result.tenantId).toBe("tenant-1");
+    expect(result.instagramConnectionId).toBe("conn-1");
+
+    const connection = await repository.findByTenantId("tenant-1");
+    expect(connection).not.toBeNull();
+    expect(connection?.instagramUserId).toBe("25928677863496445");
+    expect(connection?.instagramProfessionalAccountId).toBe("17841480590934524");
+  });
+
+  it("nulls professionalAccountId when reconnecting a different Instagram account", async () => {
+    await repository.saveConnected({
+      tenantId: "tenant-1",
+      instagramUserId: "25928677863496445",
+      instagramProfessionalAccountId: "17841480590934524",
+      username: "sixsysma",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted-old-token",
+      scope: "instagram_business_basic",
+      connectedAt: new Date("2024-01-01T00:00:00Z"),
+      tokenExpiresAt: undefined
+    });
+
+    const differentProvider = {
+      buildAuthorizationUrl(): string {
+        return "https://instagram.com/oauth/authorize?state=test";
+      },
+      async exchangeAuthorizationCode(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+        return {
+          accessToken: "long-lived-token",
+          expiresInSeconds: 5184000,
+          scope: "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
+        };
+      },
+      async refreshAccessToken(): Promise<never> {
+        throw new Error("Not implemented");
+      },
+      async revokeAuthorization(): Promise<void> {},
+      async listAccounts(): Promise<{ accounts: BusinessProfileAccount[] }> {
+        return { accounts: [] };
+      },
+      async listLocations(): Promise<{ locations: BusinessProfileLocation[] }> {
+        return { locations: [] };
+      },
+      async listReviews(): Promise<{ reviews: BusinessReview[]; averageRating: number; totalReviewCount: number }> {
+        return { reviews: [], averageRating: 0, totalReviewCount: 0 };
+      },
+      async getUserProfile(): Promise<{ id: string; username: string; account_type: string }> {
+        return {
+          id: "999999999",
+          username: "newaccount",
+          account_type: "BUSINESS"
+        };
+      },
+      async resolveWebhookAccountId(): Promise<{ id: string; username?: string; accountType?: string }> {
+        return { id: "999999999" };
+      }
+    };
+
+    const differentState = await stateStore.create({ userId: "user-1", tenantId: "tenant-1" });
+
+    const differentCallback = new CompleteInstagramOAuthCallback({
+      provider: differentProvider,
+      stateStore,
+      tokenCipher,
+      instagramConnectionRepository: repository,
+      now: () => new Date("2024-01-01T00:00:00Z"),
+      logger: console
+    });
+
+    const result = await differentCallback.execute({
+      code: "valid-code",
+      state: differentState
+    });
+
+    expect(result.tenantId).toBe("tenant-1");
+
+    const connection = await repository.findByTenantId("tenant-1");
+    expect(connection).not.toBeNull();
+    expect(connection?.instagramUserId).toBe("999999999");
+    expect(connection?.instagramProfessionalAccountId).toBeNull();
   });
 
   it("fails with invalid state", async () => {

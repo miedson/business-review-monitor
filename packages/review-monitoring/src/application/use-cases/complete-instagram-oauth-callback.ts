@@ -104,24 +104,31 @@ export class CompleteInstagramOAuthCallback {
       accountType: profile.account_type
     });
 
-    // For Instagram API with Instagram Login, the profile.id from /me IS the Instagram user ID.
-    // The webhook entry.id uses a different ID format (IG-scoped professional account ID).
-    // We store profile.id as both instagramUserId and instagramProfessionalAccountId for now.
-    // The webhook mapping will be investigated separately per official documentation.
-    const instagramProfessionalAccountId = profile.id;
+    const existingConnection =
+      await this.dependencies.instagramConnectionRepository.findByTenantId(
+        stateData.tenantId
+      );
+
+    let instagramProfessionalAccountId: string | null = null;
+
+    if (existingConnection) {
+      if (existingConnection.instagramUserId === profile.id) {
+        instagramProfessionalAccountId = existingConnection.instagramProfessionalAccountId;
+      }
+    }
 
     logger.info({
       provider: "instagram",
-      operation: "instagram_professional_account_resolved",
+      operation: "instagram_connection_identity_initialized",
       instagramUserId: profile.id,
-      instagramProfessionalAccountId
+      hasWebhookAccountMapping: instagramProfessionalAccountId !== null
     });
 
     const instagramConnection =
       await this.dependencies.instagramConnectionRepository.saveConnected({
         tenantId: stateData.tenantId,
         instagramUserId: profile.id,
-        instagramProfessionalAccountId,
+        instagramProfessionalAccountId: instagramProfessionalAccountId ?? undefined,
         username: profile.username,
         accountType: profile.account_type,
         encryptedAccessToken,

@@ -86,8 +86,7 @@ describe("instagram integration routes", () => {
     expect(instagramConnection.encryptedAccessToken).toEqual(expect.any(String));
     expect(instagramConnection.encryptedAccessToken).not.toContain("mock-access-token");
     expect(instagramConnection.instagramUserId).toBe("mock-user-id");
-    expect(instagramConnection.instagramProfessionalAccountId).toEqual(expect.any(String));
-    expect(instagramConnection.instagramProfessionalAccountId).not.toBe("");
+    expect(instagramConnection.instagramProfessionalAccountId).toBeNull();
     expect(instagramConnection.username).toBe("mock_username");
     expect(instagramConnection.accountType).toBe("BUSINESS");
     expect(instagramConnection.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
