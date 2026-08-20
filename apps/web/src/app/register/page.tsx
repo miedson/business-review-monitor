@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, Button, Input, Alert, Text, Flex, Link as ChakraLink } from "@/lib/design-system";
+import {
+  Box,
+  Button,
+  Input,
+  Alert,
+  Text,
+  Flex,
+  Link as ChakraLink,
+  Heading,
+} from "@/lib/design-system";
 import NextLink from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState, useEffect } from "react";
@@ -8,6 +17,29 @@ import { unstable_noStore } from "next/cache";
 
 import { register } from "@/lib/api-client";
 import { storeSession, getStoredSession } from "@/lib/auth-session";
+
+const pageBackgroundCss = {
+  minH: "100vh",
+  bg: "surface.secondary",
+  backgroundImage:
+    "radial-gradient(ellipse at top, rgba(16,185,137,0.035) 0%, transparent 55%), radial-gradient(ellipse at bottom, rgba(56,182,191,0.025) 0%, transparent 55%)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  px: 4,
+  py: 8,
+};
+
+const cardCss = {
+  w: "full",
+  maxW: "440px",
+  bg: "surface.primary",
+  borderRadius: "2xl",
+  boxShadow: "xl",
+  position: "relative",
+  overflow: "hidden",
+  p: 10,
+};
 
 export default function RegisterPage() {
   unstable_noStore();
@@ -51,62 +83,35 @@ export default function RegisterPage() {
 
   if (isCheckingAuth) {
     return (
-      <Box
-        css={{
-          minH: "100vh",
-          bg: "surface.secondary",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          px: 4,
-          py: 8,
-        }}
-      >
-        <Box css={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Text>Carregando...</Text>
+      <Box css={pageBackgroundCss}>
+        <Box
+          css={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <Text color="text.secondary">Carregando...</Text>
         </Box>
       </Box>
     );
   }
 
   return (
-    <Box
-      css={{
-        minH: "100vh",
-        bg: "surface.secondary",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        px: 4,
-        py: 8,
-      }}
-    >
-      <Box
-        css={{
-          w: "full",
-          maxW: "420px",
-          bg: "surface.primary",
-          border: "1px solid",
-          borderColor: "surface.border",
-          borderRadius: "2xl",
-          boxShadow: "sm",
-          p: 8,
-        }}
-      >
-        <Box css={{ textAlign: "center", mb: 6 }}>
+    <Box css={pageBackgroundCss}>
+      <Box css={cardCss}>
+        <Box css={{ textAlign: "center", mb: 8 }}>
           <Box
             css={{
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              w: 12,
-              h: 12,
-              borderRadius: "xl",
-              bg: "brand.600",
+              w: 16,
+              h: 16,
+              borderRadius: "full",
+              backgroundImage:
+                "linear-gradient(135deg, #10b981 0%, #059669 100%)",
               color: "white",
               fontWeight: "bold",
               fontSize: "2xl",
               mb: 4,
+              boxShadow: "lg",
             }}
           >
             BRH
@@ -119,21 +124,33 @@ export default function RegisterPage() {
           </Text>
         </Box>
 
-        <Text fontSize="lg" fontWeight="semibold" color="text.primary" mb={1}>
+        <Heading as="h1" fontSize="lg" fontWeight="semibold" color="text.primary" mb={1}>
           Criar sua conta
-        </Text>
-        <Text color="text.tertiary" fontSize="sm" mb={6}>
+        </Heading>
+        <Text color="text.tertiary" fontSize="sm" mb={6} lineHeight="relaxed">
           Depois do cadastro você poderá conectar suas contas Google e Instagram.
         </Text>
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (
-            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={5}>
+            <Alert
+              tone="error"
+              onClose={() => setErrorMessage(null)}
+              dismissible
+              mb={5}
+            >
               {errorMessage}
             </Alert>
           )}
 
-          <Box css={{ display: "flex", flexDirection: "column", gap: 6, mb: 6 }}>
+          <Box
+            css={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              mb: 6,
+            }}
+          >
             <Input
               label="Nome"
               autoComplete="name"
@@ -162,6 +179,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              showPasswordToggle
             />
           </Box>
 
@@ -175,19 +193,37 @@ export default function RegisterPage() {
             Criar conta
           </Button>
 
-          <Flex css={{ justifyContent: "center", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Flex
+            css={{
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
             <Text color="text.tertiary" fontSize="sm">
               Já tem conta?
             </Text>
             <ChakraLink asChild>
-              <NextLink href="/login" passHref style={{ textDecoration: "none" }}>
-                <Text color="brand.600" fontSize="sm" fontWeight="semibold" cursor="pointer" _hover={{ textDecoration: "underline" }}>
+              <NextLink href="/login" passHref>
+                <Text
+                  as="span"
+                  color="brand.600"
+                  fontSize="sm"
+                  fontWeight="semibold"
+                  cursor="pointer"
+                  _hover={{ textDecoration: "underline" }}
+                >
                   Entrar
                 </Text>
               </NextLink>
             </ChakraLink>
           </Flex>
         </form>
+
+        <Text fontSize="xs" color="text.quaternary" textAlign="center">
+          © {new Date().getFullYear()} Business Reputation Hub
+        </Text>
       </Box>
     </Box>
   );
