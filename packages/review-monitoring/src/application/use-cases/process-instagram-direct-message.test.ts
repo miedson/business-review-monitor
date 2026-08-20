@@ -1,143 +1,101 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ProcessInstagramDirectMessage } from "./process-instagram-direct-message.js";
 import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import type { NormalizedInstagramMessage } from "@brm/review-monitoring";
+import type {
+  InstagramConversation,
+  InstagramMessage,
+  NormalizedInstagramMessage
+} from "@brm/review-monitoring";
+
+type ConversationRepoMock = {
+  findByConnectionAndParticipant: ReturnType<typeof vi.fn>;
+  save: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  findByTenant: ReturnType<typeof vi.fn>;
+  findByIdForTenant: ReturnType<typeof vi.fn>;
+  incrementUnreadCount: ReturnType<typeof vi.fn>;
+  markAsRead: ReturnType<typeof vi.fn>;
+  deleteByConnectionId: ReturnType<typeof vi.fn>;
+};
+
+type MessageRepoMock = {
+  save: ReturnType<typeof vi.fn>;
+  findByConversation: ReturnType<typeof vi.fn>;
+  findByIdForTenant: ReturnType<typeof vi.fn>;
+  findByExternalId: ReturnType<typeof vi.fn>;
+  deleteByConnectionId: ReturnType<typeof vi.fn>;
+};
+
+function createConversationRepoMock(): ConversationRepoMock {
+  return {
+    findByConnectionAndParticipant: vi.fn().mockResolvedValue(null),
+    save: vi.fn().mockResolvedValue({
+      id: "conv_1",
+      tenantId: "tenant_1",
+      instagramConnectionId: "conn_1",
+      participantExternalId: "participant_1",
+      participantUsername: "participant_1",
+      participantName: "participant_1",
+      participantProfilePictureUrl: null,
+      lastMessageAt: new Date(),
+      lastMessagePreview: "Hello",
+      unreadCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as InstagramConversation),
+    update: vi.fn().mockResolvedValue({
+      id: "conv_1",
+      tenantId: "tenant_1",
+      instagramConnectionId: "conn_1",
+      participantExternalId: "participant_1",
+      participantUsername: "participant_1",
+      participantName: "participant_1",
+      participantProfilePictureUrl: null,
+      lastMessageAt: new Date(),
+      lastMessagePreview: "Hello",
+      unreadCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as InstagramConversation),
+    findByTenant: vi.fn().mockResolvedValue({ conversations: [], nextCursor: null }),
+    findByIdForTenant: vi.fn().mockResolvedValue(null),
+    incrementUnreadCount: vi.fn().mockResolvedValue(null),
+    markAsRead: vi.fn().mockResolvedValue(null),
+    deleteByConnectionId: vi.fn().mockResolvedValue(undefined)
+  };
+}
+
+function createMessageRepoMock(): MessageRepoMock {
+  return {
+    save: vi.fn().mockResolvedValue({
+      id: "msg_1",
+      tenantId: "tenant_1",
+      instagramConversationId: "conv_1",
+      externalMessageId: "msg_ext_1",
+      senderExternalId: "sender_1",
+      recipientExternalId: "recipient_1",
+      direction: "INBOUND",
+      text: "Hello",
+      sentAtExternal: new Date(),
+      status: "DELIVERED",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as InstagramMessage),
+    findByConversation: vi.fn().mockResolvedValue({ messages: [], nextCursor: null }),
+    findByIdForTenant: vi.fn().mockResolvedValue(null),
+    findByExternalId: vi.fn().mockResolvedValue(null),
+    deleteByConnectionId: vi.fn().mockResolvedValue(undefined)
+  };
+}
 
 describe("ProcessInstagramDirectMessage", () => {
-  let conversationRepo: {
-    findByConnectionAndParticipant: (input: { instagramConnectionId: string; participantExternalId: string }) => Promise<{
-      id: string;
-      tenantId: string;
-      instagramConnectionId: string;
-      participantExternalId: string;
-      unreadCount: number;
-      lastMessageAt: Date | null;
-      lastMessagePreview: string | null;
-    } | null>;
-    save: (input: {
-      tenantId: string;
-      instagramConnectionId: string;
-      participantExternalId: string;
-      participantUsername: string | undefined;
-      participantName: string | undefined;
-      participantProfilePictureUrl: string | undefined;
-      lastMessageAt: Date | undefined;
-      lastMessagePreview: string | undefined;
-      unreadCount: number;
-    }) => Promise<{
-      id: string;
-      tenantId: string;
-      instagramConnectionId: string;
-      participantExternalId: string;
-      unreadCount: number;
-      lastMessageAt: Date | null;
-      lastMessagePreview: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-    update: (input: {
-      conversationId: string;
-      tenantId: string;
-      lastMessageAt?: Date;
-      lastMessagePreview?: string;
-      unreadCount?: number | { increment: number };
-    }) => Promise<{
-      id: string;
-      tenantId: string;
-      instagramConnectionId: string;
-      participantExternalId: string;
-      unreadCount: number;
-      lastMessageAt: Date | null;
-      lastMessagePreview: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-  };
-  let messageRepo: {
-    findByExternalId: (input: { instagramConversationId: string; externalMessageId: string }) => Promise<{
-      id: string;
-      tenantId: string;
-      instagramConversationId: string;
-      externalMessageId: string;
-      direction: "INBOUND" | "OUTBOUND";
-      senderExternalId: string;
-      recipientExternalId: string;
-      text: string | null;
-      sentAtExternal: Date | null;
-      status: string;
-      createdAt: Date;
-      updatedAt: Date;
-    } | null>;
-    save: (input: {
-      tenantId: string;
-      instagramConversationId: string;
-      externalMessageId: string;
-      senderExternalId: string;
-      recipientExternalId: string;
-      direction: "INBOUND" | "OUTBOUND";
-      text: string | undefined;
-      sentAtExternal: Date | undefined;
-      status: string;
-    }) => Promise<{
-      id: string;
-      tenantId: string;
-      instagramConversationId: string;
-      externalMessageId: string;
-      direction: "INBOUND" | "OUTBOUND";
-      senderExternalId: string;
-      recipientExternalId: string;
-      text: string | null;
-      sentAtExternal: Date | null;
-      status: string;
-      createdAt: Date;
-      updatedAt: Date;
-    }>;
-  };
+  let conversationRepo: ConversationRepoMock;
+  let messageRepo: MessageRepoMock;
   let useCase: ProcessInstagramDirectMessage;
 
   beforeEach(() => {
-    conversationRepo = {
-      findByConnectionAndParticipant: async () => null,
-      save: async () => ({
-        id: "conv_1",
-        tenantId: "tenant_1",
-        instagramConnectionId: "conn_1",
-        participantExternalId: "participant_1",
-        unreadCount: 1,
-        lastMessageAt: new Date(),
-        lastMessagePreview: "Hello",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }),
-      update: async () => ({
-        id: "conv_1",
-        tenantId: "tenant_1",
-        instagramConnectionId: "conn_1",
-        participantExternalId: "participant_1",
-        unreadCount: 1,
-        lastMessageAt: new Date(),
-        lastMessagePreview: "Hello",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-    };
-    messageRepo = {
-      findByExternalId: async () => null,
-      save: async () => ({
-        id: "msg_1",
-        tenantId: "tenant_1",
-        instagramConversationId: "conv_1",
-        externalMessageId: "msg_ext_1",
-        direction: "INBOUND",
-        senderExternalId: "sender_1",
-        recipientExternalId: "recipient_1",
-        text: "Hello",
-        sentAtExternal: new Date(),
-        status: "DELIVERED",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-    };
+    conversationRepo = createConversationRepoMock();
+    messageRepo = createMessageRepoMock();
     useCase = new ProcessInstagramDirectMessage({
       instagramConversationRepository: conversationRepo,
       instagramMessageRepository: messageRepo
@@ -193,20 +151,35 @@ describe("ProcessInstagramDirectMessage", () => {
       tokenExpiresAt: new Date()
     };
 
-    messageRepo.findByExternalId = async () => ({
+    messageRepo.findByExternalId.mockResolvedValue({
       id: "msg_1",
       tenantId: "tenant_1",
       instagramConversationId: "conv_1",
       externalMessageId: "msg_ext_1",
-      direction: "INBOUND",
       senderExternalId: "sender_1",
       recipientExternalId: "recipient_1",
+      direction: "INBOUND",
       text: "Hello",
       sentAtExternal: new Date(),
       status: "DELIVERED",
       createdAt: new Date(),
       updatedAt: new Date()
-    });
+    } as InstagramMessage);
+
+    conversationRepo.findByConnectionAndParticipant.mockResolvedValue({
+      id: "conv_1",
+      tenantId: "tenant_1",
+      instagramConnectionId: "conn_1",
+      participantExternalId: "sender_1",
+      participantUsername: "sender_1",
+      participantName: "sender_1",
+      participantProfilePictureUrl: null,
+      lastMessageAt: new Date(),
+      lastMessagePreview: "Hello",
+      unreadCount: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as InstagramConversation);
 
     const normalizedMessage: NormalizedInstagramMessage = {
       instagramAccountId: "prof_1",
