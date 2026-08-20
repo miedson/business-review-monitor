@@ -2,9 +2,10 @@
 
 import { Box, Text, Flex, Link, Avatar, AvatarFallback, Menu, MenuTrigger, MenuPositioner, MenuContent, MenuItem, MenuSeparator, Badge } from "@/lib/design-system";
 import { usePathname } from "next/navigation";
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { type ChannelProvider } from "@/lib/design-system";
 import { Home, Star, Inbox, BarChart3, Plug, Settings } from "lucide-react";
+import { AppBrand } from "@/lib/design-system/components/AppBrand";
 
 const navigationItems = [
   { href: "/dashboard", label: "Visão geral", Icon: Home },
@@ -47,6 +48,12 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
     const pathname = usePathname();
     const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
 
+    useEffect(() => {
+      if (pathname.startsWith("/settings")) {
+        setIsSettingsExpanded(true);
+      }
+    }, [pathname]);
+
     return (
       <Box
         ref={ref}
@@ -61,26 +68,8 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         }}
         aria-label="Navegação principal"
       >
-        <Box css={{ display: "flex", alignItems: "center", gap: 3, px: 5, h: "64px", borderBottom: "1px solid", borderColor: "surface.border" }}>
-          <Box
-            css={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              w: 10,
-              h: 10,
-              borderRadius: "lg",
-              bg: "brand.600",
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "lg",
-            }}
-          >
-            BRH
-          </Box>
-          <Text css={{ fontWeight: "semibold", fontSize: "lg", color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            Business Reputation Hub
-          </Text>
+        <Box css={{ px: 5, py: 3, borderBottom: "1px solid", borderColor: "surface.border" }}>
+          <AppBrand title="Business Reputation Hub" subtitle="Centralize sua reputação digital" size="sm" />
         </Box>
 
         <Flex css={{ flex: 1, flexDirection: "column", overflowY: "auto", p: 4, gap: 1, scrollbarGutter: "stable" }}>
@@ -129,9 +118,9 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
                     borderRadius: "lg",
                     fontWeight: "medium",
                     fontSize: "sm",
-                    color: isSettingsExpanded || pathname.startsWith("/settings") ? "white" : "text.secondary",
-                    bg: isSettingsExpanded || pathname.startsWith("/settings") ? "brand.600" : "transparent",
-                    _hover: { bg: isSettingsExpanded || pathname.startsWith("/settings") ? "brand.700" : "surface.tertiary", color: "text.primary" },
+                    color: pathname === "/settings" ? "white" : "text.secondary",
+                    bg: pathname === "/settings" ? "brand.600" : "transparent",
+                    _hover: { bg: pathname === "/settings" ? "brand.700" : "surface.tertiary", color: "text.primary" },
                     transition: "all 0.2s ease",
                     cursor: "pointer",
                   }}
