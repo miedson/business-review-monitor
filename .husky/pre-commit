@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "${HUSKY:-1}" = "0" ]; then
-  echo "⚠️  Skipping pre-commit validation checks (HUSKY=0)."
-  exit 0
-fi
-
 echo "🔍 Running pre-commit validation checks..."
 
 pnpm lint
