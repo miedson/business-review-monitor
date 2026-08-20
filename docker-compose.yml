@@ -21,10 +21,10 @@ services:
       WEB_URL: http://localhost:3000
       API_URL: http://localhost:3333
       GOOGLE_PROVIDER: mock
-      META_APP_ID: mock-app-id
-      META_APP_SECRET: mock-app-secret
-      META_INSTAGRAM_REDIRECT_URI: http://localhost:3333/integrations/instagram/callback
-      META_WEBHOOK_VERIFY_TOKEN: mock-webhook-token
+      # META_APP_ID: mock-app-id
+      # META_APP_SECRET: mock-app-secret
+      # META_INSTAGRAM_REDIRECT_URI: http://localhost:3333/integrations/instagram/callback
+      # META_WEBHOOK_VERIFY_TOKEN: mock-webhook-token
     ports:
       - "${API_PORT:-3333}:3333"
     volumes:
