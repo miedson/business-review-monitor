@@ -108,20 +108,20 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
           {isPassword && showPasswordToggle && (
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleTogglePassword();
-              }}
+              onClick={handleTogglePassword}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "var(--colors-text-quaternary)",
+                color: showPassword
+                  ? "var(--colors-brand-600)"
+                  : "var(--colors-text-quaternary)",
                 padding: "0 12px",
                 height: "100%",
                 background: "none",
                 border: "none",
+                borderRadius: "6px",
                 cursor: "pointer",
               }}
             >
@@ -135,7 +135,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
-              )}
+               )}
             </button>
           )}
           {rightElement && (
