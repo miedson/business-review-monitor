@@ -64,17 +64,15 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
             alignItems: "center",
             width: "100%",
             bg: "surface.primary",
-            border: "1px solid",
-            borderColor: error ? "status.error.border" : "surface.border",
             borderRadius: "md",
+            boxShadow: "sm",
             transition: "all 0.15s ease",
             position: "relative",
             _focusWithin: {
-              borderColor: error ? "status.error.border" : "brand.500",
               boxShadow: error ? "0 0 0 2px {colors.status.error.icon}.300" : "0 0 0 2px {colors.brand.500}.300",
             },
             _hover: {
-              borderColor: error ? "status.error.border" : "surface.borderStrong",
+              boxShadow: error ? "sm" : "md",
             },
             opacity: disabled ? 0.5 : 1,
           }}

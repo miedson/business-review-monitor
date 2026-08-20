@@ -242,3 +242,11 @@ export type {
   ListInstagramCommentsInput,
   ListInstagramCommentsResult
 } from "./application/use-cases/list-instagram-comments.js";
+
+export {
+  DiagnoseInstagramIdentity
+} from "./application/use-cases/diagnose-instagram-identity.js";
+export type {
+  DiagnoseInstagramIdentityDependencies,
+  InstagramIdentityDiagnosisResult
+} from "./application/use-cases/diagnose-instagram-identity.js";
