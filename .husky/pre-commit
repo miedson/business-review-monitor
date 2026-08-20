@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "${HUSKY:-1}" = "0" ]; then
+  echo "⚠️  Skipping pre-commit validation checks (HUSKY=0)."
+  exit 0
+fi
+
+echo "🔍 Running pre-commit validation checks..."
+
+pnpm lint
+
+pnpm check:deploy
+
+if command -v pg_isready >/dev/null 2>&1 && pg_isready -q -h 127.0.0.1 -p 5432 2>/dev/null; then
+  pnpm test
+else
+  echo "⚠️  PostgreSQL not available on 127.0.0.1:5432, skipping tests."
+  echo "   Start PostgreSQL or run: pnpm test"
+fi
+
+echo "✅ All validation checks passed. Proceeding with commit."
