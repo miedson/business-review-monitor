@@ -12,7 +12,7 @@ type Logger = {
 export type InstagramIdentityDiagnosisResult = {
   username: string;
   oauthProfileId: string;
-  webhookEntryId?: string;
+  webhookEntryId: string | undefined;
   profileEndpoint: {
     endpoint: string;
     httpStatus: number;
@@ -34,6 +34,8 @@ export type DiagnoseInstagramIdentityDependencies = {
   instagramConnectionRepository: InstagramConnectionRepository;
   provider: InstagramReviewProvider;
   tokenCipher: TokenCipher;
+  graphApiBase: string;
+  graphApiVersion: string;
   logger?: Logger;
 };
 
@@ -59,14 +61,14 @@ export class DiagnoseInstagramIdentity {
 
     if (!connection) {
       throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_CONNECTION_NOT_FOUND",
+        "INSTAGRAM_ACCOUNT_NOT_FOUND",
         "Instagram connection not found for tenant"
       );
     }
 
     if (!connection.encryptedAccessToken) {
       throw new GoogleBusinessProfileProviderError(
-        "INSTAGRAM_TOKEN_MISSING",
+        "INSTAGRAM_AUTH_REQUIRED",
         "Instagram access token not available"
       );
     }
@@ -80,13 +82,8 @@ export class DiagnoseInstagramIdentity {
       hasToken: accessToken.length > 0
     });
 
-    const providerOptions = (this.dependencies.provider as Record<string, unknown>) as {
-      graphApiVersion?: string;
-      graphApiBase?: string;
-    };
-
-    const apiVersion = providerOptions.graphApiVersion ?? "v21.0";
-    const graphApiBase = providerOptions.graphApiBase ?? "https://graph.instagram.com";
+    const apiVersion = this.dependencies.graphApiVersion;
+    const graphApiBase = this.dependencies.graphApiBase;
 
     const profileResult = await this.callProfileEndpoint(
       accessToken,
