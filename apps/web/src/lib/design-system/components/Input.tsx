@@ -44,7 +44,9 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
       setShowPassword((prev) => !prev);
     };
 
-    const inputType: InputType = isPassword && !showPassword ? "password" : (providedType ?? "text");
+    const inputType: InputType = isPassword
+      ? (showPassword ? "text" : "password")
+      : (providedType ?? "text");
 
     const describedBy = [error && errorId, hint && hintId].filter(Boolean).join(" ") || undefined;
 
