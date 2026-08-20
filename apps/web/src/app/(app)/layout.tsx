@@ -183,6 +183,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
               flex: 1,
               p: { base: 4, md: 6 },
               overflowX: "hidden",
+              overflowY: "auto",
+              scrollbarGutter: "stable",
             }}
           >
             {children}

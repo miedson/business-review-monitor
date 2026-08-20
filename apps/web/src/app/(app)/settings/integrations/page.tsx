@@ -323,7 +323,7 @@ export default function IntegrationsPage() {
           <Box
             css={{
               display: "flex",
-              alignItems: "flexStart",
+              alignItems: "flex-start",
               gap: 3,
               p: 3,
               borderRadius: "lg",
@@ -368,7 +368,7 @@ export default function IntegrationsPage() {
           <Box
             css={{
               display: "flex",
-              alignItems: "flexStart",
+              alignItems: "flex-start",
               gap: 3,
               p: 3,
               borderRadius: "lg",

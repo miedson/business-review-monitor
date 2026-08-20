@@ -138,8 +138,8 @@ export default function InboxPage() {
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
 
   return (
-    <Box css={{ display: "flex", height: "calc(100vh - 200px)", minHeight: "400px", border: "1px solid", borderColor: "surface.border", borderRadius: "xl", overflow: "hidden" }}>
-      <Box css={{ width: "320px", borderRight: "1px solid", borderColor: "surface.border", display: "flex", flexDirection: "column", bg: "surface.primary" }}>
+    <Box css={{ display: "flex", height: "calc(100vh - 200px)", minHeight: "400px", border: "1px solid", borderColor: "surface.border", borderRadius: "xl", overflow: "hidden", bg: "surface.primary", boxShadow: "sm" }}>
+      <Box css={{ width: "320px", borderRight: "1px solid", borderColor: "surface.border", display: "flex", flexDirection: "column" }}>
         <Box css={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "surface.border" }}>
           <Text css={{ fontSize: "lg", fontWeight: "semibold", color: "text.primary" }}>
             Mensagens
@@ -148,7 +148,7 @@ export default function InboxPage() {
             Instagram Direct
           </Text>
         </Box>
-        <Box css={{ flex: 1, overflowY: "auto" }}>
+        <Box css={{ flex: 1, overflowY: "auto", scrollbarGutter: "stable" }}>
           {conversations.length === 0 && !loadingConversations && (
             <Box css={{ p: 4 }}>
               <EmptyState
@@ -257,7 +257,7 @@ export default function InboxPage() {
                 </Box>
               </Flex>
             </Box>
-            <Box css={{ flex: 1, overflowY: "auto", p: 4, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box css={{ flex: 1, overflowY: "auto", p: 4, display: "flex", flexDirection: "column", gap: 3, scrollbarGutter: "stable" }}>
               {messages.map((message) => {
                 const isInbound = message.direction === "INBOUND";
                 const time = new Date(message.sentAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -266,7 +266,7 @@ export default function InboxPage() {
                   <Box
                     key={message.id}
                     css={{
-                      alignSelf: isInbound ? "flexStart" : "flexEnd",
+                      alignSelf: isInbound ? "flex-start" : "flex-end",
                       maxW: "70%",
                       bg: isInbound ? "surface.primary" : "brand.600",
                       color: isInbound ? "text.primary" : "white",

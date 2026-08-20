@@ -121,7 +121,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
           }}
           className={className}
         >
-          <Box css={{ display: "flex", alignItems: "flexStart", gap: 4, width: "full", mb: 4, flexWrap: "wrap" }}>
+          <Box css={{ display: "flex", alignItems: "flex-start", gap: 4, width: "full", mb: 4, flexWrap: "wrap" }}>
             <Box
               css={{
                 display: "flex",
@@ -186,7 +186,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
             css={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "flexStart",
+              justifyContent: "flex-start",
               gap: 2,
               mt: 6,
               pt: 4,

@@ -106,7 +106,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
                 py={4}
                 borderTop="1px solid"
                 borderColor="surface.border"
-                justifyContent="flexEnd"
+                justifyContent="flex-end"
               >
                 {actionButtons}
               </DialogFooter>

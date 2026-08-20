@@ -96,7 +96,7 @@ export function GoogleOnboardingContent() {
         </Text>
 
         <Box css={{ bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "2xl", boxShadow: "sm", p: { base: 5, md: 6 } }}>
-          <Box css={{ display: "flex", alignItems: "flexStart", gap: 4, mb: 6 }}>
+          <Box css={{ display: "flex", alignItems: "flex-start", gap: 4, mb: 6 }}>
             <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", w: 12, h: 12, borderRadius: "lg", bg: "blue.50", color: "blue.600", flexShrink: 0 }}>
               <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

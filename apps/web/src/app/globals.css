@@ -66,21 +66,30 @@ input {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom scrollbar for dark mode */
-[data-theme="dark"] ::-webkit-scrollbar {
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--colors-surface-borderStrong) transparent;
+}
+
+*::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-track {
-  background: var(--colors-surface-secondary);
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: var(--colors-surface-borderStrong);
   border-radius: 4px;
 }
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: var(--colors-text-quaternary);
 }

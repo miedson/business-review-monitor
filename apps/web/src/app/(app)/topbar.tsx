@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Flex, Text, Link } from "@chakra-ui/react";
+import { Box, Flex, Text, Link } from "@/lib/design-system";
 import { forwardRef } from "react";
 import { ThemeToggle } from "@/lib/design-system/components/ThemeToggle";
 
@@ -53,7 +53,7 @@ const Topbar = forwardRef<HTMLDivElement, TopbarProps>(
                   {breadcrumb.map((item, index) => (
                     <Flex key={item.href ?? item.label} css={{ alignItems: "center", gap: 1 }}>
                       {index > 0 && (
-                        <Text css={{ color: "text.quaternary", fontSize: "sm" }}>›</Text>
+                        <Text css={{ color: "text.quaternary", fontSize: "sm" }}>/</Text>
                       )}
                       {item.href ? (
                         <Link

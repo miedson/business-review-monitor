@@ -2,68 +2,24 @@
 
 import { Box, Text, Flex, Link, Avatar, AvatarFallback, Menu, MenuTrigger, MenuPositioner, MenuContent, MenuItem, MenuSeparator, Badge } from "@/lib/design-system";
 import { usePathname } from "next/navigation";
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { type ChannelProvider } from "@/lib/design-system";
-
-const HomeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const SettingsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
-const CogIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
-const InboxIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 10V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4" />
-    <path d="M21 14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <path d="M4 12s4-2 7-2 7 2 7 2" />
-    <path d="M9 6v4" />
-    <path d="M15 6v4" />
-  </svg>
-);
-
-const ChartIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg">
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
-  </svg>
-);
+import { Home, Star, Inbox, BarChart3, Plug, Settings } from "lucide-react";
 
 const navigationItems = [
-  { href: "/dashboard", label: "Visão geral", Icon: HomeIcon },
-  { href: "/inbox", label: "Inbox", Icon: InboxIcon },
-  { href: "/reviews", label: "Avaliações", Icon: StarIcon },
-  { href: "/instagram/comments", label: "Comentários Instagram", Icon: InboxIcon },
+  { href: "/dashboard", label: "Visão geral", Icon: Home },
+  { href: "/inbox", label: "Inbox", Icon: Inbox },
+  { href: "/reviews", label: "Avaliações", Icon: Star },
+  { href: "/instagram/comments", label: "Comentários Instagram", Icon: Inbox },
 ] as const;
 
 const settingsSubItems = [
-  { href: "/settings/integrations", label: "Integrações", Icon: SettingsIcon },
-  { href: "/settings", label: "Configurações gerais", Icon: CogIcon },
+  { href: "/settings/integrations", label: "Integrações", Icon: Plug },
+  { href: "/settings", label: "Configurações gerais", Icon: Settings },
 ] as const;
 
 const futureItems = [
-  { label: "Relatórios", Icon: ChartIcon, comingSoon: true },
+  { label: "Relatórios", Icon: BarChart3, comingSoon: true },
 ] as const;
 
 interface SidebarProps {
@@ -89,6 +45,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
     ref
   ) => {
     const pathname = usePathname();
+    const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
 
     return (
       <Box
@@ -126,7 +83,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
           </Text>
         </Box>
 
-        <Flex css={{ flex: 1, flexDirection: "column", overflowY: "auto", p: 4, gap: 1 }}>
+        <Flex css={{ flex: 1, flexDirection: "column", overflowY: "auto", p: 4, gap: 1, scrollbarGutter: "stable" }}>
           <nav aria-label="Navegação principal">
             <Flex css={{ flexDirection: "column", gap: 1 }}>
               {navigationItems.map((item) => {
@@ -158,61 +115,82 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
                 );
               })}
 
-              <Menu.Root>
-                <MenuTrigger asChild>
-                  <Link
-                    href="/settings"
-                    onClick={onClose}
+              <Box>
+                <Box
+                  role="button"
+                  aria-expanded={isSettingsExpanded}
+                  onClick={() => setIsSettingsExpanded((prev) => !prev)}
+                  css={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 3,
+                    px: 3,
+                    py: 2.5,
+                    borderRadius: "lg",
+                    fontWeight: "medium",
+                    fontSize: "sm",
+                    color: isSettingsExpanded || pathname.startsWith("/settings") ? "white" : "text.secondary",
+                    bg: isSettingsExpanded || pathname.startsWith("/settings") ? "brand.600" : "transparent",
+                    _hover: { bg: isSettingsExpanded || pathname.startsWith("/settings") ? "brand.700" : "surface.tertiary", color: "text.primary" },
+                    transition: "all 0.2s ease",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Settings size={20} />
+                  Configurações
+                  <Box
                     css={{
+                      marginLeft: "auto",
                       display: "flex",
                       alignItems: "center",
-                      gap: 3,
-                      px: 3,
-                      py: 2.5,
-                      borderRadius: "lg",
-                      fontWeight: "medium",
-                      fontSize: "sm",
-                      color: pathname.startsWith("/settings") ? "white" : "text.secondary",
-                      bg: pathname.startsWith("/settings") ? "brand.600" : "transparent",
-                      _hover: { bg: pathname.startsWith("/settings") ? "brand.700" : "surface.tertiary", color: "text.primary" },
-                      transition: "all 0.15s ease",
+                      transition: "transform 0.25s ease",
+                      transform: isSettingsExpanded ? "rotate(180deg)" : "rotate(0deg)",
                     }}
-                    aria-current={pathname.startsWith("/settings") ? "page" : undefined}
                   >
-                    <CogIcon />
-                    Configurações
-                    <Box css={{ marginLeft: "auto" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </Box>
-                  </Link>
-                </MenuTrigger>
-                <MenuPositioner>
-                  <MenuContent css={{ minW: "200px", borderRadius: "lg", boxShadow: "lg", border: "1px solid", borderColor: "surface.border", mt: 1, ml: -4 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </Box>
+                </Box>
+                <Box
+                  css={{
+                    overflow: "hidden",
+                    maxHeight: isSettingsExpanded ? "200px" : "0px",
+                    opacity: isSettingsExpanded ? 1 : 0,
+                    transition: "max-height 0.3s ease, opacity 0.25s ease",
+                  }}
+                >
+                  <Box css={{ display: "flex", flexDirection: "column", gap: 0.5, pt: 0.5, pb: 0.5 }}>
                     {settingsSubItems.map((item) => {
                       const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                       return (
-                        <MenuItem
+                        <Link
                           key={item.href}
-                          value={item.href}
-                          asChild
-                          css={{ px: 3, py: 2, fontSize: "sm", color: isActive ? "brand.600" : "text.secondary", _hover: { bg: isActive ? "brand.50" : "surface.tertiary", color: "text.primary" }, fontWeight: isActive ? "semibold" : "medium" }}
+                          href={item.href}
+                          onClick={onClose}
+                          css={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            px: 3,
+                            py: 2,
+                            borderRadius: "md",
+                            fontSize: "sm",
+                            color: isActive ? "brand.600" : "text.secondary",
+                            bg: isActive ? "brand.50" : "transparent",
+                            _hover: { bg: isActive ? "brand.50" : "surface.tertiary", color: "text.primary" },
+                            fontWeight: isActive ? "semibold" : "medium",
+                            transition: "all 0.15s ease",
+                          }}
                         >
-                          <Link
-                            href={item.href}
-                            onClick={onClose}
-                            css={{ display: "flex", alignItems: "center", gap: 2, width: "full" }}
-                          >
-                            <item.Icon />
-                            {item.label}
-                          </Link>
-                        </MenuItem>
+                          <item.Icon />
+                          {item.label}
+                        </Link>
                       );
                     })}
-                  </MenuContent>
-                </MenuPositioner>
-              </Menu.Root>
+                  </Box>
+                </Box>
+              </Box>
             </Flex>
           </nav>
 

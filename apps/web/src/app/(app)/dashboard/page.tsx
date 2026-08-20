@@ -2,6 +2,7 @@
 
 import { Box, Text, Card, CardHeader, CardTitle, CardDescription, CardBody, CardFooter, Badge, Button, Flex, Alert, EmptyState, Link } from "@/lib/design-system";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getStoredSession } from "@/lib/auth-session";
 import {
   listGoogleAccounts,
@@ -37,6 +38,7 @@ interface GoogleReview {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [session, setSession] = useState<ReturnType<typeof getStoredSession>>(null);
   const [providers, setProviders] = useState<("google" | "instagram" | "facebook")[]>([]);
   const [googleAccounts, setGoogleAccounts] = useState<GoogleAccount[]>([]);
@@ -50,11 +52,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const stored = getStoredSession();
     if (!stored) {
-      window.location.href = "/login";
+      router.replace("/login");
     } else {
       setSession(stored);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -328,7 +330,7 @@ export default function DashboardPage() {
                             ) : (
                             <Flex css={{ flexDirection: "column", gap: 4 }}>
                                    {googleReviews.slice(0, 5).map((review) => (
-                                      <Box key={review.id} css={{ p: 5, bg: "surface.tertiary", borderRadius: "lg", border: "1px solid", borderColor: "surface.border" }}>
+                                       <Box key={review.id} css={{ p: 5, bg: "surface.tertiary", borderRadius: "lg", border: "1px solid", borderColor: "surface.border", boxShadow: "sm" }}>
                                       <Flex css={{ justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
                                       <Text fontWeight="semibold" color="text.primary">{starRatingLabel(review.starRating)}</Text>
                                       <Text fontSize="sm" color="text.tertiary">{formatDate(review.updatedAt)}</Text>
