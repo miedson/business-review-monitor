@@ -33,6 +33,15 @@ export function ThemeProvider({ children, initialThemeMode = "system" }: ThemePr
     updateThemeClass(saved);
   }, []);
 
+  useEffect(() => {
+    if (themeMode !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncWithSystemTheme = () => updateThemeClass("system");
+    mediaQuery.addEventListener("change", syncWithSystemTheme);
+    return () => mediaQuery.removeEventListener("change", syncWithSystemTheme);
+  }, [themeMode]);
+
   const setThemeMode = (mode: ThemeMode) => {
     setThemeModeState(mode);
     setStoredTheme(mode);

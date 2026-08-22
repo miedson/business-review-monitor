@@ -21,8 +21,8 @@ const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
         css={{
           width,
           height,
-          borderRadius: variant === "circular" ? "full" : variant === "text" ? "full" : "md",
-          minH: variant === "text" ? "1rem" : variant === "card" ? "200px" : undefined,
+          borderRadius: variant === "circular" ? "full" : variant === "card" ? "xl" : "sm",
+          minH: variant === "text" && !height ? "1rem" : variant === "card" ? "160px" : undefined,
           maxW: variant === "text" ? "full" : undefined,
         }}
         {...rest}
