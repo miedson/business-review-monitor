@@ -24,6 +24,8 @@ import type { AppConfig } from "@brm/config";
 import { SyncGoogleReviewsJob } from "./jobs/sync-google-reviews-job.js";
 import { CleanupExpiredReviewCacheJob } from "./jobs/cleanup-expired-review-cache-job.js";
 import { ProcessMetaWebhookEventJob } from "./jobs/process-meta-webhook-event-job.js";
+import { RedisRealtimeEventPublisher } from "./realtime-publisher.js";
+import { createRedisClient } from "./redis-connection.js";
 
 export function createSyncGoogleReviewsJob(
   config: AppConfig
@@ -95,6 +97,9 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
     resolveWebhookIdentity,
     conversationRepository,
     messageRepository,
-    processDirectMessage
+    processDirectMessage,
+    undefined,
+    undefined,
+    new RedisRealtimeEventPublisher(createRedisClient(config.REDIS_URL))
   );
 }

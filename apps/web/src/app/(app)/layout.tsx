@@ -18,12 +18,14 @@ import { useEffect, useState } from "react";
 import { getStoredSession, clearStoredSession } from "@/lib/auth-session";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
+import { useBrhRealtime } from "@/lib/use-brh-realtime";
 
 interface AppLayoutProps {
   children: React.ReactNode;
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  useBrhRealtime();
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

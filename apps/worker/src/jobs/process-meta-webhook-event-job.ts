@@ -90,6 +90,7 @@ type JobMessage = NonNullable<JobEntry["messaging"]>[0];
 export type ProcessMetaWebhookEventUseCase = {
   execute(input: ProcessMetaWebhookEventJobData): Promise<void>;
 };
+export type RealtimeEventPublisher = { publish(event: { tenantId: string; type: string; payload: Record<string, string> }): Promise<void> };
 
 export class ProcessMetaWebhookEventJob {
   constructor(
@@ -108,7 +109,8 @@ export class ProcessMetaWebhookEventJob {
     private readonly instagramMessageRepository: InstagramMessageRepository,
     private readonly processInstagramDirectMessage: ProcessInstagramDirectMessage,
     private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer(),
-    private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer()
+    private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer(),
+    private readonly realtimeEventPublisher?: RealtimeEventPublisher
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -283,6 +285,7 @@ export class ProcessMetaWebhookEventJob {
     if (normalizedComment.createdAtExternal !== undefined) upsertInput.createdAtExternal = normalizedComment.createdAtExternal;
 
     const comment = await this.instagramCommentRepository.upsert(upsertInput);
+    await this.realtimeEventPublisher?.publish({ tenantId: comment.tenantId, type: "instagram.comment.created", payload: { commentId: comment.id, instagramConnectionId: comment.instagramConnectionId } });
 
     logInfo("instagram_comment_persisted", {
       requestId,

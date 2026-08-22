@@ -12,6 +12,7 @@ import {
   SelectBusinessLocation
 } from "@brm/review-monitoring";
 import type { BusinessProfileReviewProvider, BusinessLocationRepository, GoogleConnectionRepository, ReviewCacheRepository, TokenCipher } from "@brm/review-monitoring";
+import type { RealtimeGateway } from "./realtime-gateway.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService } from "../auth/auth.service.js";
@@ -297,6 +298,7 @@ export type RegisterGoogleIntegrationRoutesOptions = {
   businessLocationRepository: BusinessLocationRepository;
   reviewCacheRepository: ReviewCacheRepository;
   tokenCipher: TokenCipher;
+  realtimeGateway: RealtimeGateway;
   selectBusinessLocation: SelectBusinessLocation;
   disconnectGoogleConnection: DisconnectGoogleConnection;
   webUrl: string;
@@ -509,6 +511,7 @@ export function registerGoogleIntegrationRoutes(
       if (!connection?.encryptedRefreshToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Google connection is required", requestId: request.id });
       const refreshToken = options.tokenCipher.decrypt(connection.encryptedRefreshToken); const tokenSet = await options.googleProvider.refreshAccessToken({ refreshToken });
       await options.googleProvider.replyToReview({ accessToken: tokenSet.accessToken, accountId: body.accountId, locationId: body.locationId, reviewId: request.params.reviewId, message: body.message });
+      await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "google.review.replied", payload: { reviewId: request.params.reviewId, locationId: body.locationId } });
       return reply.send({ reviewId: request.params.reviewId, replied: true });
     }
   );

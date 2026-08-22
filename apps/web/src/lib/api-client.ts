@@ -3,6 +3,7 @@ import { clearStoredSession, storeSession } from "./auth-session";
 
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:3333";
+export const getApiBaseUrl = (): string => apiBaseUrl;
 
 const authUserSchema = z.object({
   id: z.string(),

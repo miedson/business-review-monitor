@@ -62,6 +62,8 @@ import {
 } from "../modules/integrations/redis-connection.js";
 import { RedisManualSyncRateLimiter } from "../modules/integrations/redis-manual-sync-rate-limiter.js";
 import { registerAttentionSummaryRoute } from "../modules/integrations/attention-summary.routes.js";
+import { RealtimeGateway } from "../modules/integrations/realtime-gateway.js";
+import { registerRealtimeRoute } from "../modules/integrations/realtime.routes.js";
 
 export type BuildApiOptions = {
   config?: AppConfig;
@@ -287,6 +289,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     tokenCipher
   });
   const redis = createRedisClient(config.REDIS_URL);
+  const realtimeGateway = new RealtimeGateway(redis);
   const googleReviewSyncQueue = new Queue(googleReviewSyncQueueName, {
     connection: createBullMqConnection(config.REDIS_URL),
     prefix: config.BRM_QUEUE_PREFIX
@@ -296,6 +299,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     prefix: config.BRM_QUEUE_PREFIX
   });
   app.addHook("onClose", async () => {
+    await realtimeGateway.close();
     await googleReviewSyncQueue.close();
     await metaWebhookQueue.close();
     redis.disconnect();
@@ -318,6 +322,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
 
   registerAuthRoutes(app, authService);
   registerAttentionSummaryRoute(app, { prisma, authService });
+  registerRealtimeRoute(app, { gateway: realtimeGateway, authService });
   registerGoogleIntegrationRoutes(app, {
     authService,
     startGoogleOAuthConnection,
@@ -331,6 +336,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     businessLocationRepository,
     reviewCacheRepository,
     tokenCipher,
+    realtimeGateway,
     selectBusinessLocation,
     disconnectGoogleConnection,
     webUrl: config.WEB_URL
@@ -349,7 +355,8 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     instagramCommentRepository,
     instagramConnectionRepository,
     instagramProvider,
-    tokenCipher
+    tokenCipher,
+    realtimeGateway
   });
 
   registerInboxRoutes(app, {

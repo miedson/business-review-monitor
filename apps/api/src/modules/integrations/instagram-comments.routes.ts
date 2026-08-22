@@ -5,6 +5,7 @@ import type {
   ListInstagramCommentsInput
 } from "@brm/review-monitoring";
 import type { InstagramReviewProvider, InstagramConnectionRepository, TokenCipher } from "@brm/review-monitoring";
+import type { RealtimeGateway } from "./realtime-gateway.js";
 
 const listInstagramCommentsQuerySchema = z.object({
   instagramConnectionId: z.string().optional(),
@@ -81,6 +82,7 @@ export type RegisterInstagramCommentsRoutesOptions = {
   instagramConnectionRepository: InstagramConnectionRepository;
   instagramProvider: InstagramReviewProvider;
   tokenCipher: TokenCipher;
+  realtimeGateway: RealtimeGateway;
 };
 
 export function registerInstagramCommentsRoutes(
@@ -158,6 +160,7 @@ export function registerInstagramCommentsRoutes(
     const accessToken = options.tokenCipher.decrypt(connection.encryptedAccessToken);
     const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
     await options.instagramCommentRepository.markReplied({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
+    await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "instagram.comment.replied", payload: { commentId: comment.id } });
     return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });
   });
 }
