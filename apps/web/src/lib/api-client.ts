@@ -392,22 +392,25 @@ async function requestJson(path: string, options: RequestOptions = {}): Promise<
   const response = await sendRequest(path, options);
 
   if (response.status === 401 && options.accessToken && path !== "/auth/refresh") {
+    let session: AuthResponse;
+
     try {
-      const session = await refreshSession();
-      const retriedResponse = await sendRequest(path, {
-        ...options,
-        accessToken: session.accessToken,
-      });
-
-      if (!retriedResponse.ok) {
-        throw new Error(await readErrorMessage(retriedResponse));
-      }
-
-      return readResponseBody(retriedResponse);
+      session = await refreshSession();
     } catch {
       clearStoredSession();
       throw new Error("Authentication required");
     }
+
+    const retriedResponse = await sendRequest(path, {
+      ...options,
+      accessToken: session.accessToken,
+    });
+
+    if (!retriedResponse.ok) {
+      throw new Error(await readErrorMessage(retriedResponse));
+    }
+
+    return readResponseBody(retriedResponse);
   }
 
   if (!response.ok) {

@@ -53,6 +53,7 @@ export type AuthServiceOptions = {
   jwt: JwtSigner;
   refreshSecret: string;
   secureCookies: boolean;
+  refreshCookieSameSite: "lax" | "none";
 };
 
 export class AuthService {
@@ -66,7 +67,7 @@ export class AuthService {
     return {
       httpOnly: true,
       secure: this.options.secureCookies,
-      sameSite: "lax" as const,
+      sameSite: this.options.refreshCookieSameSite,
       path: "/auth",
       maxAge: 7 * 24 * 60 * 60
     };
@@ -76,7 +77,7 @@ export class AuthService {
     return {
       httpOnly: true,
       secure: this.options.secureCookies,
-      sameSite: "lax" as const,
+      sameSite: this.options.refreshCookieSameSite,
       path: "/auth"
     };
   }

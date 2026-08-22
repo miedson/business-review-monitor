@@ -186,7 +186,8 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     userRepository,
     jwt: app.jwt,
     refreshSecret: config.JWT_REFRESH_SECRET,
-    secureCookies: isProduction
+    secureCookies: isProduction,
+    refreshCookieSameSite: isProduction ? "none" : "lax"
   });
   const googleProvider =
     config.GOOGLE_PROVIDER === "mock"

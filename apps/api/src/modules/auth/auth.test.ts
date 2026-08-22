@@ -226,6 +226,31 @@ describe("auth routes", () => {
     await app.close();
   });
 
+  it("sets a cross-site refresh cookie in production", async () => {
+    const app = await buildApi({
+      config: {
+        ...testConfig,
+        NODE_ENV: "production"
+      }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/auth/register",
+      payload: {
+        name: "Auth Test",
+        email: testEmail,
+        password: "password123"
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(String(response.headers["set-cookie"])).toContain("SameSite=None");
+    expect(String(response.headers["set-cookie"])).toContain("Secure");
+
+    await app.close();
+  });
+
   it("rejects invalid register payloads", async () => {
     const app = await buildApi({ config: testConfig });
 
