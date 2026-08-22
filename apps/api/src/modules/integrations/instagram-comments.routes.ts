@@ -185,12 +185,23 @@ export function registerInstagramCommentsRoutes(
       return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });
     } catch (error) {
       if (error instanceof GoogleBusinessProfileProviderError) {
+        if (isUnavailableInstagramCommentError(error)) {
+          return reply.status(409).send({ error: "Este comentário não está mais disponível no Instagram e não pode receber resposta.", code: "INSTAGRAM_COMMENT_UNAVAILABLE", requestId: request.id });
+        }
         const status = error.code === "INSTAGRAM_AUTH_REQUIRED" || error.code === "INSTAGRAM_TOKEN_REVOKED" ? 401 : error.code === "INSTAGRAM_PERMISSION_DENIED" ? 403 : error.code === "INSTAGRAM_RATE_LIMITED" ? 429 : 502;
         return reply.status(status).send({ error: error.message, code: error.code, requestId: request.id });
       }
       throw error;
     }
   });
+}
+
+function isUnavailableInstagramCommentError(error: unknown): boolean {
+  if (!(error instanceof GoogleBusinessProfileProviderError)) return false;
+  const cause = error.cause;
+  if (!cause || typeof cause !== "object") return false;
+  const details = cause as { httpStatus?: unknown; metaError?: { code?: unknown; error_subcode?: unknown } };
+  return details.httpStatus === 400 && details.metaError?.code === 100 && details.metaError.error_subcode === 33;
 }
 
 async function getAuthenticatedUserId(

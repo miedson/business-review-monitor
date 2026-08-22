@@ -228,7 +228,11 @@ export class InstagramApiProvider implements InstagramReviewProvider {
         responseKeys: isObject(payload) ? Object.keys(payload) : [],
         metaError: sanitizeGraphError(payload)
       });
-      throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram comment reply request failed");
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram comment reply request failed",
+        { httpStatus: response.status, metaError: sanitizeGraphError(payload) }
+      );
     }
     return { id: payload.id };
   }
