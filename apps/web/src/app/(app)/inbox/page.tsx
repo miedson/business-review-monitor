@@ -268,6 +268,7 @@ function ConversationRow({
           w: 9,
           h: 9,
           borderRadius: "full",
+          overflow: "hidden",
           flexShrink: 0,
           bg: "surface.tertiary",
           color: "text.secondary",

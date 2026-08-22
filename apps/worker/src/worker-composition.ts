@@ -101,8 +101,8 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
       );
       return {
         username: profile.username,
-        name: profile.name,
-        profilePictureUrl: profile.profile_pic,
+        ...(profile.name ? { name: profile.name } : {}),
+        ...(profile.profile_pic ? { profilePictureUrl: profile.profile_pic } : {}),
       };
     },
   });
