@@ -92,6 +92,19 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
   const processDirectMessage = new ProcessInstagramDirectMessage({
     instagramConversationRepository: conversationRepository,
     instagramMessageRepository: messageRepository,
+    resolveParticipantProfile: async ({ connection, participantExternalId }) => {
+      if (!instagramProvider.getExternalUserProfile || !connection.encryptedAccessToken)
+        return null;
+      const profile = await instagramProvider.getExternalUserProfile(
+        tokenCipher.decrypt(connection.encryptedAccessToken),
+        participantExternalId,
+      );
+      return {
+        username: profile.username,
+        name: profile.name,
+        profilePictureUrl: profile.profile_pic,
+      };
+    },
   });
 
   return new ProcessMetaWebhookEventJob(

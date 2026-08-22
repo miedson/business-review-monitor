@@ -18,6 +18,9 @@ export type UpdateInstagramConversationInput = {
   lastMessageAt: Date | undefined;
   lastMessagePreview: string | undefined;
   unreadCount: number | { increment: number } | undefined;
+  participantUsername?: string | undefined;
+  participantName?: string | undefined;
+  participantProfilePictureUrl?: string | undefined;
 };
 
 export type FindInstagramConversationsInput = {

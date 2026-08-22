@@ -274,7 +274,17 @@ function ConversationRow({
           fontWeight: "medium",
         }}
       >
-        {name.slice(0, 2).toUpperCase()}
+        {conversation.participant.profilePictureUrl ? (
+          <img
+            src={conversation.participant.profilePictureUrl}
+            alt=""
+            width="36"
+            height="36"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          name.slice(0, 2).toUpperCase()
+        )}
       </Box>
       <Box css={{ flex: 1, minW: 0 }}>
         <Flex css={{ justifyContent: "space-between", gap: 3, flexWrap: "wrap" }}>

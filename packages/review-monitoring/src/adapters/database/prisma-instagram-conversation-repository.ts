@@ -36,6 +36,11 @@ export class PrismaInstagramConversationRepository implements InstagramConversat
     if (input.lastMessageAt !== undefined) data.lastMessageAt = input.lastMessageAt;
     if (input.lastMessagePreview !== undefined) data.lastMessagePreview = input.lastMessagePreview;
     if (input.unreadCount !== undefined) data.unreadCount = input.unreadCount;
+    if (input.participantUsername !== undefined)
+      data.participantUsername = input.participantUsername;
+    if (input.participantName !== undefined) data.participantName = input.participantName;
+    if (input.participantProfilePictureUrl !== undefined)
+      data.participantProfilePictureUrl = input.participantProfilePictureUrl;
 
     const conversation = await this.prisma.instagramConversation.update({
       where: { id: input.conversationId },

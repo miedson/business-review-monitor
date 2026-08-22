@@ -26,6 +26,14 @@ export type ProcessInstagramDirectMessageResult = {
 export type ProcessInstagramDirectMessageDependencies = {
   instagramConversationRepository: InstagramConversationRepository;
   instagramMessageRepository: InstagramMessageRepository;
+  resolveParticipantProfile?: (input: {
+    connection: StoredInstagramConnection;
+    participantExternalId: string;
+  }) => Promise<{
+    username?: string;
+    name?: string;
+    profilePictureUrl?: string;
+  } | null>;
   logger?: Logger;
 };
 
@@ -48,6 +56,13 @@ export class ProcessInstagramDirectMessage {
         participantExternalId,
       });
 
+    const shouldResolveProfile =
+      this.dependencies.resolveParticipantProfile &&
+      (!conversation?.participantUsername || !conversation.participantProfilePictureUrl);
+    const participantProfile = shouldResolveProfile
+      ? await this.resolveParticipantProfile(input.connection, participantExternalId)
+      : null;
+
     if (!conversation) {
       logger.info({
         operation: "instagram_conversation_created",
@@ -62,9 +77,9 @@ export class ProcessInstagramDirectMessage {
         participantExternalId,
         // Meta messaging payloads commonly provide only the external ID.
         // Keep that identifier in participantExternalId, never present it as a name.
-        participantUsername: undefined,
-        participantName: undefined,
-        participantProfilePictureUrl: undefined,
+        participantUsername: participantProfile?.username,
+        participantName: participantProfile?.name,
+        participantProfilePictureUrl: participantProfile?.profilePictureUrl,
         lastMessageAt: input.normalizedMessage.sentAtExternal,
         lastMessagePreview: input.normalizedMessage.text,
         unreadCount: input.normalizedMessage.direction === "INBOUND" ? 1 : 0,
@@ -75,6 +90,9 @@ export class ProcessInstagramDirectMessage {
         lastMessageAt?: Date;
         lastMessagePreview?: string;
         unreadCount?: number | { increment: number };
+        participantUsername?: string;
+        participantName?: string;
+        participantProfilePictureUrl?: string;
       } = {};
 
       if (input.normalizedMessage.sentAtExternal) {
@@ -89,6 +107,10 @@ export class ProcessInstagramDirectMessage {
       if (isInbound) {
         updates.unreadCount = { increment: 1 };
       }
+      if (participantProfile?.username) updates.participantUsername = participantProfile.username;
+      if (participantProfile?.name) updates.participantName = participantProfile.name;
+      if (participantProfile?.profilePictureUrl)
+        updates.participantProfilePictureUrl = participantProfile.profilePictureUrl;
 
       conversation = await this.dependencies.instagramConversationRepository.update({
         conversationId: conversation.id,
@@ -96,6 +118,9 @@ export class ProcessInstagramDirectMessage {
         lastMessageAt: updates.lastMessageAt,
         lastMessagePreview: updates.lastMessagePreview,
         unreadCount: updates.unreadCount,
+        participantUsername: updates.participantUsername,
+        participantName: updates.participantName,
+        participantProfilePictureUrl: updates.participantProfilePictureUrl,
       } as UpdateInstagramConversationInput);
     }
 
@@ -145,5 +170,24 @@ export class ProcessInstagramDirectMessage {
       messageId: message.id,
       isNew: true,
     };
+  }
+
+  private async resolveParticipantProfile(
+    connection: StoredInstagramConnection,
+    participantExternalId: string,
+  ): Promise<{ username?: string; name?: string; profilePictureUrl?: string } | null> {
+    try {
+      return await this.dependencies.resolveParticipantProfile!({
+        connection,
+        participantExternalId,
+      });
+    } catch (error) {
+      (this.dependencies.logger ?? console).warn({
+        operation: "instagram_participant_profile_resolution_failed",
+        participantExternalId,
+        error: error instanceof Error ? error.message : "unknown_error",
+      });
+      return null;
+    }
   }
 }
