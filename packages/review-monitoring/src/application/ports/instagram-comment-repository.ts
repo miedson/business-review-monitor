@@ -38,6 +38,6 @@ export interface InstagramCommentRepository {
   findByTenant(input: FindInstagramCommentsInput): Promise<InstagramComment[]>;
   findByIdForTenant(input: FindInstagramCommentByIdInput): Promise<InstagramComment | null>;
   deleteByConnectionId(input: DeleteInstagramCommentsByConnectionIdInput): Promise<void>;
-  markReplied(input: MarkInstagramCommentRepliedInput): Promise<InstagramComment>;
-  saveReply(input: SaveInstagramCommentReplyInput): Promise<void>;
+  markReplied?(input: MarkInstagramCommentRepliedInput): Promise<InstagramComment>;
+  saveReply?(input: SaveInstagramCommentReplyInput): Promise<void>;
 }

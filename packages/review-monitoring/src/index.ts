@@ -205,6 +205,8 @@ export type {
   DeleteInstagramCommentsByConnectionIdInput
   ,MarkInstagramCommentRepliedInput, SaveInstagramCommentReplyInput
 } from "./application/ports/instagram-comment-repository.js";
+export type { BusinessLocationRepository } from "./application/ports/business-location-repository.js";
+export type { ReviewCacheRepository } from "./application/ports/review-cache-repository.js";
 
 export type {
   MetaWebhookVerifyQuery,

@@ -37,5 +37,5 @@ export interface ReviewCacheRepository {
     input: ListValidReviewCacheInput
   ): Promise<CachedBusinessReview[]>;
   deleteExpired(input: DeleteExpiredReviewCacheInput): Promise<number>;
-  saveReply(input: SaveReviewReplyInput): Promise<void>;
+  saveReply?(input: SaveReviewReplyInput): Promise<void>;
 }

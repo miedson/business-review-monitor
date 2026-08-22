@@ -1,4 +1,7 @@
 import type { ConnectionOptions } from "bullmq";
+import { Redis } from "ioredis";
+
+export function createRedisClient(redisUrl: string): Redis { return new Redis(redisUrl, { maxRetriesPerRequest: null }); }
 
 export function createBullMqConnection(redisUrl: string): ConnectionOptions {
   const parsedUrl = new URL(redisUrl);

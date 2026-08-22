@@ -104,7 +104,7 @@ export interface BusinessProfileReviewProvider {
     input: ListBusinessProfileLocationsInput
   ): Promise<ListBusinessProfileLocationsResult>;
   listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult>;
-  replyToReview(input: ReplyToGoogleReviewInput): Promise<void>;
+  replyToReview?(input: ReplyToGoogleReviewInput): Promise<void>;
 }
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {

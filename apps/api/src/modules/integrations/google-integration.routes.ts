@@ -510,10 +510,12 @@ export function registerGoogleIntegrationRoutes(
       const connection = await options.googleConnectionRepository.findByTenantId(session.tenant.id);
       if (!connection?.encryptedRefreshToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Google connection is required", requestId: request.id });
       const refreshToken = options.tokenCipher.decrypt(connection.encryptedRefreshToken); const tokenSet = await options.googleProvider.refreshAccessToken({ refreshToken });
-      await options.googleProvider.replyToReview({ accessToken: tokenSet.accessToken, accountId: body.accountId, locationId: body.locationId, reviewId: request.params.reviewId, message: body.message });
-      await options.reviewCacheRepository.saveReply({ tenantId: session.tenant.id, businessLocationId: location.id, googleReviewId: request.params.reviewId, comment: body.message, updatedAt: new Date() });
-      await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "google.review.replied", payload: { reviewId: request.params.reviewId, locationId: body.locationId } });
-      return reply.send({ reviewId: request.params.reviewId, replied: true });
+      if (!options.googleProvider.replyToReview) return reply.status(501).send({ error: "Google reply is not supported by this provider", requestId: request.id });
+      const reviewId = (request.params as { reviewId: string }).reviewId;
+      await options.googleProvider.replyToReview({ accessToken: tokenSet.accessToken, accountId: body.accountId, locationId: body.locationId, reviewId, message: body.message });
+      await options.reviewCacheRepository.saveReply?.({ tenantId: session.tenant.id, businessLocationId: location.id, googleReviewId: reviewId, comment: body.message, updatedAt: new Date() });
+      await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "google.review.replied", payload: { reviewId, locationId: body.locationId } });
+      return reply.send({ reviewId, replied: true });
     }
   );
 
