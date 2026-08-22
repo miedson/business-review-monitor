@@ -4,6 +4,7 @@ import type {
   ListInstagramComments,
   ListInstagramCommentsInput
 } from "@brm/review-monitoring";
+import type { InstagramReviewProvider, InstagramConnectionRepository, TokenCipher } from "@brm/review-monitoring";
 
 const listInstagramCommentsQuerySchema = z.object({
   instagramConnectionId: z.string().optional(),
@@ -74,13 +75,17 @@ export type RegisterInstagramCommentsRoutesOptions = {
     getCurrentSession: (userId: string) => Promise<{ user: { id: string }; tenant: { id: string } }>;
   };
   listInstagramComments: ListInstagramComments;
+  instagramCommentRepository: import("@brm/review-monitoring").InstagramCommentRepository;
+  instagramConnectionRepository: InstagramConnectionRepository;
+  instagramProvider: InstagramReviewProvider;
+  tokenCipher: TokenCipher;
 };
 
 export function registerInstagramCommentsRoutes(
   app: FastifyInstance,
   options: RegisterInstagramCommentsRoutesOptions
 ): void {
-  app.get<{
+  app.get<{ 
     Querystring: ListInstagramCommentsInput;
   }>("/instagram/comments", { schema: listInstagramCommentsRouteSchema }, async (request, reply) => {
     const userId = await getAuthenticatedUserId(request);
@@ -110,6 +115,7 @@ export function registerInstagramCommentsRoutes(
         text: comment.text ?? undefined,
         createdAt: comment.createdAtExternal?.toISOString() ?? comment.createdAt.toISOString(),
         status: comment.status
+        ,repliedAt: comment.repliedAt?.toISOString() ?? null
       }));
 
       return reply.send({
@@ -124,6 +130,22 @@ export function registerInstagramCommentsRoutes(
       });
       throw error;
     }
+  });
+
+  app.post<{ Params: { id: string }; Body: { message: string } }>("/instagram/comments/:id/reply", {
+    schema: { tags: ["Instagram Comments"], summary: "Reply to an Instagram comment", security: [{ bearerAuth: [] }], params: { type: "object", required: ["id"], properties: { id: { type: "string" } } }, body: { type: "object", required: ["message"], properties: { message: { type: "string", minLength: 1, maxLength: 2200 } } } }
+  }, async (request, reply) => {
+    const userId = await getAuthenticatedUserId(request);
+    const session = await options.authService.getCurrentSession(userId);
+    const body = z.object({ message: z.string().trim().min(1).max(2200) }).parse(request.body);
+    const comment = await options.instagramCommentRepository.findByIdForTenant({ id: request.params.id, tenantId: session.tenant.id });
+    if (!comment) return reply.status(404).send({ error: "Comment not found", requestId: request.id });
+    const connection = await options.instagramConnectionRepository.findByTenantId(session.tenant.id);
+    if (!connection?.encryptedAccessToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Instagram connection is required", requestId: request.id });
+    const accessToken = options.tokenCipher.decrypt(connection.encryptedAccessToken);
+    const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
+    await options.instagramCommentRepository.markReplied({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
+    return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });
   });
 }
 

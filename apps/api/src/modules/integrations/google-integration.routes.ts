@@ -11,6 +11,7 @@ import {
   DisconnectGoogleConnection,
   SelectBusinessLocation
 } from "@brm/review-monitoring";
+import type { BusinessProfileReviewProvider, BusinessLocationRepository, GoogleConnectionRepository, ReviewCacheRepository, TokenCipher } from "@brm/review-monitoring";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService } from "../auth/auth.service.js";
@@ -291,6 +292,11 @@ export type RegisterGoogleIntegrationRoutesOptions = {
   listGoogleLocations: ListGoogleLocations;
   listGoogleReviews: ListGoogleReviews;
   requestGoogleReviewSync: RequestGoogleReviewSync;
+  googleProvider: BusinessProfileReviewProvider;
+  googleConnectionRepository: GoogleConnectionRepository;
+  businessLocationRepository: BusinessLocationRepository;
+  reviewCacheRepository: ReviewCacheRepository;
+  tokenCipher: TokenCipher;
   selectBusinessLocation: SelectBusinessLocation;
   disconnectGoogleConnection: DisconnectGoogleConnection;
   webUrl: string;
@@ -488,6 +494,22 @@ export function registerGoogleIntegrationRoutes(
 
         throw error;
       }
+    }
+  );
+
+  app.post(
+    "/reviews/:reviewId/reply",
+    { schema: { tags: ["Google Integration"], summary: "Reply to a Google review", security: [{ bearerAuth: [] }], params: { type: "object", required: ["reviewId"], properties: { reviewId: { type: "string" } } }, body: { type: "object", required: ["accountId", "locationId", "message"], properties: { accountId: { type: "string" }, locationId: { type: "string" }, message: { type: "string", minLength: 1, maxLength: 4096 } } } } },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request); const session = await options.authService.getCurrentSession(userId);
+      const body = z.object({ accountId: z.string().min(1), locationId: z.string().min(1), message: z.string().trim().min(1).max(4096) }).parse(request.body);
+      const location = await options.businessLocationRepository.findByGoogleIds({ tenantId: session.tenant.id, googleAccountId: body.accountId, googleLocationId: body.locationId });
+      if (!location?.isActive) return reply.status(404).send({ error: "Google location not found", requestId: request.id });
+      const connection = await options.googleConnectionRepository.findByTenantId(session.tenant.id);
+      if (!connection?.encryptedRefreshToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Google connection is required", requestId: request.id });
+      const refreshToken = options.tokenCipher.decrypt(connection.encryptedRefreshToken); const tokenSet = await options.googleProvider.refreshAccessToken({ refreshToken });
+      await options.googleProvider.replyToReview({ accessToken: tokenSet.accessToken, accountId: body.accountId, locationId: body.locationId, reviewId: request.params.reviewId, message: body.message });
+      return reply.send({ reviewId: request.params.reviewId, replied: true });
     }
   );
 

@@ -48,6 +48,8 @@ export type InstagramComment = {
   text: string | null;
   createdAtExternal: Date | null;
   status: InstagramCommentStatus;
+  readAt: Date | null;
+  repliedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };

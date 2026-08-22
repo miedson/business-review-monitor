@@ -4,6 +4,7 @@ import type {
   ListBusinessProfileAccountsResult,
   ListBusinessProfileLocationsResult,
   ListBusinessReviewsResult,
+  ReplyToGoogleReviewInput,
   ProviderAuthorizationCodeInput,
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
@@ -80,6 +81,7 @@ type GoogleReviewResource = {
   comment?: string;
   createTime?: string;
   updateTime?: string;
+  reviewReply?: { comment?: string; updateTime?: string };
 };
 
 type GoogleReviewsListResponse = {
@@ -307,6 +309,7 @@ export class GoogleBusinessProfileApiProvider
           ? { reviewerName: review.reviewer.displayName }
           : {}),
         ...(review.comment ? { comment: review.comment } : {}),
+        ...(review.reviewReply?.comment ? { reviewReply: { comment: review.reviewReply.comment, ...(review.reviewReply.updateTime ? { updatedAt: new Date(review.reviewReply.updateTime) } : {}) } } : {}),
         createdAt: review.createTime ? new Date(review.createTime) : new Date(0),
         updatedAt: review.updateTime ? new Date(review.updateTime) : new Date(0)
       })),
@@ -319,6 +322,17 @@ export class GoogleBusinessProfileApiProvider
     }
 
     return result;
+  }
+
+  async replyToReview(input: ReplyToGoogleReviewInput): Promise<void> {
+    const parent = `${input.accountId.replace(/\/$/, "")}/${input.locationId.replace(/^\//, "")}`;
+    const url = `https://mybusiness.googleapis.com/v4/${parent}/reviews/${encodeURIComponent(input.reviewId)}/reply`;
+    const response = await this.fetchFn(url, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${input.accessToken}`, "content-type": "application/json" },
+      body: JSON.stringify({ comment: input.message })
+    });
+    if (!response.ok) throw new GoogleBusinessProfileProviderError(mapGoogleApiErrorStatus(response.status), "Google review reply request failed.");
   }
 
   private async requestToken(

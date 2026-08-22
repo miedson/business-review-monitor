@@ -90,6 +90,7 @@ export class RefreshGoogleReviewCache {
         ...(review.reviewerName ? { reviewerName: review.reviewerName } : {}),
         starRating: review.starRating,
         ...(review.comment ? { comment: review.comment } : {}),
+        ...(review.reviewReply ? { reviewReply: review.reviewReply } : {}),
         reviewCreatedAt: review.createdAt,
         reviewUpdatedAt: review.updatedAt,
         cachedAt,

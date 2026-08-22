@@ -6,6 +6,7 @@ import type {
   FindInstagramCommentsInput,
   FindInstagramCommentByIdInput,
   DeleteInstagramCommentsByConnectionIdInput
+  ,MarkInstagramCommentRepliedInput
 } from "../../application/ports/instagram-comment-repository.js";
 import type { InstagramComment, InstagramCommentStatus } from "../../domain/instagram-comment.js";
 
@@ -97,6 +98,11 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     });
   }
 
+  async markReplied(input: MarkInstagramCommentRepliedInput): Promise<InstagramComment> {
+    const comment = await this.prisma.instagramComment.update({ where: { id: input.id }, data: { repliedAt: input.repliedAt } });
+    return this.mapToDomain(comment);
+  }
+
   private mapToDomain(comment: {
     id: string;
     tenantId: string;
@@ -108,6 +114,8 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     text: string | null;
     createdAtExternal: Date | null;
     status: InstagramCommentStatus;
+    readAt: Date | null;
+    repliedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): InstagramComment {
@@ -122,6 +130,8 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
       text: comment.text,
       createdAtExternal: comment.createdAtExternal,
       status: comment.status,
+      readAt: comment.readAt,
+      repliedAt: comment.repliedAt,
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt
     };

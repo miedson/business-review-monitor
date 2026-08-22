@@ -60,6 +60,14 @@ export type ListBusinessReviewsResult = ReviewSummary & {
   nextPageToken?: string;
 };
 
+export type ReplyToGoogleReviewInput = {
+  accessToken: string;
+  accountId: string;
+  locationId: string;
+  reviewId: string;
+  message: string;
+};
+
 export type InstagramUserProfile = {
   id: string;
   username: string;
@@ -93,9 +101,11 @@ export interface BusinessProfileReviewProvider {
     input: ListBusinessProfileLocationsInput
   ): Promise<ListBusinessProfileLocationsResult>;
   listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult>;
+  replyToReview(input: ReplyToGoogleReviewInput): Promise<void>;
 }
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
+  replyToComment(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
   resolveWebhookAccountId(
     input: ResolveWebhookAccountIdInput

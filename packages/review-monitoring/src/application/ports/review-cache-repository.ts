@@ -12,6 +12,7 @@ export type CacheBusinessReviewInput = {
   reviewerName?: string;
   starRating: ReviewStarRating;
   comment?: string;
+  reviewReply?: { comment: string; updatedAt?: Date };
   reviewCreatedAt: Date;
   reviewUpdatedAt: Date;
   cachedAt: Date;

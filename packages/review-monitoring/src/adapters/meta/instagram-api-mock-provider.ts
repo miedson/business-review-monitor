@@ -47,6 +47,11 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     this.scenario = options.scenario ?? "connected";
   }
 
+  async replyToComment(): Promise<{ id: string }> {
+    this.throwScenarioError();
+    return { id: `mock-reply-${Date.now()}` };
+  }
+
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
     const url = new URL(this.authorizationBaseUrl);
 

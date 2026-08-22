@@ -133,6 +133,10 @@ export class GoogleBusinessProfileMockProvider
     this.reviews = options.reviews ?? defaultReviews;
   }
 
+  async replyToReview(): Promise<void> {
+    this.throwScenarioError();
+  }
+
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
     const url = new URL(this.authorizationBaseUrl);
 

@@ -56,6 +56,7 @@ const googleReviewSchema = z.object({
   comment: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  reviewReply: z.object({ comment: z.string(), updatedAt: z.string().optional() }).nullable().optional(),
 });
 
 const googleReviewsResponseSchema = z.object({
@@ -100,6 +101,7 @@ const instagramCommentSchema = z.object({
   text: z.string().nullable().optional(),
   createdAt: z.string(),
   status: z.enum(["NEW", "READ"]),
+  repliedAt: z.string().nullable().optional(),
 });
 
 const instagramCommentsResponseSchema = z.object({
@@ -195,6 +197,10 @@ export async function listGoogleReviews(input: {
   );
 }
 
+export async function replyToGoogleReview(input: { accessToken: string; reviewId: string; accountId: string; locationId: string; message: string }): Promise<void> {
+  await requestJson(`/reviews/${encodeURIComponent(input.reviewId)}/reply`, { accessToken: input.accessToken, method: "POST", body: { accountId: input.accountId, locationId: input.locationId, message: input.message } });
+}
+
 export async function requestGoogleReviewSync(input: {
   accessToken: string;
   accountId: string;
@@ -286,6 +292,10 @@ export async function listInstagramComments(input: {
       accessToken: input.accessToken,
     })
   );
+}
+
+export async function replyToInstagramComment(input: { accessToken: string; id: string; message: string }): Promise<void> {
+  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/reply`, { accessToken: input.accessToken, method: "POST", body: { message: input.message } });
 }
 
 export type InboxConversation = {

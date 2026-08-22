@@ -5,6 +5,7 @@ export type BusinessReview = {
   reviewerName?: string;
   starRating: ReviewStarRating;
   comment?: string;
+  reviewReply?: { comment: string; updatedAt?: Date };
   createdAt: Date;
   updatedAt: Date;
 };

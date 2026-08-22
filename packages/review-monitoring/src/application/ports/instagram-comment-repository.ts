@@ -30,10 +30,12 @@ export type FindInstagramCommentByIdInput = {
 export type DeleteInstagramCommentsByConnectionIdInput = {
   connectionId: string;
 };
+export type MarkInstagramCommentRepliedInput = { id: string; tenantId: string; repliedAt: Date };
 
 export interface InstagramCommentRepository {
   upsert(input: UpsertInstagramCommentInput): Promise<InstagramComment>;
   findByTenant(input: FindInstagramCommentsInput): Promise<InstagramComment[]>;
   findByIdForTenant(input: FindInstagramCommentByIdInput): Promise<InstagramComment | null>;
   deleteByConnectionId(input: DeleteInstagramCommentsByConnectionIdInput): Promise<void>;
+  markReplied(input: MarkInstagramCommentRepliedInput): Promise<InstagramComment>;
 }

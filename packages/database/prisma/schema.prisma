@@ -26,6 +26,9 @@ model Tenant {
   businessLocations    BusinessLocation[]
   googleConnections    GoogleConnection[]
   instagramComments    InstagramComment[]
+  instagramCommentReplies InstagramCommentReply[]
+  instagramMedia       InstagramMedia[]
+  instagramExternalUsers InstagramExternalUser[]
   instagramConnections InstagramConnection[]
   instagramConversations InstagramConversation[]
   instagramMessages    InstagramMessage[]
@@ -86,6 +89,9 @@ model InstagramConnection {
   createdAt                       DateTime                  @default(now()) @db.Timestamptz(3)
   updatedAt                       DateTime                  @updatedAt @db.Timestamptz(3)
   comments                        InstagramComment[]
+  commentReplies                  InstagramCommentReply[]
+  media                           InstagramMedia[]
+  externalUsers                   InstagramExternalUser[]
   conversations                   InstagramConversation[]
   tenant                          Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -106,16 +112,71 @@ model InstagramComment {
   text                  String?
   createdAtExternal     DateTime?              @db.Timestamptz(3)
   status                InstagramCommentStatus @default(NEW)
+  readAt                DateTime?              @db.Timestamptz(3)
+  repliedAt             DateTime?              @db.Timestamptz(3)
   createdAt             DateTime               @default(now()) @db.Timestamptz(3)
   updatedAt             DateTime               @updatedAt @db.Timestamptz(3)
   instagramConnection   InstagramConnection    @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
   tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  replies               InstagramCommentReply[]
 
   @@unique([instagramConnectionId, externalCommentId])
   @@index([tenantId])
   @@index([instagramConnectionId])
   @@index([createdAtExternal])
   @@map("instagram_comments")
+}
+
+model InstagramCommentReply {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  instagramCommentId String
+  externalReplyId    String?
+  authorType         InstagramReplyAuthorType
+  text               String
+  createdAtExternal  DateTime? @db.Timestamptz(3)
+  createdAt          DateTime  @default(now()) @db.Timestamptz(3)
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instagramComment   InstagramComment @relation(fields: [instagramCommentId], references: [id], onDelete: Cascade)
+  @@index([tenantId])
+  @@index([instagramCommentId])
+  @@map("instagram_comment_replies")
+}
+
+model InstagramMedia {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  instagramConnectionId String
+  externalMediaId       String
+  mediaType             String?
+  mediaProductType      String?
+  caption               String?
+  mediaUrl              String?
+  thumbnailUrl          String?
+  permalink             String?
+  publishedAt           DateTime? @db.Timestamptz(3)
+  lastSyncedAt          DateTime  @default(now()) @db.Timestamptz(3)
+  tenant                Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instagramConnection   InstagramConnection @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  @@unique([instagramConnectionId, externalMediaId])
+  @@index([tenantId])
+  @@map("instagram_media")
+}
+
+model InstagramExternalUser {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  instagramConnectionId String
+  externalUserId        String
+  username              String?
+  name                  String?
+  profilePictureUrl     String?
+  lastSyncedAt          DateTime  @default(now())
+  tenant                Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instagramConnection   InstagramConnection @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  @@unique([instagramConnectionId, externalUserId])
+  @@index([tenantId])
+  @@map("instagram_external_users")
 }
 
 model InstagramConversation {
@@ -199,6 +260,8 @@ model ReviewCache {
   comment            String?
   reviewCreatedAt    DateTime         @db.Timestamptz(3)
   reviewUpdatedAt    DateTime         @db.Timestamptz(3)
+  replyText          String?
+  replyUpdatedAt     DateTime?        @db.Timestamptz(3)
   cachedAt           DateTime         @db.Timestamptz(3)
   expiresAt          DateTime         @db.Timestamptz(3)
   createdAt          DateTime         @default(now()) @db.Timestamptz(3)
@@ -236,6 +299,11 @@ enum InstagramConnectionStatus {
 enum InstagramCommentStatus {
   NEW
   READ
+}
+
+enum InstagramReplyAuthorType {
+  CUSTOMER
+  BUSINESS
 }
 
 enum InstagramMessageDirection {

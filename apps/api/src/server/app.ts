@@ -324,6 +324,11 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     listGoogleLocations,
     listGoogleReviews,
     requestGoogleReviewSync,
+    googleProvider,
+    googleConnectionRepository,
+    businessLocationRepository,
+    reviewCacheRepository,
+    tokenCipher,
     selectBusinessLocation,
     disconnectGoogleConnection,
     webUrl: config.WEB_URL
@@ -338,7 +343,11 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   });
   registerInstagramCommentsRoutes(app, {
     authService,
-    listInstagramComments
+    listInstagramComments,
+    instagramCommentRepository,
+    instagramConnectionRepository,
+    instagramProvider,
+    tokenCipher
   });
 
   registerInboxRoutes(app, {

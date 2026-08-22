@@ -207,6 +207,15 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     };
   }
 
+  async replyToComment(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }> {
+    const url = new URL(`${this.graphApiBase}/${input.commentId}/replies`);
+    url.searchParams.set("access_token", input.accessToken);
+    const response = await this.fetchFn(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: input.message }) });
+    const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || typeof payload.id !== "string") throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram comment reply request failed");
+    return { id: payload.id };
+  }
+
   async getUserProfile(accessToken: string): Promise<InstagramUserProfile> {
     this.logger.info({
       provider: "instagram",
