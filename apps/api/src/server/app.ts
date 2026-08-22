@@ -35,6 +35,7 @@ import {
   ListInstagramConversations,
   ListInstagramConversationMessages,
   MarkInstagramConversationAsRead,
+  SendInstagramDirectMessage,
   PrismaInstagramConversationRepository,
   PrismaInstagramMessageRepository
 } from "@brm/review-monitoring";
@@ -282,6 +283,13 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   const markInstagramConversationAsRead = new MarkInstagramConversationAsRead({
     instagramConversationRepository
   });
+  const sendInstagramDirectMessage = new SendInstagramDirectMessage({
+    instagramConnectionRepository,
+    instagramConversationRepository,
+    instagramMessageRepository,
+    instagramProvider,
+    tokenCipher
+  });
   const disconnectInstagramConnection = new DisconnectInstagramConnection({
     instagramConnectionRepository,
     instagramCommentRepository,
@@ -364,7 +372,9 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     authService,
     listInstagramConversations,
     listInstagramConversationMessages,
-    markInstagramConversationAsRead
+    markInstagramConversationAsRead,
+    sendInstagramDirectMessage,
+    realtimeGateway
   });
 
   registerMvpManagementRoutes(app, {

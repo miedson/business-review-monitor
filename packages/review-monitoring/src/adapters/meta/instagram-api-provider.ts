@@ -9,7 +9,8 @@ import type {
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
   RefreshProviderAccessTokenInput,
-  RevokeProviderAuthorizationInput
+  RevokeProviderAuthorizationInput,
+  SendInstagramDirectMessageInput
 } from "../../application/ports/business-profile-review-provider.js";
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
 import { INSTAGRAM_SCOPE_STRING } from "./instagram.constants.js";
@@ -217,6 +218,27 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     const payload = await readJson(response);
     if (!response.ok || !isObject(payload) || typeof payload.id !== "string") throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram comment reply request failed");
     return { id: payload.id };
+  }
+
+  async sendDirectMessage(input: SendInstagramDirectMessageInput): Promise<{ id: string }> {
+    const url = new URL(`${this.graphApiBase}/${input.instagramAccountId}/messages`);
+    url.searchParams.set("access_token", input.accessToken);
+    const response = await this.fetchFn(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        recipient: { id: input.recipientId },
+        message: { text: input.message }
+      })
+    });
+    const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || typeof payload.message_id !== "string") {
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram direct message request failed"
+      );
+    }
+    return { id: payload.message_id };
   }
 
   async getUserProfile(accessToken: string): Promise<InstagramUserProfile> {

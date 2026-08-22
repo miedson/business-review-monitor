@@ -51,6 +51,10 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     this.throwScenarioError();
     return { id: `mock-reply-${Date.now()}` };
   }
+  async sendDirectMessage(): Promise<{ id: string }> {
+    this.throwScenarioError();
+    return { id: `mock-message-${Date.now()}` };
+  }
   async getExternalUserProfile(_accessToken: string, userId: string): Promise<InstagramUserProfile> { return { id: userId, username: `user_${userId}`, account_type: "" }; }
   async getMediaMetadata(_accessToken: string, mediaId: string): Promise<import("../../application/ports/business-profile-review-provider.js").InstagramMediaMetadata> { return { id: mediaId, media_type: "IMAGE", media_product_type: "FEED" }; }
 

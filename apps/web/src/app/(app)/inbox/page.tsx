@@ -7,8 +7,10 @@ import {
   listInboxConversations,
   listInboxConversationMessages,
   markInboxConversationAsRead,
+  sendInstagramDirectMessage,
 } from "@/lib/api-client";
 import { Box, Text, Flex, Badge, LoadingSpinner, PageHeader } from "@/lib/design-system";
+import { Composer } from "@/components/conversation";
 
 type InboxConversation = {
   id: string;
@@ -42,6 +44,8 @@ export default function InboxPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     setSession(getStoredSession());
@@ -137,6 +141,27 @@ export default function InboxPage() {
   };
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
+
+  useEffect(() => {
+    const onRealtime = () => {
+      void loadConversations();
+      if (selectedConversationId) void loadMessages(selectedConversationId);
+    };
+    window.addEventListener("brh:realtime", onRealtime);
+    return () => window.removeEventListener("brh:realtime", onRealtime);
+  }, [loadConversations, loadMessages, selectedConversationId]);
+
+  const handleSend = async () => {
+    if (!session?.accessToken || !selectedConversationId || !draft.trim() || sending) return;
+    try {
+      setSending(true);
+      await sendInstagramDirectMessage({ accessToken: session.accessToken, conversationId: selectedConversationId, message: draft.trim() });
+      setDraft("");
+      await Promise.all([loadConversations(), loadMessages(selectedConversationId)]);
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <Box css={{ maxW: "1440px", mx: "auto" }}>
@@ -291,23 +316,7 @@ export default function InboxPage() {
               )}
             </Box>
             <Box css={{ px: 4, py: 3, borderTop: "1px solid", borderColor: "surface.border", bg: "surface.primary" }}>
-              <Box
-                css={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  px: 3,
-                  py: 2,
-                  borderRadius: "lg",
-                  bg: "surface.secondary",
-                  border: "1px solid",
-                  borderColor: "surface.border",
-                }}
-              >
-                <Text css={{ fontSize: "sm", color: "text.tertiary", flex: 1 }}>
-                  Responder em breve
-                </Text>
-              </Box>
+              <Composer value={draft} onChange={setDraft} onSubmit={() => void handleSend()} disabled={sending} placeholder="Digite uma mensagem..." />
             </Box>
           </>
         ) : (

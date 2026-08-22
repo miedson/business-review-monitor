@@ -423,6 +423,20 @@ export async function markInboxConversationAsRead(input: {
     );
 }
 
+export async function sendInstagramDirectMessage(input: {
+  accessToken: string;
+  conversationId: string;
+  message: string;
+}): Promise<{ id: string; externalMessageId: string }> {
+  return z.object({ id: z.string(), externalMessageId: z.string() }).parse(
+    await requestJson(`/inbox/conversations/${encodeURIComponent(input.conversationId)}/messages`, {
+      accessToken: input.accessToken,
+      method: "POST",
+      body: { message: input.message }
+    })
+  );
+}
+
 async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {
   const response = await sendRequest(path, options);
 

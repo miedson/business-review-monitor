@@ -296,6 +296,12 @@ export {
   type ProcessInstagramDirectMessageResult,
   type ProcessInstagramDirectMessageDependencies
 } from "./application/use-cases/process-instagram-direct-message.js";
+export {
+  SendInstagramDirectMessage,
+  type SendInstagramDirectMessageInput,
+  type SendInstagramDirectMessageResult,
+  type SendInstagramDirectMessageDependencies
+} from "./application/use-cases/send-instagram-direct-message.js";
 
 export {
   ListInstagramConversations,

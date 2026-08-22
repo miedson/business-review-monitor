@@ -9,8 +9,10 @@ import type {
   ListInstagramConversationMessagesInput
 } from "@brm/review-monitoring";
 import {
-  MarkInstagramConversationAsRead
+  MarkInstagramConversationAsRead,
+  SendInstagramDirectMessage
 } from "@brm/review-monitoring";
+import type { RealtimeGateway } from "./realtime-gateway.js";
 
 const listConversationsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
@@ -180,6 +182,17 @@ const markAsReadRouteSchema = {
   }
 };
 
+const sendMessageRouteSchema = {
+  tags: ["Inbox"],
+  summary: "Send an Instagram direct message",
+  security: [{ bearerAuth: [] }],
+  params: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+  body: { type: "object", required: ["message"], properties: { message: { type: "string", minLength: 1, maxLength: 1000 } } },
+  response: {
+    200: { type: "object", required: ["id", "externalMessageId"], properties: { id: { type: "string" }, externalMessageId: { type: "string" } } }
+  }
+};
+
 export type RegisterInboxRoutesOptions = {
   authService: {
     getCurrentSession: (userId: string) => Promise<{ user: { id: string }; tenant: { id: string } }>;
@@ -187,6 +200,8 @@ export type RegisterInboxRoutesOptions = {
   listInstagramConversations: ListInstagramConversations;
   listInstagramConversationMessages: ListInstagramConversationMessages;
   markInstagramConversationAsRead: MarkInstagramConversationAsRead;
+  sendInstagramDirectMessage: SendInstagramDirectMessage;
+  realtimeGateway: RealtimeGateway;
 };
 
 export function registerInboxRoutes(
@@ -276,6 +291,23 @@ export function registerInboxRoutes(
       id: result.conversation.id,
       unreadCount: result.conversation.unreadCount
     });
+  });
+
+  app.post<{ Params: { id: string }; Body: { message: string } }>("/inbox/conversations/:id/messages", { schema: sendMessageRouteSchema }, async (request, reply) => {
+    const userId = await getAuthenticatedUserId(request);
+    const session = await options.authService.getCurrentSession(userId);
+    const body = z.object({ message: z.string().trim().min(1).max(1000) }).parse(request.body);
+    const result = await options.sendInstagramDirectMessage.execute({
+      tenantId: session.tenant.id,
+      conversationId: request.params.id,
+      message: body.message
+    });
+    await options.realtimeGateway.publish({
+      tenantId: session.tenant.id,
+      type: "instagram.message.sent",
+      payload: { conversationId: result.conversationId, messageId: result.messageId }
+    });
+    return reply.send({ id: result.messageId, externalMessageId: result.externalMessageId });
   });
 }
 

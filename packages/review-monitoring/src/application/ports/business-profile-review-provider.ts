@@ -68,6 +68,13 @@ export type ReplyToGoogleReviewInput = {
   message: string;
 };
 
+export type SendInstagramDirectMessageInput = {
+  accessToken: string;
+  instagramAccountId: string;
+  recipientId: string;
+  message: string;
+};
+
 export type InstagramUserProfile = {
   id: string;
   username: string;
@@ -109,6 +116,7 @@ export interface BusinessProfileReviewProvider {
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
   replyToComment?(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
+  sendDirectMessage?(input: SendInstagramDirectMessageInput): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
   getExternalUserProfile?(accessToken: string, userId: string): Promise<InstagramUserProfile>;
   getMediaMetadata?(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
