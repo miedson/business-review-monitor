@@ -31,9 +31,22 @@ const instagramCommentResponseSchema = {
       }
     },
     text: { type: ["string", "null"] },
-    media: { type: ["object", "null"] },
+    media: {
+      type: ["object", "null"],
+      properties: {
+        id: { type: "string" },
+        media_type: { type: "string" },
+        media_product_type: { type: "string" },
+        media_url: { type: "string" },
+        thumbnail_url: { type: "string" },
+        permalink: { type: "string" },
+        caption: { type: "string" },
+        timestamp: { type: "string", format: "date-time" }
+      }
+    },
     createdAt: { type: "string", format: "date-time" },
-    status: { type: "string", enum: ["NEW", "READ"] }
+    status: { type: "string", enum: ["NEW", "READ"] },
+    repliedAt: { type: ["string", "null"], format: "date-time" }
   }
 };
 
