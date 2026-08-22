@@ -58,14 +58,15 @@ const processMetaWebhookEventJobDataSchema = z
                 timestamp: z.number(),
                 message: z
                   .object({
-                    id: z.string(),
+                    id: z.string().optional(),
+                    mid: z.string().optional(),
                     text: z.string().optional(),
                     created_time: z.number().optional()
                   })
                   .optional(),
                 postback: z
                   .object({
-                    payload: z.string(),
+                    payload: z.string().optional(),
                     title: z.string().optional()
                   })
                   .optional()
@@ -158,7 +159,7 @@ export class ProcessMetaWebhookEventJob {
 
     if (entry.messaging) {
       for (const message of entry.messaging) {
-        await this.processMessage(message, requestId);
+        await this.processMessage(entry, message, requestId);
       }
     }
   }
@@ -309,16 +310,28 @@ export class ProcessMetaWebhookEventJob {
   }
 
   private async processMessage(
+    entry: JobEntry,
     message: JobMessage,
     requestId: string
   ): Promise<void> {
     const senderId = message.sender.id;
     const recipientId = message.recipient.id;
 
-    let connection = await this.instagramConnectionRepository.findByInstagramUserId(senderId);
+    let connection = await this.instagramConnectionRepository.findByProfessionalAccountId(entry.id);
+
+    if (!connection) {
+      connection = await this.instagramConnectionRepository.findByInstagramUserId(senderId);
+    }
 
     if (!connection) {
       connection = await this.instagramConnectionRepository.findByInstagramUserId(recipientId);
+    }
+
+    if (!connection) {
+      const resolved = await this.resolveInstagramWebhookIdentity.execute({
+        webhookAccountId: entry.id
+      });
+      connection = resolved?.connection ?? null;
     }
 
     if (!connection) {
@@ -343,7 +356,7 @@ export class ProcessMetaWebhookEventJob {
     });
 
     const normalizedMessage = this.messageNormalizer.normalize(
-      { id: senderId, time: message.timestamp } as MetaWebhookEntry,
+      entry as MetaWebhookEntry,
       message as MetaWebhookMessaging
     );
 

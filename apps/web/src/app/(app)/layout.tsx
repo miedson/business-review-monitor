@@ -222,7 +222,7 @@ function getPageTitle(pathname: string): string {
 function getBreadcrumb(pathname: string): Array<{ label: string; href?: string }> | undefined {
   if (pathname === "/dashboard") return [{ label: "Visão geral" }];
   if (pathname.startsWith("/inbox")) return [{ label: "Inbox" }];
-  if (pathname.startsWith("/instagram/comments")) return [{ label: "Monitoramento" }, { label: "Comentários Instagram" }];
+  if (pathname.startsWith("/instagram/comments")) return [{ label: "Instagram" }, { label: "Comentários" }];
   if (pathname.startsWith("/reviews")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Avaliações" }];
   if (pathname.startsWith("/settings/integrations")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações", href: "/settings" }, { label: "Integrações" }];
   if (pathname.startsWith("/settings")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações" }];

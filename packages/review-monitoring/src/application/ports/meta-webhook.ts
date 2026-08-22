@@ -43,7 +43,8 @@ export type MetaWebhookFrom = {
 };
 
 export type MetaWebhookMessage = {
-  id: string;
+  id?: string;
+  mid?: string;
   text?: string;
   created_time?: number;
 };
@@ -57,7 +58,7 @@ export type MetaWebhookMessaging = {
 };
 
 export type MetaWebhookPostback = {
-  payload: string;
+  payload?: string;
   title?: string;
 };
 

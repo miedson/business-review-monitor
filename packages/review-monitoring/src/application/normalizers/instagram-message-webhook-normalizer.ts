@@ -20,7 +20,8 @@ export class DefaultInstagramMessageWebhookNormalizer
     messaging: MetaWebhookMessaging
   ): NormalizedInstagramMessage | null {
     const message = messaging.message;
-    if (!message || !message.id) {
+    const externalMessageId = message?.id ?? message?.mid;
+    if (!message || !externalMessageId) {
       return null;
     }
 
@@ -37,7 +38,7 @@ export class DefaultInstagramMessageWebhookNormalizer
 
     return createNormalizedInstagramMessage({
       instagramAccountId,
-      externalMessageId: message.id,
+      externalMessageId,
       senderExternalId: senderId,
       recipientExternalId: recipientId,
       direction,

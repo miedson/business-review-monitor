@@ -449,3 +449,53 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
     expect(commentRepo.upserted).toHaveLength(0);
   });
 });
+
+describe("ProcessMetaWebhookEventJob - Instagram Direct", () => {
+  it("resolves the connection by the professional account in entry.id", async () => {
+    const connection: StoredInstagramConnection = {
+      id: "conn_direct",
+      tenantId: "tenant_direct",
+      instagramUserId: "oauth_user",
+      instagramProfessionalAccountId: "professional_account",
+      username: "business",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted_token",
+      scope: "instagram_business_basic",
+      status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
+      tokenExpiresAt: new Date(Date.now() + 86400000)
+    };
+    const connectionRepo = new FakeInstagramConnectionRepository();
+    connectionRepo.setConnection(connection);
+    const processDirectMessage = new FakeProcessInstagramDirectMessage();
+    const job = new ProcessMetaWebhookEventJob(
+      connectionRepo,
+      new FakeInstagramCommentRepository(),
+      new FakeResolveInstagramWebhookIdentity(),
+      new FakeInstagramConversationRepository(),
+      new FakeInstagramMessageRepository(),
+      processDirectMessage
+    );
+
+    const data = {
+      payload: {
+        object: "instagram",
+        entry: [{
+          id: "professional_account",
+          time: 1700000000,
+          messaging: [{
+            sender: { id: "customer" },
+            recipient: { id: "professional_account" },
+            timestamp: 1700000000000,
+            message: { mid: "mid_1", text: "Olá" }
+          }]
+        }]
+      },
+      receivedAt: new Date().toISOString(),
+      requestId: "123e4567-e89b-12d3-a456-426614174000"
+    };
+
+    await job.handle({ id: "job_direct", name: "process-meta-webhook-event", data } as unknown as Job<ProcessMetaWebhookEventJobData>);
+  });
+});
