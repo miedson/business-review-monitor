@@ -158,6 +158,43 @@ describe("GoogleBusinessProfileApiProvider", () => {
       provider.exchangeAuthorizationCode({ code: "authorization-code" })
     ).rejects.toBeInstanceOf(GoogleBusinessProfileProviderError);
   });
+
+  it("preserves the reply returned by Google for answered reviews", async () => {
+    const calls: FetchCall[] = [];
+    const provider = createProvider({
+      calls,
+      response: Response.json({
+        reviews: [
+          {
+            reviewId: "review-answered",
+            reviewer: { displayName: "Maria" },
+            starRating: "FIVE",
+            comment: "Excelente atendimento",
+            reviewReply: {
+              comment: "Obrigado pelo feedback!",
+              updateTime: "2026-08-20T12:00:00Z"
+            },
+            createTime: "2026-08-01T10:00:00Z",
+            updateTime: "2026-08-20T12:00:00Z"
+          }
+        ],
+        averageRating: 5,
+        totalReviewCount: 1
+      })
+    });
+
+    const result = await provider.listReviews({
+      accessToken: "access-token",
+      accountId: "accounts/1001",
+      locationId: "locations/2001"
+    });
+
+    expect(result.reviews[0]?.reviewReply).toEqual({
+      comment: "Obrigado pelo feedback!",
+      updatedAt: new Date("2026-08-20T12:00:00Z")
+    });
+    expect(calls[0]?.url).toContain("/accounts/1001/locations/2001/reviews");
+  });
 });
 
 function readRequestBody(body: unknown): Record<string, string> {

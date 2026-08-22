@@ -286,7 +286,7 @@ export class GoogleBusinessProfileApiProvider
       url.searchParams.set("pageToken", input.pageToken);
     }
 
-    const response = await fetch(url, {
+    const response = await this.fetchFn(url, {
       headers: {
         Authorization: `Bearer ${input.accessToken}`,
         Accept: "application/json"

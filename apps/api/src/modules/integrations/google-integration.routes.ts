@@ -239,6 +239,13 @@ const googleReviewsRouteSchema = {
                 enum: ["ONE", "TWO", "THREE", "FOUR", "FIVE"]
               },
               comment: { type: "string" },
+              reviewReply: {
+                type: "object",
+                properties: {
+                  comment: { type: "string" },
+                  updatedAt: { type: "string", format: "date-time" }
+                }
+              },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" }
             }
