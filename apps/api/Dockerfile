@@ -47,4 +47,4 @@ FROM base AS runner
 ENV NODE_ENV=production
 COPY --from=build /app /app
 EXPOSE 3333
-CMD ["pnpm", "--filter", "@brm/api", "start"]
+CMD ["sh", "-c", "pnpm --filter @brm/database db:migrate:deploy && pnpm --filter @brm/api start"]
