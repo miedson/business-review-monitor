@@ -4,6 +4,7 @@ export { Card, type CardProps, CardHeader, CardTitle, CardDescription, CardBody,
 export { Input, type InputProps } from "./Input";
 export { Badge, type BadgeProps } from "./Badge";
 export { Alert, type AlertProps } from "./Alert";
+export { Toast, type ToastProps, type ToastTone } from "./Toast";
 export { Modal, type ModalProps, ConfirmDialog, type ConfirmDialogProps } from "./Modal";
 export { Skeleton, type SkeletonProps } from "./Skeleton";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";

@@ -10,7 +10,7 @@ import {
   listGoogleAccounts,
   listInstagramAccounts,
 } from "@/lib/api-client";
-import { Box, Text, Alert, ChannelCard, Modal, Button, Card, CardBody, PageHeader } from "@/lib/design-system";
+import { Box, Text, Toast, ChannelCard, Modal, Button, Card, CardBody, PageHeader } from "@/lib/design-system";
 
 type InstagramDisconnectChoice = "keep" | "delete" | null;
 
@@ -191,9 +191,9 @@ export default function IntegrationsPage() {
       <PageHeader eyebrow="Configurações" title="Integrações" description="Conecte os canais que fazem parte da reputação digital da sua empresa." />
 
       {message && (
-        <Alert tone={message.type === "success" ? "success" : "error"} onClose={() => setMessage(null)} dismissible>
+        <Toast tone={message.type} onClose={() => setMessage(null)}>
           {message.text}
-        </Alert>
+        </Toast>
       )}
 
       <Card variant="default" padding="none"><CardBody css={{ p: 0 }}>
