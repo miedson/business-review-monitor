@@ -13,7 +13,9 @@ import type {
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
 import { INSTAGRAM_SCOPE_STRING } from "./instagram.constants.js";
 
-const instagramAuthorizationEndpoint = "https://api.instagram.com/oauth/authorize";
+// Instagram API with Instagram Login uses the www host for authorization.
+// api.instagram.com remains the token-exchange endpoint.
+const instagramAuthorizationEndpoint = "https://www.instagram.com/oauth/authorize";
 const instagramTokenEndpoint = "https://api.instagram.com/oauth/access_token";
 const instagramGraphApiBase = "https://graph.instagram.com";
 const instagramRevokeEndpoint = "https://api.instagram.com/oauth/revoke";
