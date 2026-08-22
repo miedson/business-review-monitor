@@ -22,7 +22,6 @@ export default function ReviewsPage() {
   const reviewsQuery = useQuery({
     queryKey: ["reviews", activeLocation?.id],
     enabled: Boolean(activeLocation),
-    refetchInterval: 15000,
     queryFn: () => listGoogleReviews({ accessToken: getStoredSession()?.accessToken ?? "", accountId: activeLocation?.accountId ?? "", locationId: activeLocation?.id ?? "" }),
   });
   useEffect(() => { setQuery(""); setMinimum(0); }, [activeLocation?.id]);

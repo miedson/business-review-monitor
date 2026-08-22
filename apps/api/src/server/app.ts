@@ -322,7 +322,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
 
   registerAuthRoutes(app, authService);
   registerAttentionSummaryRoute(app, { prisma, authService });
-  registerRealtimeRoute(app, { gateway: realtimeGateway, authService });
+  registerRealtimeRoute(app, { gateway: realtimeGateway, authService, webUrl: config.WEB_URL });
   registerGoogleIntegrationRoutes(app, {
     authService,
     startGoogleOAuthConnection,
