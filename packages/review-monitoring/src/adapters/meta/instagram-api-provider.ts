@@ -226,7 +226,9 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     });
 
     const url = new URL(`${this.graphApiBase}/me`);
-    url.searchParams.set("fields", "id,username,account_type,media_count,name,profile_pic");
+    // Keep the connection/account probe limited to fields supported by the
+    // authenticated /me endpoint. Enrichment fields are fetched separately.
+    url.searchParams.set("fields", "id,username,account_type,media_count");
     url.searchParams.set("access_token", accessToken);
 
     const response = await this.fetchFn(url, {
