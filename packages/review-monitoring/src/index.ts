@@ -203,7 +203,7 @@ export type {
   FindInstagramCommentsInput,
   FindInstagramCommentByIdInput,
   DeleteInstagramCommentsByConnectionIdInput
-  ,MarkInstagramCommentRepliedInput
+  ,MarkInstagramCommentRepliedInput, SaveInstagramCommentReplyInput
 } from "./application/ports/instagram-comment-repository.js";
 
 export type {

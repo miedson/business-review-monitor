@@ -103,6 +103,10 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     return this.mapToDomain(comment);
   }
 
+  async saveReply(input: { tenantId: string; instagramCommentId: string; externalReplyId: string; text: string; createdAt: Date }): Promise<void> {
+    await this.prisma.instagramCommentReply.create({ data: { tenantId: input.tenantId, instagramCommentId: input.instagramCommentId, externalReplyId: input.externalReplyId, authorType: "BUSINESS", text: input.text, createdAtExternal: input.createdAt } });
+  }
+
   private mapToDomain(comment: {
     id: string;
     tenantId: string;

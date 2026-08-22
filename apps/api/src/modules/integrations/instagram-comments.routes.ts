@@ -159,6 +159,7 @@ export function registerInstagramCommentsRoutes(
     if (!connection?.encryptedAccessToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Instagram connection is required", requestId: request.id });
     const accessToken = options.tokenCipher.decrypt(connection.encryptedAccessToken);
     const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
+    await options.instagramCommentRepository.saveReply({ tenantId: session.tenant.id, instagramCommentId: comment.id, externalReplyId: result.id, text: body.message, createdAt: new Date() });
     await options.instagramCommentRepository.markReplied({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
     await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "instagram.comment.replied", payload: { commentId: comment.id } });
     return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });

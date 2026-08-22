@@ -97,6 +97,10 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
     return result.count;
   }
 
+  async saveReply(input: { tenantId: string; businessLocationId: string; googleReviewId: string; comment: string; updatedAt: Date }): Promise<void> {
+    await this.prisma.reviewCache.updateMany({ where: { tenantId: input.tenantId, businessLocationId: input.businessLocationId, googleReviewId: input.googleReviewId }, data: { replyText: input.comment, replyUpdatedAt: input.updatedAt } });
+  }
+
   async deleteByTenantId(tenantId: string): Promise<void> {
     await this.prisma.reviewCache.deleteMany({
       where: { tenantId }
