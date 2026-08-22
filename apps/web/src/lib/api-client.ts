@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { clearStoredSession, storeSession } from "./auth-session";
 
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:3333";
@@ -13,6 +14,8 @@ const authResponseSchema = z.object({
   accessToken: z.string(),
   user: authUserSchema,
 });
+
+let refreshInFlight: Promise<AuthResponse> | undefined;
 
 const googleAccountSchema = z.object({
   id: z.string(),
@@ -386,6 +389,55 @@ export async function markInboxConversationAsRead(input: {
 }
 
 async function requestJson(path: string, options: RequestOptions = {}): Promise<unknown> {
+  const response = await sendRequest(path, options);
+
+  if (response.status === 401 && options.accessToken && path !== "/auth/refresh") {
+    try {
+      const session = await refreshSession();
+      const retriedResponse = await sendRequest(path, {
+        ...options,
+        accessToken: session.accessToken,
+      });
+
+      if (!retriedResponse.ok) {
+        throw new Error(await readErrorMessage(retriedResponse));
+      }
+
+      return readResponseBody(retriedResponse);
+    } catch {
+      clearStoredSession();
+      throw new Error("Authentication required");
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response));
+  }
+
+  return readResponseBody(response);
+}
+
+async function refreshSession(): Promise<AuthResponse> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      const response = await sendRequest("/auth/refresh", { method: "POST" });
+
+      if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+      }
+
+      const session = authResponseSchema.parse(await readResponseBody(response));
+      storeSession(session);
+      return session;
+    })().finally(() => {
+      refreshInFlight = undefined;
+    });
+  }
+
+  return refreshInFlight;
+}
+
+async function sendRequest(path: string, options: RequestOptions): Promise<Response> {
   const headers: Record<string, string> = {};
 
   if (options.body !== undefined) {
@@ -397,6 +449,7 @@ async function requestJson(path: string, options: RequestOptions = {}): Promise<
   }
 
   const requestInit: RequestInit = {
+    credentials: "include",
     headers,
     method: options.method ?? "GET",
   };
@@ -405,12 +458,10 @@ async function requestJson(path: string, options: RequestOptions = {}): Promise<
     requestInit.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${apiBaseUrl}${path}`, requestInit);
+  return fetch(`${apiBaseUrl}${path}`, requestInit);
+}
 
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response));
-  }
-
+async function readResponseBody(response: Response): Promise<unknown> {
   if (response.status === 204) {
     return null;
   }
