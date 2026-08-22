@@ -19,6 +19,7 @@ import { getStoredSession, clearStoredSession } from "@/lib/auth-session";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { useBrhRealtime } from "@/lib/use-brh-realtime";
+import { getInstagramConnectionStatus } from "@/lib/api-client";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -68,13 +69,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/accounts`, {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accounts?.length > 0) providers.push("instagram");
-      }
+      const status = await getInstagramConnectionStatus(session.accessToken);
+      if (status.connected) providers.push("instagram");
     } catch {
       // ignore
     }

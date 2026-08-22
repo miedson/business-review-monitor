@@ -347,6 +347,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     completeInstagramOAuthCallback,
     listInstagramAccounts,
     disconnectInstagramConnection,
+    instagramConnectionRepository,
     webUrl: config.WEB_URL
   });
   registerInstagramCommentsRoutes(app, {

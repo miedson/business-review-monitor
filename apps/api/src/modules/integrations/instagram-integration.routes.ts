@@ -8,6 +8,7 @@ import { GoogleBusinessProfileProviderError } from "@brm/review-monitoring";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AuthService } from "../auth/auth.service.js";
+import type { InstagramConnectionRepository } from "@brm/review-monitoring";
 
 const callbackQuerySchema = z.object({
   code: z.string().min(1).optional(),
@@ -161,6 +162,7 @@ export type RegisterInstagramIntegrationRoutesOptions = {
   listInstagramAccounts: ListInstagramAccounts;
   disconnectInstagramConnection: DisconnectInstagramConnection;
   webUrl: string;
+  instagramConnectionRepository: InstagramConnectionRepository;
 };
 
 export function registerInstagramIntegrationRoutes(
@@ -296,6 +298,13 @@ export function registerInstagramIntegrationRoutes(
 
       throw error;
     }
+  });
+
+  app.get("/integrations/instagram/status", { schema: { tags: ["Instagram Integration"], summary: "Get Instagram connection status", security: [{ bearerAuth: [] }], response: { 200: { type: "object", required: ["connected"], properties: { connected: { type: "boolean" }, username: { type: ["string", "null"] }, status: { type: "string" } } } } } }, async (request, reply) => {
+    const userId = await getAuthenticatedUserId(request);
+    const session = await options.authService.getCurrentSession(userId);
+    const connection = await options.instagramConnectionRepository.findByTenantId(session.tenant.id);
+    return reply.send({ connected: connection?.status === "CONNECTED" && Boolean(connection.encryptedAccessToken), username: connection?.username ?? null, status: connection?.status ?? "DISCONNECTED" });
   });
 
   app.post("/integrations/instagram/disconnect", { schema: instagramDisconnectRouteSchema }, async (request, reply) => {
