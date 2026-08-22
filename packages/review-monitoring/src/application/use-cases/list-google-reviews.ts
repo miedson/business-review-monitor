@@ -46,6 +46,29 @@ export class ListGoogleReviews {
       refreshToken
     });
 
+    // A location id is an external identifier. Verify it against the locations
+    // exposed by this tenant's connected Google credential before querying it.
+    let pageToken: string | undefined;
+    let locationIsAvailable = false;
+    do {
+      const page = await this.dependencies.provider.listLocations({
+        accessToken: tokenSet.accessToken,
+        accountId: input.accountId,
+        ...(pageToken ? { pageToken } : {})
+      });
+      locationIsAvailable = page.locations.some(
+        (location) => location.id === input.locationId
+      );
+      pageToken = page.nextPageToken;
+    } while (!locationIsAvailable && pageToken);
+
+    if (!locationIsAvailable) {
+      throw new GoogleBusinessProfileProviderError(
+        "GOOGLE_LOCATION_NOT_FOUND",
+        "Google Business Profile location was not found for this tenant."
+      );
+    }
+
     return this.dependencies.provider.listReviews({
       accessToken: tokenSet.accessToken,
       accountId: input.accountId,

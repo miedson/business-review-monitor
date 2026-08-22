@@ -25,6 +25,7 @@ const googleAccountSchema = z.object({
 
 const googleAccountsResponseSchema = z.object({
   accounts: z.array(googleAccountSchema),
+  nextPageToken: z.string().nullable().optional(),
 });
 
 const googleLocationSchema = z.object({
@@ -38,6 +39,7 @@ const googleLocationSchema = z.object({
 
 const googleLocationsResponseSchema = z.object({
   locations: z.array(googleLocationSchema),
+  nextPageToken: z.string().nullable().optional(),
 });
 
 const googleReviewSchema = z.object({
@@ -150,18 +152,26 @@ export async function buildGoogleConnectUrl(accessToken: string): Promise<string
 }
 
 export async function listGoogleAccounts(
-  accessToken: string
-): Promise<{ accounts: GoogleAccount[] }> {
+  accessToken: string,
+  pageToken?: string
+): Promise<{ accounts: GoogleAccount[]; nextPageToken?: string | null | undefined }> {
+  const params = new URLSearchParams();
+  if (pageToken) params.set("pageToken", pageToken);
+  const path = params.size
+    ? `/integrations/google/accounts?${params.toString()}`
+    : "/integrations/google/accounts";
   return googleAccountsResponseSchema.parse(
-    await requestJson("/integrations/google/accounts", { accessToken })
+    await requestJson(path, { accessToken })
   );
 }
 
 export async function listGoogleLocations(input: {
   accessToken: string;
   accountId: string;
-}): Promise<{ locations: GoogleLocation[] }> {
+  pageToken?: string;
+}): Promise<{ locations: GoogleLocation[]; nextPageToken?: string | null | undefined }> {
   const params = new URLSearchParams({ accountId: input.accountId });
+  if (input.pageToken) params.set("pageToken", input.pageToken);
   return googleLocationsResponseSchema.parse(
     await requestJson(`/integrations/google/locations?${params.toString()}`, {
       accessToken: input.accessToken,

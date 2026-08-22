@@ -576,6 +576,10 @@ function mapProviderErrorStatus(error: GoogleBusinessProfileProviderError): 400 
     return 403;
   }
 
+  if (error.code === "GOOGLE_LOCATION_NOT_FOUND") {
+    return 403;
+  }
+
   if (error.code === "GOOGLE_RATE_LIMITED") {
     return 429;
   }

@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { ThemeProvider, useThemeMode } from "@/lib/design-system";
 import { system } from "@/lib/design-system/theme";
+import { GoogleLocationProvider } from "@/lib/google-location-context";
 
 function ThemeToggleWrapper({ children }: { children: React.ReactNode }) {
   useThemeMode();
@@ -29,7 +30,7 @@ export function AppProviders({ children }: Readonly<{ children: ReactNode }>) {
     <ThemeProvider>
       <ChakraProvider value={system}>
         <ThemeToggleWrapper>
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <QueryClientProvider client={queryClient}><GoogleLocationProvider>{children}</GoogleLocationProvider></QueryClientProvider>
         </ThemeToggleWrapper>
       </ChakraProvider>
     </ThemeProvider>

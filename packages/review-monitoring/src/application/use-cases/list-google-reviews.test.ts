@@ -41,6 +41,7 @@ class FakeTokenCipher implements TokenCipher {
 class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
   refreshTokenInput?: RefreshProviderAccessTokenInput;
   reviewsInput?: Parameters<BusinessProfileReviewProvider["listReviews"]>[0];
+  availableLocationIds = ["locations/2001"];
 
   buildAuthorizationUrl(): string {
     throw new Error("Not implemented for this test.");
@@ -70,8 +71,8 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
     throw new Error("Not implemented for this test.");
   }
 
-  async listLocations(): Promise<ListBusinessProfileLocationsResult> {
-    throw new Error("Not implemented for this test.");
+  async listLocations(input: Parameters<BusinessProfileReviewProvider["listLocations"]>[0]): Promise<ListBusinessProfileLocationsResult> {
+    return { locations: this.availableLocationIds.map((id) => ({ id, accountId: input.accountId, name: id })) };
   }
 
   async listReviews(
@@ -147,5 +148,18 @@ describe("ListGoogleReviews", () => {
         locationId: "locations/2001"
       })
     ).rejects.toBeInstanceOf(GoogleBusinessProfileProviderError);
+  });
+
+  it("does not query a location that is unavailable to the tenant connection", async () => {
+    const provider = new FakeBusinessProfileProvider();
+    provider.availableLocationIds = ["locations/tenant-b"];
+    const useCase = new ListGoogleReviews({
+      googleConnectionRepository: new FakeGoogleConnectionRepository({ id: "connection-b", tenantId: "tenant-b", encryptedRefreshToken: "encrypted", scope: "scope", status: "CONNECTED" }),
+      provider,
+      tokenCipher: new FakeTokenCipher()
+    });
+
+    await expect(useCase.execute({ tenantId: "tenant-b", accountId: "accounts/1", locationId: "locations/tenant-a" })).rejects.toMatchObject({ code: "GOOGLE_LOCATION_NOT_FOUND" });
+    expect(provider.reviewsInput).toBeUndefined();
   });
 });

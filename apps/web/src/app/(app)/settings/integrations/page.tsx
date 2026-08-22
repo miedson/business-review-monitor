@@ -8,6 +8,7 @@ import {
   buildInstagramConnectUrl,
   disconnectInstagram,
   listGoogleAccounts,
+  listGoogleLocations,
   listInstagramAccounts,
 } from "@/lib/api-client";
 import { Box, Text, Toast, ChannelCard, Modal, Button, Card, CardBody, PageHeader } from "@/lib/design-system";
@@ -47,6 +48,7 @@ export default function IntegrationsPage() {
   const [googleAccount, setGoogleAccount] = useState<{ name?: string | undefined; accountName?: string | undefined } | null>(null);
   const [instagramAccount, setInstagramAccount] = useState<{ username?: string | undefined } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleLocationCount, setGoogleLocationCount] = useState(0);
   const [instagramLoading, setInstagramLoading] = useState(false);
 
   const [showInstagramDisconnectModal, setShowInstagramDisconnectModal] = useState(false);
@@ -71,9 +73,14 @@ export default function IntegrationsPage() {
       const firstGoogleAccount = googleResult.accounts[0];
       if (firstGoogleAccount) {
         setGoogleAccount({ name: firstGoogleAccount.name, accountName: firstGoogleAccount.accountName ?? undefined });
+        const locations = await Promise.all(googleResult.accounts.map((account) => listGoogleLocations({ accessToken: session.accessToken, accountId: account.id })));
+        setGoogleLocationCount(locations.reduce((total, page) => total + page.locations.length, 0));
+      } else {
+        setGoogleLocationCount(0);
       }
     } catch {
       setGoogleAccount(null);
+      setGoogleLocationCount(0);
     } finally {
       setGoogleLoading(false);
     }
@@ -119,6 +126,7 @@ export default function IntegrationsPage() {
       setGoogleDisconnectLoading(true);
       await disconnectGoogle({ accessToken: session.accessToken });
       setGoogleAccount(null);
+      setGoogleLocationCount(0);
       setShowGoogleDisconnectModal(false);
       setMessage({ type: "success", text: "Google Business Profile desconectado com sucesso!" });
     } catch (error) {
@@ -204,7 +212,7 @@ export default function IntegrationsPage() {
           description="Conecte sua conta para monitorar avaliações, responder clientes e acompanhar a reputação da sua empresa no Google Maps e Busca."
           status={googleAccount ? "connected" : "disconnected"}
           accountLabel={googleAccountLabel}
-          subtitle={googleAccount ? "Conta conectada" : undefined}
+          subtitle={googleAccount ? `${googleLocationCount} ${googleLocationCount === 1 ? "empresa disponível" : "empresas disponíveis"}` : undefined}
           onConnect={handleGoogleConnect}
           onDisconnectClick={handleGoogleDisconnectClick}
           isLoading={googleLoading}

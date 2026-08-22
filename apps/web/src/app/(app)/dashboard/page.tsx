@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   Camera,
@@ -17,9 +18,10 @@ import {
 } from "@/lib/design-system";
 import { getStoredSession } from "@/lib/auth-session";
 import {
-  listGoogleAccounts, listGoogleLocations, listGoogleReviews, listInstagramAccounts,
+  listGoogleReviews, listInstagramAccounts,
   listInstagramComments, type GoogleReview, type InstagramComment,
 } from "@/lib/api-client";
+import { useGoogleLocation } from "@/lib/google-location-context";
 
 const score = (rating: GoogleReview["starRating"]) =>
   ({ ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, STAR_RATING_UNSPECIFIED: 0 })[rating];
@@ -30,6 +32,7 @@ const relativeDate = (date: string) =>
   );
 
 export default function DashboardPage() {
+  const { activeLocation, status: locationStatus } = useGoogleLocation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [reviews, setReviews] = useState<GoogleReview[]>([]);
@@ -40,36 +43,43 @@ export default function DashboardPage() {
   const [total, setTotal] = useState<number | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
 
+  const googleReviewsQuery = useQuery({
+    queryKey: ["dashboard", activeLocation?.id],
+    enabled: Boolean(activeLocation),
+    queryFn: () => listGoogleReviews({
+      accessToken: getStoredSession()?.accessToken ?? "",
+      accountId: activeLocation?.accountId ?? "",
+      locationId: activeLocation?.id ?? "",
+    }),
+  });
+
   useEffect(() => { void loadDashboard(); }, []);
+  useEffect(() => {
+    setGoogleConnected(Boolean(activeLocation));
+    setReviews([]);
+    setAverage(null);
+    setTotal(null);
+  }, [activeLocation?.id]);
+  useEffect(() => {
+    if (googleReviewsQuery.data) {
+      setReviews(googleReviewsQuery.data.reviews);
+      setAverage(googleReviewsQuery.data.averageRating ?? null);
+      setTotal(googleReviewsQuery.data.totalReviewCount ?? null);
+    }
+  }, [googleReviewsQuery.data]);
 
   async function loadDashboard() {
     const session = getStoredSession();
     if (!session?.accessToken) return;
     setUserName(session.user.name);
     try {
-      const [google, instagram] = await Promise.allSettled([
-        listGoogleAccounts(session.accessToken),
-        listInstagramAccounts(session.accessToken),
-      ]);
-      if (instagram.status === "fulfilled") {
-        const active = instagram.value.accounts.length > 0;
+      const instagram = await Promise.resolve(listInstagramAccounts(session.accessToken));
+      {
+        const active = instagram.accounts.length > 0;
         setInstagramConnected(active);
         if (active) {
           const result = await listInstagramComments({ accessToken: session.accessToken, limit: 12 });
           setComments(result.comments);
-        }
-      }
-      if (google.status === "fulfilled" && google.value.accounts[0]) {
-        setGoogleConnected(true);
-        const accountId = google.value.accounts[0].id;
-        const locations = await listGoogleLocations({ accessToken: session.accessToken, accountId });
-        if (locations.locations[0]) {
-          const result = await listGoogleReviews({
-            accessToken: session.accessToken, accountId, locationId: locations.locations[0].id,
-          });
-          setReviews(result.reviews);
-          setAverage(result.averageRating ?? null);
-          setTotal(result.totalReviewCount ?? null);
         }
       }
     } finally {
@@ -97,7 +107,7 @@ export default function DashboardPage() {
 
   return <Box css={{ maxW: "1580px", mx: "auto", pb: 8 }}>
     <DashboardHeader userName={userName} refreshing={refreshing} onRefresh={() => { setRefreshing(true); void loadDashboard(); }} />
-    {loading ? <DashboardSkeleton /> : !connected ? <DisconnectedDashboard /> : <>
+    {loading || locationStatus === "loading" || googleReviewsQuery.isFetching ? <DashboardSkeleton /> : !connected ? <DisconnectedDashboard /> : <>
       <Box css={{ display: "grid", gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" }, gap: 0, mb: 6, bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "lg", overflow: "hidden" }}>
         <Kpi icon={<Star size={17} />} label="Reputação Google" value={average?.toFixed(1) ?? "—"} detail={average ? "Nota média atual" : "Aguardando avaliações"} emphasis />
         <Kpi icon={<MessageCircle size={17} />} label="Avaliações" value={total?.toLocaleString("pt-BR") ?? "—"} detail={total !== null ? "Total no Google Business Profile" : "Sem dados disponíveis"} />
