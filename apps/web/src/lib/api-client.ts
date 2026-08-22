@@ -138,6 +138,34 @@ export async function getAttentionSummary(accessToken: string): Promise<Attentio
   return attentionSummarySchema.parse(await requestJson("/attention-summary", { accessToken }));
 }
 
+const notificationSchema = z.object({
+  id: z.string(),
+  type: z.enum(["INSTAGRAM_COMMENT", "INSTAGRAM_DIRECT", "GOOGLE_REVIEW", "SYSTEM"]),
+  title: z.string(),
+  body: z.string(),
+  resourceType: z.string(),
+  resourceId: z.string(),
+  readAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime()
+});
+const notificationsResponseSchema = z.object({ notifications: z.array(notificationSchema), unreadCount: z.number().int() });
+export type AppNotification = z.infer<typeof notificationSchema>;
+
+export async function getNotifications(input: { accessToken: string; unreadOnly?: boolean; limit?: number }): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
+  const params = new URLSearchParams();
+  if (input.unreadOnly) params.set("unreadOnly", "true");
+  if (input.limit) params.set("limit", String(input.limit));
+  return notificationsResponseSchema.parse(await requestJson(`/notifications?${params.toString()}`, { accessToken: input.accessToken }));
+}
+
+export async function markNotificationRead(input: { accessToken: string; id: string }): Promise<void> {
+  await requestJson(`/notifications/${encodeURIComponent(input.id)}/read`, { accessToken: input.accessToken, method: "POST" });
+}
+
+export async function markAllNotificationsRead(accessToken: string): Promise<void> {
+  await requestJson("/notifications/read-all", { accessToken, method: "POST" });
+}
+
 export async function register(input: {
   name: string;
   email: string;

@@ -32,6 +32,7 @@ model Tenant {
   instagramConnections InstagramConnection[]
   instagramConversations InstagramConversation[]
   instagramMessages    InstagramMessage[]
+  notifications        Notification[]
   reviewCaches         ReviewCache[]
   users                TenantUser[]
 
@@ -225,6 +226,25 @@ model InstagramMessage {
   @@map("instagram_messages")
 }
 
+model Notification {
+  id           String             @id @default(cuid())
+  tenantId     String
+  type         NotificationType
+  title        String
+  body         String
+  resourceType String
+  resourceId   String
+  dedupeKey    String
+  readAt       DateTime?          @db.Timestamptz(3)
+  createdAt    DateTime           @default(now()) @db.Timestamptz(3)
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, readAt])
+  @@index([tenantId, createdAt])
+  @@map("notifications")
+}
+
 model BusinessLocation {
   id                 String           @id @default(cuid())
   tenantId           String
@@ -315,4 +335,11 @@ enum InstagramMessageStatus {
   DELIVERED
   READ
   FAILED
+}
+
+enum NotificationType {
+  INSTAGRAM_COMMENT
+  INSTAGRAM_DIRECT
+  GOOGLE_REVIEW
+  SYSTEM
 }

@@ -19,9 +19,11 @@ export type SyncGoogleReviewsJobData = z.infer<
 export type SyncGoogleReviewsUseCase = {
   execute(input: SyncGoogleReviewsJobData): Promise<ListBusinessReviewsResult>;
 };
+type NotificationStore = { create(input: { tenantId: string; type: "GOOGLE_REVIEW"; title: string; body: string; resourceType: string; resourceId: string; dedupeKey: string }): Promise<void> };
+type RealtimeEventPublisher = { publish(event: { tenantId: string; type: string; payload: Record<string, string> }): Promise<void> };
 
 export class SyncGoogleReviewsJob {
-  constructor(private readonly useCase: SyncGoogleReviewsUseCase) {}
+  constructor(private readonly useCase: SyncGoogleReviewsUseCase, private readonly notificationStore?: NotificationStore, private readonly realtimeEventPublisher?: RealtimeEventPublisher) {}
 
   async handle(job: Job<unknown>): Promise<void> {
     const parsedData = syncGoogleReviewsJobDataSchema.safeParse(job.data);
@@ -32,6 +34,20 @@ export class SyncGoogleReviewsJob {
 
     const startedAt = Date.now();
     const result = await this.useCase.execute(parsedData.data);
+    for (const review of result.reviews) {
+      await this.notificationStore?.create({
+        tenantId: parsedData.data.tenantId,
+        type: "GOOGLE_REVIEW",
+        title: "Nova avaliação no Google",
+        body: review.comment ?? "Uma nova avaliação foi recebida.",
+        resourceType: "google-review",
+        resourceId: review.id,
+        dedupeKey: `google-review:${review.id}`
+      });
+    }
+    if (result.reviews.length > 0) {
+      await this.realtimeEventPublisher?.publish({ tenantId: parsedData.data.tenantId, type: "google.review.created", payload: { locationId: parsedData.data.locationId } });
+    }
 
     logInfo("sync_google_reviews_job_completed", {
       tenantId: parsedData.data.tenantId,

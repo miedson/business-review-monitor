@@ -91,6 +91,7 @@ export type ProcessMetaWebhookEventUseCase = {
   execute(input: ProcessMetaWebhookEventJobData): Promise<void>;
 };
 export type RealtimeEventPublisher = { publish(event: { tenantId: string; type: string; payload: Record<string, string> }): Promise<void> };
+export type NotificationStore = { create(input: { tenantId: string; type: "INSTAGRAM_COMMENT" | "INSTAGRAM_DIRECT" | "GOOGLE_REVIEW" | "SYSTEM"; title: string; body: string; resourceType: string; resourceId: string; dedupeKey: string }): Promise<void> };
 
 export class ProcessMetaWebhookEventJob {
   constructor(
@@ -110,7 +111,8 @@ export class ProcessMetaWebhookEventJob {
     private readonly processInstagramDirectMessage: ProcessInstagramDirectMessage,
     private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer(),
     private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer(),
-    private readonly realtimeEventPublisher?: RealtimeEventPublisher
+    private readonly realtimeEventPublisher?: RealtimeEventPublisher,
+    private readonly notificationStore?: NotificationStore
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -285,6 +287,15 @@ export class ProcessMetaWebhookEventJob {
     if (normalizedComment.createdAtExternal !== undefined) upsertInput.createdAtExternal = normalizedComment.createdAtExternal;
 
     const comment = await this.instagramCommentRepository.upsert(upsertInput);
+    await this.notificationStore?.create({
+      tenantId: comment.tenantId,
+      type: "INSTAGRAM_COMMENT",
+      title: "Novo comentário no Instagram",
+      body: comment.text ?? "Um novo comentário precisa da sua atenção.",
+      resourceType: "instagram-comment",
+      resourceId: comment.id,
+      dedupeKey: `instagram-comment:${comment.id}`
+    });
     await this.realtimeEventPublisher?.publish({ tenantId: comment.tenantId, type: "instagram.comment.created", payload: { commentId: comment.id, instagramConnectionId: comment.instagramConnectionId } });
 
     logInfo("instagram_comment_persisted", {
@@ -360,6 +371,19 @@ export class ProcessMetaWebhookEventJob {
       connection,
       normalizedMessage
     } as ProcessInstagramDirectMessageInput);
+
+    if (result.isNew && normalizedMessage.direction === "INBOUND") {
+      await this.notificationStore?.create({
+        tenantId: connection.tenantId,
+        type: "INSTAGRAM_DIRECT",
+        title: "Nova mensagem no Instagram Direct",
+        body: normalizedMessage.text ?? "Você recebeu uma nova mensagem.",
+        resourceType: "instagram-conversation",
+        resourceId: result.conversationId,
+        dedupeKey: `instagram-message:${normalizedMessage.externalMessageId}`
+      });
+      await this.realtimeEventPublisher?.publish({ tenantId: connection.tenantId, type: "instagram.message.created", payload: { conversationId: result.conversationId, messageId: result.messageId } });
+    }
 
     logInfo("instagram_direct_message_processed", {
       requestId,

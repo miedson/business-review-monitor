@@ -65,6 +65,7 @@ import { RedisManualSyncRateLimiter } from "../modules/integrations/redis-manual
 import { registerAttentionSummaryRoute } from "../modules/integrations/attention-summary.routes.js";
 import { RealtimeGateway } from "../modules/integrations/realtime-gateway.js";
 import { registerRealtimeRoute } from "../modules/integrations/realtime.routes.js";
+import { registerNotificationRoutes } from "../modules/notifications/notifications.routes.js";
 
 export type BuildApiOptions = {
   config?: AppConfig;
@@ -331,6 +332,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   registerAuthRoutes(app, authService);
   registerAttentionSummaryRoute(app, { prisma, authService });
   registerRealtimeRoute(app, { gateway: realtimeGateway, authService, webUrl: config.WEB_URL });
+  registerNotificationRoutes(app, { prisma, authService });
   registerGoogleIntegrationRoutes(app, {
     authService,
     startGoogleOAuthConnection,

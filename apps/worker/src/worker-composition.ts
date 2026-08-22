@@ -39,6 +39,8 @@ export function createSyncGoogleReviewsJob(
           redirectUri: config.GOOGLE_REDIRECT_URI
         });
 
+  const notificationStore = createNotificationStore();
+  const realtimeEventPublisher = new RedisRealtimeEventPublisher(createRedisClient(config.REDIS_URL));
   return new SyncGoogleReviewsJob(
     new RefreshGoogleReviewCache({
       businessLocationRepository: new PrismaBusinessLocationRepository(prisma),
@@ -48,7 +50,9 @@ export function createSyncGoogleReviewsJob(
       tokenCipher: new EncryptionTokenCipher(
         createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY)
       )
-    })
+    }),
+    notificationStore,
+    realtimeEventPublisher
   );
 }
 
@@ -100,6 +104,19 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
     processDirectMessage,
     undefined,
     undefined,
-    new RedisRealtimeEventPublisher(createRedisClient(config.REDIS_URL))
+    new RedisRealtimeEventPublisher(createRedisClient(config.REDIS_URL)),
+    createNotificationStore()
   );
+}
+
+function createNotificationStore() {
+  return {
+    async create(input: { tenantId: string; type: "INSTAGRAM_COMMENT" | "INSTAGRAM_DIRECT" | "GOOGLE_REVIEW" | "SYSTEM"; title: string; body: string; resourceType: string; resourceId: string; dedupeKey: string }): Promise<void> {
+      await prisma.notification.upsert({
+        where: { tenantId_dedupeKey: { tenantId: input.tenantId, dedupeKey: input.dedupeKey } },
+        create: input,
+        update: {}
+      });
+    }
+  };
 }
