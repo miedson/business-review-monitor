@@ -7,6 +7,7 @@ import {
   ConversationShell,
 } from "@/components/conversation";
 import {
+  listInstagramAccounts,
   listInstagramComments,
   markInstagramCommentReplied,
   replyToInstagramComment,
@@ -45,14 +46,20 @@ export default function InstagramCommentsPage() {
   const [filter, setFilter] = useState<"ALL" | "PENDING" | "REPLIED">("ALL");
   const [selected, setSelected] = useState<CommentThread | null>(null);
   const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [connectedUsername, setConnectedUsername] = useState<string | null>(null);
   async function load() {
     const session = getStoredSession();
     if (!session?.accessToken) return;
     try {
       setLoading(true);
-      const result = await listInstagramComments({ accessToken: session.accessToken, limit: 100 });
+      const [result, accounts] = await Promise.all([
+        listInstagramComments({ accessToken: session.accessToken, limit: 100 }),
+        listInstagramAccounts(session.accessToken),
+      ]);
       setConnected(true);
       setComments(result.comments);
+      setConnectedUsername(accounts.accounts[0]?.username ?? null);
     } catch (cause) {
       setConnected(false);
       setError(
@@ -93,6 +100,7 @@ export default function InstagramCommentsPage() {
     const session = getStoredSession();
     if (!session?.accessToken || !selected || !message.trim()) return;
     try {
+      setSending(true);
       await replyToInstagramComment({
         accessToken: session.accessToken,
         id: selected.latest.id,
@@ -105,6 +113,8 @@ export default function InstagramCommentsPage() {
       setError(
         cause instanceof Error ? cause.message : "Não foi possível responder a este comentário.",
       );
+    } finally {
+      setSending(false);
     }
   }
   return (
@@ -203,6 +213,8 @@ export default function InstagramCommentsPage() {
         <ConversationDrawer
           thread={selected}
           message={message}
+          username={connectedUsername}
+          sending={sending}
           onMessage={setMessage}
           onClose={() => setSelected(null)}
           onPublish={() => void publish()}
@@ -307,12 +319,16 @@ function ThreadRow({ thread, onOpen }: { thread: CommentThread; onOpen: () => vo
 function ConversationDrawer({
   thread,
   message,
+  username,
+  sending,
   onMessage,
   onClose,
   onPublish,
 }: {
   thread: CommentThread;
   message: string;
+  username: string | null;
+  sending: boolean;
   onMessage: (value: string) => void;
   onClose: () => void;
   onPublish: () => void;
@@ -329,16 +345,18 @@ function ConversationDrawer({
         </ConversationHeader>
       }
       context={<ContextPreview media={thread.media} detailed />}
-      composer={<Composer value={message} onChange={onMessage} onSubmit={onPublish} />}
+      composer={
+        <Composer value={message} onChange={onMessage} onSubmit={onPublish} loading={sending} />
+      }
     >
       <Box css={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {thread.messages.map((comment) => {
           const business = comment.authorType === "BUSINESS";
-          const name = comment.author.username ?? (business ? "BRH" : "cliente");
+          const name = comment.author.username ?? (business ? "cliente" : "cliente");
           return (
             <ConversationMessageBubble
               key={comment.id}
-              author={business ? "BRH" : `@${name}`}
+              author={business ? formatBusinessAuthor(username) : `@${name}`}
               timestamp={formatDate(comment.createdAt)}
               align={business ? "end" : "start"}
             >
@@ -427,6 +445,11 @@ function formatDate(value: string): string {
     new Date(value),
   );
 }
+
+function formatBusinessAuthor(username: string | null): string {
+  return username ? `BRH @${username}` : "BRH";
+}
+
 async function markCommentReplied(id: string): Promise<void> {
   const session = getStoredSession();
   if (!session?.accessToken) return;

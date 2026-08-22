@@ -89,13 +89,25 @@ export function MessageBubble({
   children,
   author,
   timestamp,
+  status,
   align = "start",
 }: {
   children: ReactNode;
   author: string;
   timestamp: string;
+  status?: "SENT" | "DELIVERED" | "READ" | "FAILED";
   align?: "start" | "end";
 }) {
+  const statusLabel =
+    status === "READ"
+      ? "Lida"
+      : status === "DELIVERED"
+        ? "Entregue"
+        : status === "FAILED"
+          ? "Falhou"
+          : status === "SENT"
+            ? "Enviada"
+            : undefined;
   return (
     <Flex css={{ justifyContent: align === "end" ? "flex-end" : "flex-start", mb: 3 }}>
       <Box
@@ -109,7 +121,10 @@ export function MessageBubble({
       >
         <Text css={{ fontSize: "xs", fontWeight: "semibold", opacity: 0.75, mb: 1 }}>{author}</Text>
         <Text css={{ fontSize: "sm", whiteSpace: "pre-wrap" }}>{children}</Text>
-        <Text css={{ mt: 2, fontSize: "10px", opacity: 0.65 }}>{timestamp}</Text>
+        <Text css={{ mt: 2, fontSize: "10px", opacity: 0.65 }}>
+          {timestamp}
+          {statusLabel ? ` · ${statusLabel}` : ""}
+        </Text>
       </Box>
     </Flex>
   );
@@ -121,12 +136,14 @@ export function Composer({
   onSubmit,
   placeholder = "Digite uma resposta...",
   disabled = false,
+  loading = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
   placeholder?: string;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const emojis = ["😀", "😊", "👏", "❤️", "🙏", "🎉", "👍", "✨", "🙂", "💚", "🔥", "🙌"];
@@ -176,7 +193,7 @@ export function Composer({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={3}
-        disabled={disabled}
+        disabled={disabled || loading}
         placeholder={placeholder}
         style={{
           width: "100%",
@@ -193,13 +210,14 @@ export function Composer({
           aria-label="Adicionar emoji"
           variant="ghost"
           size="sm"
+          disabled={disabled || loading}
           onClick={() => setEmojiOpen((open) => !open)}
         >
           😀
         </Button>
-        <Button size="sm" disabled={disabled || !value.trim()} onClick={onSubmit}>
+        <Button size="sm" disabled={disabled || loading || !value.trim()} onClick={onSubmit}>
           <Send size={15} />
-          Enviar
+          {loading ? "Enviando..." : "Enviar"}
         </Button>
       </Flex>
     </Box>

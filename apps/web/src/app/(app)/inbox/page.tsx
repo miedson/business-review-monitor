@@ -9,6 +9,7 @@ import {
 import {
   listInboxConversationMessages,
   listInboxConversations,
+  listInstagramAccounts,
   markInboxConversationAsRead,
   sendInstagramDirectMessage,
   type InboxMessage,
@@ -41,24 +42,27 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [connectedUsername, setConnectedUsername] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     const session = getStoredSession();
     if (!session?.accessToken) return;
     try {
       setLoading(true);
-      const result = await listInboxConversations({
-        accessToken: session.accessToken,
-        limit: 100,
-        cursor: undefined,
-      });
+      const [result, accounts] = await Promise.all([
+        listInboxConversations({ accessToken: session.accessToken, limit: 100, cursor: undefined }),
+        listInstagramAccounts(session.accessToken),
+      ]);
       setConversations(result.conversations);
+      setConnectedUsername(accounts.accounts[0]?.username ?? null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível carregar as conversas.");
     } finally {
       setLoading(false);
     }
   }, []);
+
   const loadMessages = useCallback(async (conversationId: string) => {
     const session = getStoredSession();
     if (!session?.accessToken) return;
@@ -75,6 +79,7 @@ export default function InboxPage() {
       setLoadingMessages(false);
     }
   }, []);
+
   useEffect(() => {
     void load();
     const onRealtime = () => {
@@ -84,6 +89,7 @@ export default function InboxPage() {
     window.addEventListener("brh:realtime", onRealtime);
     return () => window.removeEventListener("brh:realtime", onRealtime);
   }, [load, loadMessages, selected]);
+
   const visible = useMemo(
     () =>
       conversations.filter((item) => {
@@ -95,6 +101,7 @@ export default function InboxPage() {
       }),
     [conversations, query],
   );
+
   async function openConversation(conversation: Conversation): Promise<void> {
     const session = getStoredSession();
     setSelected(conversation);
@@ -110,6 +117,7 @@ export default function InboxPage() {
       items.map((item) => (item.id === conversation.id ? { ...item, unreadCount: 0 } : item)),
     );
   }
+
   async function sendMessage(): Promise<void> {
     const session = getStoredSession();
     if (!session?.accessToken || !selected || !draft.trim() || sending) return;
@@ -128,11 +136,8 @@ export default function InboxPage() {
       setSending(false);
     }
   }
-  const name = selected
-    ? (selected.participant.username ??
-      selected.participant.name ??
-      selected.participant.externalId)
-    : "";
+
+  const name = selected ? getParticipantDisplayName(selected) : "";
   return (
     <Box css={{ maxW: "1160px", mx: "auto" }}>
       <PageHeader
@@ -194,7 +199,9 @@ export default function InboxPage() {
           header={
             <ConversationHeader onClose={() => setSelected(null)}>
               <Text css={{ fontWeight: "semibold", fontSize: "lg" }}>Conversa no Instagram</Text>
-              <Text css={{ mt: 1, fontSize: "sm", color: "text.tertiary" }}>@{name}</Text>
+              <Text css={{ mt: 1, fontSize: "sm", color: "text.tertiary" }}>
+                {formatParticipantLabel(name)}
+              </Text>
             </ConversationHeader>
           }
           composer={
@@ -203,6 +210,7 @@ export default function InboxPage() {
               onChange={setDraft}
               onSubmit={() => void sendMessage()}
               disabled={sending}
+              loading={sending}
               placeholder="Digite uma mensagem..."
             />
           }
@@ -214,8 +222,13 @@ export default function InboxPage() {
               {messages.map((message) => (
                 <MessageBubble
                   key={message.id}
-                  author={message.direction === "OUTBOUND" ? "BRH" : `@${name}`}
+                  author={
+                    message.direction === "OUTBOUND"
+                      ? formatBusinessAuthor(connectedUsername)
+                      : formatParticipantLabel(name)
+                  }
                   timestamp={formatDate(message.sentAt)}
+                  {...(message.direction === "OUTBOUND" ? { status: message.status } : {})}
                   align={message.direction === "OUTBOUND" ? "end" : "start"}
                 >
                   {message.text ?? "Mensagem sem texto."}
@@ -236,10 +249,7 @@ function ConversationRow({
   conversation: Conversation;
   onOpen: () => void;
 }) {
-  const name =
-    conversation.participant.username ??
-    conversation.participant.name ??
-    conversation.participant.externalId;
+  const name = getParticipantDisplayName(conversation);
   return (
     <Flex
       css={{
@@ -269,7 +279,9 @@ function ConversationRow({
       <Box css={{ flex: 1, minW: 0 }}>
         <Flex css={{ justifyContent: "space-between", gap: 3, flexWrap: "wrap" }}>
           <Box>
-            <Text css={{ fontWeight: "medium", fontSize: "sm" }}>@{name}</Text>
+            <Text css={{ fontWeight: "medium", fontSize: "sm" }}>
+              {formatParticipantLabel(name)}
+            </Text>
             <Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>
               {formatDate(conversation.lastMessageAt)}
               {conversation.unreadCount ? ` · ${conversation.unreadCount} não lida(s)` : ""}
@@ -286,6 +298,18 @@ function ConversationRow({
       </Box>
     </Flex>
   );
+}
+
+function getParticipantDisplayName(conversation: Conversation): string {
+  const candidate = conversation.participant.username ?? conversation.participant.name;
+  return candidate && !/^\d{6,}$/.test(candidate) ? candidate : "Cliente do Instagram";
+}
+
+function formatParticipantLabel(name: string): string {
+  return name === "Cliente do Instagram" ? name : `@${name}`;
+}
+function formatBusinessAuthor(username: string | null): string {
+  return username ? `BRH @${username}` : "BRH";
 }
 function formatDate(value: string | null): string {
   return value

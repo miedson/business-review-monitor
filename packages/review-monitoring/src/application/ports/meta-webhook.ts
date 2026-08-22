@@ -55,6 +55,12 @@ export type MetaWebhookMessaging = {
   timestamp: number;
   message?: MetaWebhookMessage;
   postback?: MetaWebhookPostback;
+  read?: MetaWebhookRead;
+};
+
+export type MetaWebhookRead = {
+  watermark: number;
+  seq?: number;
 };
 
 export type MetaWebhookPostback = {

@@ -36,5 +36,9 @@ export interface InstagramMessageRepository {
     instagramConversationId: string;
     externalMessageId: string;
   }): Promise<InstagramMessage | null>;
+  markOutboundMessagesAsRead(input: {
+    instagramConversationId: string;
+    watermark: Date;
+  }): Promise<number>;
   deleteByConnectionId(connectionId: string): Promise<void>;
 }

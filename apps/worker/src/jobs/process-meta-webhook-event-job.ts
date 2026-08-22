@@ -64,6 +64,12 @@ const processMetaWebhookEventJobDataSchema = z
                     title: z.string().optional(),
                   })
                   .optional(),
+                read: z
+                  .object({
+                    watermark: z.number(),
+                    seq: z.number().optional(),
+                  })
+                  .optional(),
               }),
             )
             .optional(),
@@ -169,7 +175,12 @@ export class ProcessMetaWebhookEventJob {
 
     if (entry.messaging) {
       for (const message of entry.messaging) {
-        await this.processMessage(entry, message, requestId);
+        if (message.read) {
+          await this.processRead(entry, message, requestId);
+        }
+        if (message.message || message.postback) {
+          await this.processMessage(entry, message, requestId);
+        }
       }
     }
   }
@@ -426,5 +437,77 @@ export class ProcessMetaWebhookEventJob {
       messageId: result.messageId,
       isNew: result.isNew,
     });
+  }
+
+  private async processRead(
+    entry: JobEntry,
+    message: JobMessage,
+    requestId: string,
+  ): Promise<void> {
+    const connection = await this.resolveConnection(
+      entry.id,
+      message.sender.id,
+      message.recipient.id,
+    );
+    if (!connection) {
+      logInfo("meta_webhook_read_unknown_connection", {
+        requestId,
+        entryId: entry.id,
+        senderId: message.sender.id,
+        recipientId: message.recipient.id,
+      });
+      return;
+    }
+
+    const conversation = await this.instagramConversationRepository.findByConnectionAndParticipant({
+      instagramConnectionId: connection.id,
+      participantExternalId: message.sender.id,
+    });
+    if (!conversation) {
+      logInfo("meta_webhook_read_conversation_not_found", {
+        requestId,
+        tenantId: connection.tenantId,
+        instagramConnectionId: connection.id,
+        participantExternalId: message.sender.id,
+      });
+      return;
+    }
+
+    const updatedCount = await this.instagramMessageRepository.markOutboundMessagesAsRead({
+      instagramConversationId: conversation.id,
+      watermark: new Date(message.read!.watermark),
+    });
+
+    if (updatedCount > 0) {
+      await this.realtimeEventPublisher?.publish({
+        tenantId: connection.tenantId,
+        type: "instagram.message.read",
+        payload: { conversationId: conversation.id, updatedCount: String(updatedCount) },
+      });
+    }
+
+    logInfo("instagram_direct_messages_read", {
+      requestId,
+      tenantId: connection.tenantId,
+      conversationId: conversation.id,
+      watermark: message.read!.watermark,
+      updatedCount,
+    });
+  }
+
+  private async resolveConnection(
+    webhookAccountId: string,
+    senderId: string,
+    recipientId: string,
+  ): Promise<StoredInstagramConnection | null> {
+    let connection =
+      await this.instagramConnectionRepository.findByProfessionalAccountId(webhookAccountId);
+    if (!connection)
+      connection = await this.instagramConnectionRepository.findByInstagramUserId(senderId);
+    if (!connection)
+      connection = await this.instagramConnectionRepository.findByInstagramUserId(recipientId);
+    if (connection) return connection;
+    const resolved = await this.resolveInstagramWebhookIdentity.execute({ webhookAccountId });
+    return resolved?.connection ?? null;
   }
 }

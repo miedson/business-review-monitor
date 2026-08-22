@@ -85,6 +85,23 @@ export class PrismaInstagramMessageRepository implements InstagramMessageReposit
     return message ? this.mapToDomain(message) : null;
   }
 
+  async markOutboundMessagesAsRead(input: {
+    instagramConversationId: string;
+    watermark: Date;
+  }): Promise<number> {
+    const result = await this.prisma.instagramMessage.updateMany({
+      where: {
+        instagramConversationId: input.instagramConversationId,
+        direction: "OUTBOUND",
+        sentAtExternal: { lte: input.watermark },
+        status: { in: ["SENT", "DELIVERED"] },
+      },
+      data: { status: "READ" },
+    });
+
+    return result.count;
+  }
+
   async deleteByConnectionId(connectionId: string): Promise<void> {
     await this.prisma.instagramMessage.deleteMany({
       where: {

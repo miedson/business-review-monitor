@@ -60,8 +60,10 @@ export class ProcessInstagramDirectMessage {
         tenantId: input.connection.tenantId,
         instagramConnectionId: input.connection.id,
         participantExternalId,
-        participantUsername: participantExternalId,
-        participantName: participantExternalId,
+        // Meta messaging payloads commonly provide only the external ID.
+        // Keep that identifier in participantExternalId, never present it as a name.
+        participantUsername: undefined,
+        participantName: undefined,
         participantProfilePictureUrl: undefined,
         lastMessageAt: input.normalizedMessage.sentAtExternal,
         lastMessagePreview: input.normalizedMessage.text,

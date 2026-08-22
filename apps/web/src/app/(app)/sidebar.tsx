@@ -22,6 +22,7 @@ import {
   Home,
   Inbox,
   LogOut,
+  MessageSquareText,
   PanelLeftClose,
   PanelLeftOpen,
   Plug,
@@ -36,7 +37,7 @@ const primaryItems = [
   ["/reviews", "Avaliações", Star],
 ] as const;
 const instagramItems = [
-  ["/instagram/comments", "Comentários", Camera],
+  ["/instagram/comments", "Comentários", MessageSquareText],
   ["/inbox", "Direct", Inbox],
 ] as const;
 const settingsItems = [

@@ -171,6 +171,7 @@ export type {
   MetaWebhookFrom,
   MetaWebhookMessage,
   MetaWebhookMessaging,
+  MetaWebhookRead,
   MetaWebhookPostback,
   MetaWebhookPayload,
   MetaWebhookErrorCode,

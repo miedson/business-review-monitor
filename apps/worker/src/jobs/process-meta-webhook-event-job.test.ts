@@ -124,6 +124,7 @@ class FakeInstagramConversationRepository {
 }
 
 class FakeInstagramMessageRepository {
+  markedReadCount = 0;
   async save() {
     return {} as never;
   }
@@ -136,8 +137,18 @@ class FakeInstagramMessageRepository {
   async findByExternalId() {
     return null;
   }
+  async markOutboundMessagesAsRead() {
+    this.markedReadCount += 1;
+    return 1;
+  }
   async deleteByConnectionId() {
     void 0;
+  }
+}
+
+class FakeReadConversationRepository extends FakeInstagramConversationRepository {
+  async findByConnectionAndParticipant() {
+    return { id: "conversation_read" } as never;
   }
 }
 
@@ -596,5 +607,63 @@ describe("ProcessMetaWebhookEventJob - Instagram Direct", () => {
       name: "process-meta-webhook-event",
       data,
     } as unknown as Job<ProcessMetaWebhookEventJobData>);
+  });
+
+  it("marks outbound messages as read from the Meta read watermark", async () => {
+    const connection: StoredInstagramConnection = {
+      id: "conn_read",
+      tenantId: "tenant_read",
+      instagramUserId: "oauth_user",
+      instagramProfessionalAccountId: "professional_account",
+      username: "business",
+      accountType: "BUSINESS",
+      encryptedAccessToken: "encrypted_token",
+      scope: "instagram_business_basic",
+      status: "CONNECTED",
+      connectedAt: new Date(),
+      disconnectedAt: null,
+      tokenExpiresAt: new Date(Date.now() + 86400000),
+    };
+    const connectionRepo = new FakeInstagramConnectionRepository();
+    connectionRepo.setConnection(connection);
+    const messageRepo = new FakeInstagramMessageRepository();
+    const job = new ProcessMetaWebhookEventJob(
+      connectionRepo,
+      new FakeInstagramCommentRepository(),
+      new FakeResolveInstagramWebhookIdentity(),
+      new FakeReadConversationRepository(),
+      messageRepo,
+      new FakeProcessInstagramDirectMessage(),
+    );
+
+    const data = {
+      payload: {
+        object: "instagram",
+        entry: [
+          {
+            id: "professional_account",
+            time: 1700000000,
+            messaging: [
+              {
+                sender: { id: "customer" },
+                recipient: { id: "professional_account" },
+                timestamp: 1700000000000,
+                read: { watermark: 1700000000000 },
+              },
+            ],
+          },
+        ],
+      },
+      receivedAt: new Date().toISOString(),
+      requestId: "123e4567-e89b-12d3-a456-426614174000",
+    };
+
+    await job.handle({
+      id: "job_read",
+      name: "process-meta-webhook-event",
+      data,
+    } as unknown as Job<ProcessMetaWebhookEventJobData>);
+
+    expect(messageRepo.markedReadCount).toBe(1);
   });
 });

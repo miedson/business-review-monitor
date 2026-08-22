@@ -25,6 +25,7 @@ type MessageRepoMock = {
   findByConversation: ReturnType<typeof vi.fn>;
   findByIdForTenant: ReturnType<typeof vi.fn>;
   findByExternalId: ReturnType<typeof vi.fn>;
+  markOutboundMessagesAsRead: ReturnType<typeof vi.fn>;
   deleteByConnectionId: ReturnType<typeof vi.fn>;
 };
 
@@ -86,6 +87,7 @@ function createMessageRepoMock(): MessageRepoMock {
     findByConversation: vi.fn().mockResolvedValue({ messages: [], nextCursor: null }),
     findByIdForTenant: vi.fn().mockResolvedValue(null),
     findByExternalId: vi.fn().mockResolvedValue(null),
+    markOutboundMessagesAsRead: vi.fn().mockResolvedValue(0),
     deleteByConnectionId: vi.fn().mockResolvedValue(undefined),
   };
 }
