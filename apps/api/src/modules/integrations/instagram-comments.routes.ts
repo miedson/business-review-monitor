@@ -194,6 +194,18 @@ export function registerInstagramCommentsRoutes(
       throw error;
     }
   });
+
+  app.post<{ Params: { id: string } }>("/instagram/comments/:id/mark-replied", {
+    schema: { tags: ["Instagram Comments"], summary: "Manually mark an Instagram comment as replied", security: [{ bearerAuth: [] }], params: { type: "object", required: ["id"], properties: { id: { type: "string" } } } }
+  }, async (request, reply) => {
+    const userId = await getAuthenticatedUserId(request);
+    const session = await options.authService.getCurrentSession(userId);
+    const comment = await options.instagramCommentRepository.findByIdForTenant({ id: request.params.id, tenantId: session.tenant.id });
+    if (!comment) return reply.status(404).send({ error: "Comment not found", requestId: request.id });
+    await options.instagramCommentRepository.markReplied?.({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
+    await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "instagram.comment.replied", payload: { commentId: comment.id } });
+    return reply.send({ id: comment.id, replied: true, manuallyMarked: true });
+  });
 }
 
 function isUnavailableInstagramCommentError(error: unknown): boolean {

@@ -337,6 +337,10 @@ export async function replyToInstagramComment(input: { accessToken: string; id: 
   await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/reply`, { accessToken: input.accessToken, method: "POST", body: { message: input.message } });
 }
 
+export async function markInstagramCommentReplied(input: { accessToken: string; id: string }): Promise<void> {
+  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/mark-replied`, { accessToken: input.accessToken, method: "POST" });
+}
+
 export async function getInstagramConnectionStatus(accessToken: string): Promise<{ connected: boolean; username: string | null; status: string }> {
   return z.object({ connected: z.boolean(), username: z.string().nullable().optional(), status: z.string() }).parse(await requestJson("/integrations/instagram/status", { accessToken })) as { connected: boolean; username: string | null; status: string };
 }
