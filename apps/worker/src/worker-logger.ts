@@ -16,7 +16,7 @@ function writeLog(level: LogLevel, message: string, fields: LogFields): void {
       level,
       message,
       timestamp: new Date().toISOString(),
-      ...fields
-    })}\n`
+      ...fields,
+    })}\n`,
   );
 }

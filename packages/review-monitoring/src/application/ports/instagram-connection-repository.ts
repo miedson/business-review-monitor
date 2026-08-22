@@ -38,16 +38,14 @@ export type SetProfessionalAccountIdInput = {
 export interface InstagramConnectionRepository {
   findByTenantId(tenantId: string): Promise<StoredInstagramConnection | null>;
   findByInstagramUserId(instagramUserId: string): Promise<StoredInstagramConnection | null>;
-  findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null>;
+  findByProfessionalAccountId(
+    professionalAccountId: string,
+  ): Promise<StoredInstagramConnection | null>;
   findConnectedWithoutProfessionalAccountId(): Promise<StoredInstagramConnection[]>;
-  saveConnected(
-    input: SaveConnectedInstagramConnectionInput
-  ): Promise<StoredInstagramConnection>;
-  setProfessionalAccountId(
-    input: SetProfessionalAccountIdInput
-  ): Promise<void>;
+  saveConnected(input: SaveConnectedInstagramConnectionInput): Promise<StoredInstagramConnection>;
+  setProfessionalAccountId(input: SetProfessionalAccountIdInput): Promise<void>;
   disconnectByTenantId(
-    input: DisconnectInstagramConnectionInput
+    input: DisconnectInstagramConnectionInput,
   ): Promise<StoredInstagramConnection | null>;
   deleteByTenantId(tenantId: string): Promise<void>;
 }

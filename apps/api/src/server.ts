@@ -1,5 +1,7 @@
 import "dotenv/config";
+
 import { loadConfig } from "@brm/config";
+
 import { buildApi } from "./server/app.js";
 
 const config = loadConfig();

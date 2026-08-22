@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner, Box, type BoxProps } from "@chakra-ui/react";
+import { Box, Spinner, type BoxProps } from "@chakra-ui/react";
 
 interface LoadingSpinnerProps extends BoxProps {
   size?: "sm" | "md" | "lg";
@@ -19,18 +19,8 @@ const colorMap = {
   current: "gray",
 } as const;
 
-export const LoadingSpinner = ({
-  size = "md",
-  color = "brand",
-  ...rest
-}: LoadingSpinnerProps) => {
-  return (
-    <Spinner
-      size={sizeMap[size]}
-      color={colorMap[color]}
-      {...rest}
-    />
-  );
+export const LoadingSpinner = ({ size = "md", color = "brand", ...rest }: LoadingSpinnerProps) => {
+  return <Spinner size={sizeMap[size]} color={colorMap[color]} {...rest} />;
 };
 
 export const SpinnerOverlay = ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton as ChakraSkeleton, Box } from "@chakra-ui/react";
+import { Box, Skeleton as ChakraSkeleton } from "@chakra-ui/react";
 import { forwardRef } from "react";
 
 interface SkeletonProps {
@@ -30,11 +30,14 @@ const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
     ));
 
     return (
-      <Box css={{ display: "flex", flexDirection: "column", width: "full", gap: spacing }} className={className}>
+      <Box
+        css={{ display: "flex", flexDirection: "column", width: "full", gap: spacing }}
+        className={className}
+      >
         {skeletons}
       </Box>
     );
-  }
+  },
 );
 
 Skeleton.displayName = "Skeleton";

@@ -1,13 +1,23 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
 import { ListInstagramComments } from "@brm/review-monitoring";
-import type { InstagramCommentRepository, InstagramComment, FindInstagramCommentsInput, InstagramCommentStatus } from "@brm/review-monitoring";
+import type {
+  FindInstagramCommentsInput,
+  InstagramComment,
+  InstagramCommentRepository,
+  InstagramCommentStatus,
+} from "@brm/review-monitoring";
 
 class FakeInstagramCommentRepository implements InstagramCommentRepository {
   private comments: InstagramComment[] = [];
 
-  async upsert(input: Parameters<InstagramCommentRepository["upsert"]>[0]): Promise<InstagramComment> {
+  async upsert(
+    input: Parameters<InstagramCommentRepository["upsert"]>[0],
+  ): Promise<InstagramComment> {
     const existingIndex = this.comments.findIndex(
-      (c) => c.instagramConnectionId === input.instagramConnectionId && c.externalCommentId === input.externalCommentId
+      (c) =>
+        c.instagramConnectionId === input.instagramConnectionId &&
+        c.externalCommentId === input.externalCommentId,
     );
     const existingComment = existingIndex >= 0 ? this.comments[existingIndex] : null;
     const comment: InstagramComment = {
@@ -22,7 +32,7 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
       createdAtExternal: input.createdAtExternal ?? null,
       status: (input.status ?? "NEW") as InstagramCommentStatus,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     if (existingIndex >= 0) {
       this.comments[existingIndex] = comment;
@@ -40,16 +50,20 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
     if (input.status) {
       filtered = filtered.filter((c) => c.status === input.status);
     }
-    filtered.sort((a, b) => (b.createdAtExternal?.getTime() ?? 0) - (a.createdAtExternal?.getTime() ?? 0));
+    filtered.sort(
+      (a, b) => (b.createdAtExternal?.getTime() ?? 0) - (a.createdAtExternal?.getTime() ?? 0),
+    );
     return filtered.slice(0, input.limit ?? 50);
   }
 
-  async findByIdForTenant(input: { id: string; tenantId: string }): Promise<InstagramComment | null> {
+  async findByIdForTenant(input: {
+    id: string;
+    tenantId: string;
+  }): Promise<InstagramComment | null> {
     return this.comments.find((c) => c.id === input.id && c.tenantId === input.tenantId) ?? null;
   }
 
-  async deleteByConnectionId(): Promise<void> {
-  }
+  async deleteByConnectionId(): Promise<void> {}
 
   seed(comments: InstagramComment[]): void {
     this.comments = comments;
@@ -80,7 +94,7 @@ describe("ListInstagramComments", () => {
         createdAtExternal: new Date(now.getTime() - 1000),
         status: "NEW",
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       },
       {
         id: "2",
@@ -94,8 +108,8 @@ describe("ListInstagramComments", () => {
         createdAtExternal: new Date(now.getTime() - 2000),
         status: "NEW",
         createdAt: now,
-        updatedAt: now
-      }
+        updatedAt: now,
+      },
     ]);
 
     const result = await useCase.execute({ tenantId: "tenant_1" });
@@ -120,7 +134,7 @@ describe("ListInstagramComments", () => {
         createdAtExternal: null,
         status: "NEW",
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       },
       {
         id: "2",
@@ -134,8 +148,8 @@ describe("ListInstagramComments", () => {
         createdAtExternal: null,
         status: "NEW",
         createdAt: now,
-        updatedAt: now
-      }
+        updatedAt: now,
+      },
     ]);
 
     const result = await useCase.execute({ tenantId: "tenant_1", instagramConnectionId: "conn_1" });
@@ -159,7 +173,7 @@ describe("ListInstagramComments", () => {
         createdAtExternal: null,
         status: "NEW",
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       },
       {
         id: "2",
@@ -173,8 +187,8 @@ describe("ListInstagramComments", () => {
         createdAtExternal: null,
         status: "READ",
         createdAt: now,
-        updatedAt: now
-      }
+        updatedAt: now,
+      },
     ]);
 
     const result = await useCase.execute({ tenantId: "tenant_1", status: "NEW" });
@@ -198,8 +212,8 @@ describe("ListInstagramComments", () => {
         createdAtExternal: null,
         status: "NEW",
         createdAt: now,
-        updatedAt: now
-      }
+        updatedAt: now,
+      },
     ]);
 
     const result = await useCase.execute({ tenantId: "tenant_2" });
@@ -221,7 +235,7 @@ describe("ListInstagramComments", () => {
       createdAtExternal: null,
       status: "NEW" as const,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     }));
     repository.seed(comments);
 

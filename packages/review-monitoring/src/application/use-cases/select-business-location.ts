@@ -1,6 +1,6 @@
 import type {
   SelectBusinessLocationInput as SelectBusinessLocationRepositoryInput,
-  StoredBusinessLocation
+  StoredBusinessLocation,
 } from "../ports/business-location-repository.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
 
@@ -12,7 +12,7 @@ export type SelectBusinessLocationInput = {
 export type SelectBusinessLocationDependencies = {
   businessLocationRepository: {
     selectForTenant(
-      input: SelectBusinessLocationRepositoryInput
+      input: SelectBusinessLocationRepositoryInput,
     ): Promise<StoredBusinessLocation | null>;
   };
 };
@@ -23,13 +23,13 @@ export class SelectBusinessLocation {
   async execute(input: SelectBusinessLocationInput): Promise<void> {
     const location = await this.dependencies.businessLocationRepository.selectForTenant({
       businessLocationId: input.businessLocationId,
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
 
     if (!location) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_LOCATION_NOT_FOUND",
-        "Google Business Profile location was not found for this tenant."
+        "Google Business Profile location was not found for this tenant.",
       );
     }
   }

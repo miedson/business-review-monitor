@@ -1,5 +1,8 @@
-import type { InstagramCommentRepository } from "@brm/review-monitoring";
-import type { FindInstagramCommentsInput, InstagramComment } from "@brm/review-monitoring";
+import type {
+  FindInstagramCommentsInput,
+  InstagramComment,
+  InstagramCommentRepository,
+} from "@brm/review-monitoring";
 
 export type ListInstagramCommentsInput = FindInstagramCommentsInput;
 
@@ -19,7 +22,7 @@ export class ListInstagramComments {
     const limit = input.limit ?? 50;
     const comments = await this.dependencies.instagramCommentRepository.findByTenant({
       ...input,
-      limit: limit + 1
+      limit: limit + 1,
     });
 
     let nextCursor: string | null = null;
@@ -30,7 +33,7 @@ export class ListInstagramComments {
 
     return {
       comments,
-      nextCursor
+      nextCursor,
     };
   }
 }

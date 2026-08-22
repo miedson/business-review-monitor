@@ -1,16 +1,15 @@
 import type { Redis } from "ioredis";
+
 import type {
   ManualSyncRateLimiter,
   ManualSyncRateLimitInput,
-  ManualSyncRateLimitResult
+  ManualSyncRateLimitResult,
 } from "@brm/review-monitoring";
 
 export class RedisManualSyncRateLimiter implements ManualSyncRateLimiter {
   constructor(private readonly redis: Redis) {}
 
-  async consume(
-    input: ManualSyncRateLimitInput
-  ): Promise<ManualSyncRateLimitResult> {
+  async consume(input: ManualSyncRateLimitInput): Promise<ManualSyncRateLimitResult> {
     const key = `manual-sync:google-reviews:${input.tenantId}:${input.businessLocationId}`;
     const result = await this.redis.set(key, "1", "EX", input.windowSeconds, "NX");
 
@@ -22,7 +21,7 @@ export class RedisManualSyncRateLimiter implements ManualSyncRateLimiter {
 
     return {
       allowed: false,
-      retryAfterSeconds: ttl > 0 ? ttl : input.windowSeconds
+      retryAfterSeconds: ttl > 0 ? ttl : input.windowSeconds,
     };
   }
 }

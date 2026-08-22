@@ -1,6 +1,13 @@
 "use client";
 
-import { Card, CardHeader, CardBody, CardFooter, CardTitle, CardDescription } from "@chakra-ui/react";
+import {
+  Card,
+  CardBody,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@chakra-ui/react";
 import { forwardRef } from "react";
 
 interface CardProps {
@@ -13,8 +20,18 @@ interface CardProps {
 const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
   ({ variant = "default", padding = "md", children, className, ...rest }, ref) => {
     const variantStyles = {
-      default: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border", boxShadow: "xs" },
-      elevated: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border", boxShadow: "sm" },
+      default: {
+        bg: "surface.primary",
+        border: "1px solid",
+        borderColor: "surface.border",
+        boxShadow: "xs",
+      },
+      elevated: {
+        bg: "surface.primary",
+        border: "1px solid",
+        borderColor: "surface.border",
+        boxShadow: "sm",
+      },
       outlined: { bg: "transparent", border: "1px solid", borderColor: "surface.borderStrong" },
       filled: { bg: "surface.secondary" },
     };
@@ -29,14 +46,20 @@ const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
     return (
       <Card.Root
         ref={ref}
-        css={{ borderRadius: "xl", overflow: "hidden", transition: "border-color 0.15s ease, background-color 0.15s ease", ...variantStyles[variant], ...paddingStyles[padding] }}
+        css={{
+          borderRadius: "xl",
+          overflow: "hidden",
+          transition: "border-color 0.15s ease, background-color 0.15s ease",
+          ...variantStyles[variant],
+          ...paddingStyles[padding],
+        }}
         className={className}
         {...rest}
       >
         {children}
       </Card.Root>
     );
-  }
+  },
 );
 
 CardWrapper.displayName = "Card";

@@ -9,7 +9,7 @@ const base64EncodedBytes = (expectedBytes: number) =>
         return false;
       }
     },
-    { message: `must be a base64-encoded ${expectedBytes}-byte value` }
+    { message: `must be a base64-encoded ${expectedBytes}-byte value` },
   );
 
 const envSchema = z.object({
@@ -31,7 +31,7 @@ const envSchema = z.object({
   META_APP_SECRET: z.string().min(1),
   META_INSTAGRAM_REDIRECT_URI: z.string().url(),
   META_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
-  META_GRAPH_API_VERSION: z.string().min(1).default("v21.0")
+  META_GRAPH_API_VERSION: z.string().min(1).default("v21.0"),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

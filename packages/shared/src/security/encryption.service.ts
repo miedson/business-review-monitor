@@ -31,10 +31,7 @@ export class EncryptionService {
     try {
       const iv = randomBytes(IV_BYTE_LENGTH);
       const cipher = createCipheriv(ALGORITHM, this.key, iv);
-      const ciphertext = Buffer.concat([
-        cipher.update(value, "utf8"),
-        cipher.final()
-      ]);
+      const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
       const authTag = cipher.getAuthTag();
 
       const payload: EncryptedPayload = {
@@ -42,7 +39,7 @@ export class EncryptionService {
         algorithm: ALGORITHM,
         iv: iv.toString("base64"),
         authTag: authTag.toString("base64"),
-        ciphertext: ciphertext.toString("base64")
+        ciphertext: ciphertext.toString("base64"),
       };
 
       return JSON.stringify(payload);
@@ -65,10 +62,7 @@ export class EncryptionService {
       const decipher = createDecipheriv(ALGORITHM, this.key, iv);
       decipher.setAuthTag(authTag);
 
-      return Buffer.concat([
-        decipher.update(ciphertext),
-        decipher.final()
-      ]).toString("utf8");
+      return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
     } catch (error) {
       if (error instanceof EncryptionError) {
         throw error;
@@ -79,9 +73,7 @@ export class EncryptionService {
   }
 }
 
-export function createEncryptionServiceFromBase64Key(
-  base64Key: string
-): EncryptionService {
+export function createEncryptionServiceFromBase64Key(base64Key: string): EncryptionService {
   return new EncryptionService(decodeBase64(base64Key));
 }
 
@@ -116,7 +108,7 @@ function parseEncryptedPayload(value: string): EncryptedPayload {
       algorithm: payload.algorithm,
       iv: payload.iv,
       authTag: payload.authTag,
-      ciphertext: payload.ciphertext
+      ciphertext: payload.ciphertext,
     };
   } catch {
     throw new EncryptionError("Invalid encrypted payload");

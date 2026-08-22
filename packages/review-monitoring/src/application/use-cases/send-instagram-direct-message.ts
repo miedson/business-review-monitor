@@ -34,11 +34,13 @@ export class SendInstagramDirectMessage {
 
     const conversation = await this.dependencies.instagramConversationRepository.findByIdForTenant({
       id: input.conversationId,
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
     if (!conversation) throw new Error("Instagram conversation not found");
 
-    const connection = await this.dependencies.instagramConnectionRepository.findByTenantId(input.tenantId);
+    const connection = await this.dependencies.instagramConnectionRepository.findByTenantId(
+      input.tenantId,
+    );
     if (!connection || connection.status !== "CONNECTED" || !connection.encryptedAccessToken) {
       throw new Error("Instagram connection is required");
     }
@@ -55,7 +57,7 @@ export class SendInstagramDirectMessage {
       accessToken,
       instagramAccountId: connection.instagramProfessionalAccountId,
       recipientId: conversation.participantExternalId,
-      message
+      message,
     });
 
     const savedMessage = await this.dependencies.instagramMessageRepository.save({
@@ -67,7 +69,7 @@ export class SendInstagramDirectMessage {
       direction: "OUTBOUND",
       text: message,
       sentAtExternal: sentAt,
-      status: "SENT"
+      status: "SENT",
     });
 
     await this.dependencies.instagramConversationRepository.update({
@@ -75,9 +77,13 @@ export class SendInstagramDirectMessage {
       tenantId: input.tenantId,
       lastMessageAt: sentAt,
       lastMessagePreview: message.length > 100 ? `${message.slice(0, 100)}...` : message,
-      unreadCount: undefined
+      unreadCount: undefined,
     });
 
-    return { conversationId: conversation.id, messageId: savedMessage.id, externalMessageId: result.id };
+    return {
+      conversationId: conversation.id,
+      messageId: savedMessage.id,
+      externalMessageId: result.id,
+    };
   }
 }

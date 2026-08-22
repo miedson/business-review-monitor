@@ -26,7 +26,7 @@ export type SelectBusinessLocationInput = {
 
 export interface BusinessLocationRepository {
   findByGoogleIds(
-    input: FindBusinessLocationByGoogleIdsInput
+    input: FindBusinessLocationByGoogleIdsInput,
   ): Promise<StoredBusinessLocation | null>;
 
   markSynced(input: MarkBusinessLocationSyncedInput): Promise<void>;

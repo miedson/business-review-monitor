@@ -1,9 +1,9 @@
 "use client";
 
+import { getStoredSession } from "@/lib/auth-session";
 import { Box, Text } from "@/lib/design-system";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { getStoredSession } from "@/lib/auth-session";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -18,7 +18,15 @@ export default function OnboardingPage() {
   }, [router]);
 
   return (
-    <Box css={{ minH: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 4 }}>
+    <Box
+      css={{
+        minH: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 4,
+      }}
+    >
       <Text>Carregando...</Text>
     </Box>
   );

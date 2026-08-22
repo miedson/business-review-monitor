@@ -1,6 +1,6 @@
 import type {
   BusinessProfileReviewProvider,
-  ListBusinessProfileAccountsResult
+  ListBusinessProfileAccountsResult,
 } from "../ports/business-profile-review-provider.js";
 import type { InstagramConnectionRepository } from "../ports/instagram-connection-repository.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
@@ -19,31 +19,22 @@ export type ListInstagramAccountsDependencies = {
 export class ListInstagramAccounts {
   constructor(private readonly dependencies: ListInstagramAccountsDependencies) {}
 
-  async execute(
-    input: ListInstagramAccountsInput
-  ): Promise<ListBusinessProfileAccountsResult> {
-    const connection =
-      await this.dependencies.instagramConnectionRepository.findByTenantId(
-        input.tenantId
-      );
+  async execute(input: ListInstagramAccountsInput): Promise<ListBusinessProfileAccountsResult> {
+    const connection = await this.dependencies.instagramConnectionRepository.findByTenantId(
+      input.tenantId,
+    );
 
-    if (
-      !connection ||
-      connection.status !== "CONNECTED" ||
-      !connection.encryptedAccessToken
-    ) {
+    if (!connection || connection.status !== "CONNECTED" || !connection.encryptedAccessToken) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_AUTH_REQUIRED",
-        "Instagram authorization is required"
+        "Instagram authorization is required",
       );
     }
 
-    const accessToken = this.dependencies.tokenCipher.decrypt(
-      connection.encryptedAccessToken
-    );
+    const accessToken = this.dependencies.tokenCipher.decrypt(connection.encryptedAccessToken);
 
     return this.dependencies.provider.listAccounts({
-      accessToken
+      accessToken,
     });
   }
 }

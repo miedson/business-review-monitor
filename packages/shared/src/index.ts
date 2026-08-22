@@ -2,9 +2,9 @@ export type HealthStatus = "ok";
 export {
   EncryptionError,
   EncryptionService,
-  createEncryptionServiceFromBase64Key
+  createEncryptionServiceFromBase64Key,
 } from "./security/encryption.service.js";
 export {
   MetaWebhookSignatureVerifier,
-  MetaWebhookSignatureVerifierError
+  MetaWebhookSignatureVerifierError,
 } from "./security/meta-webhook-signature-verifier.js";

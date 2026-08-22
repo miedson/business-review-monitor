@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+
 import {
   cleanupExpiredReviewCacheJobName,
   googleReviewSyncQueueName,
   maintenanceQueueName,
-  syncGoogleReviewsJobName
+  syncGoogleReviewsJobName,
 } from "./queue-names.js";
 
 describe("queue names", () => {
@@ -14,8 +15,6 @@ describe("queue names", () => {
 
   it("keeps the initial BullMQ job names explicit and stable", () => {
     expect(syncGoogleReviewsJobName).toBe("sync-google-reviews");
-    expect(cleanupExpiredReviewCacheJobName).toBe(
-      "cleanup-expired-review-cache"
-    );
+    expect(cleanupExpiredReviewCacheJobName).toBe("cleanup-expired-review-cache");
   });
 });

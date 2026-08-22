@@ -1,22 +1,34 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { CompleteInstagramOAuthCallback } from "./complete-instagram-oauth-callback.js";
-import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
-import type { InstagramConnectionRepository, StoredInstagramConnection } from "../ports/instagram-connection-repository.js";
-import type { OAuthStateStore, OAuthStateData } from "../ports/oauth-state-store.js";
-import type { TokenCipher } from "../ports/token-cipher.js";
-import type { BusinessProfileAccount, BusinessProfileLocation } from "../../domain/business-profile.js";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import type {
+  BusinessProfileAccount,
+  BusinessProfileLocation,
+} from "../../domain/business-profile.js";
 import type { BusinessReview } from "../../domain/review.js";
+import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
+import type {
+  InstagramConnectionRepository,
+  StoredInstagramConnection,
+} from "../ports/instagram-connection-repository.js";
+import type { OAuthStateData, OAuthStateStore } from "../ports/oauth-state-store.js";
+import type { TokenCipher } from "../ports/token-cipher.js";
+import { CompleteInstagramOAuthCallback } from "./complete-instagram-oauth-callback.js";
 
 class FakeProvider implements InstagramReviewProvider {
   buildAuthorizationUrl(): string {
     return "https://instagram.com/oauth/authorize?state=test";
   }
 
-  async exchangeAuthorizationCode(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+  async exchangeAuthorizationCode(): Promise<{
+    accessToken: string;
+    expiresInSeconds: number;
+    scope: string;
+  }> {
     return {
       accessToken: "long-lived-token",
       expiresInSeconds: 5184000,
-      scope: "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
+      scope:
+        "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
     };
   }
 
@@ -34,7 +46,11 @@ class FakeProvider implements InstagramReviewProvider {
     return { locations: [] };
   }
 
-  async listReviews(): Promise<{ reviews: BusinessReview[]; averageRating: number; totalReviewCount: number }> {
+  async listReviews(): Promise<{
+    reviews: BusinessReview[];
+    averageRating: number;
+    totalReviewCount: number;
+  }> {
     return { reviews: [], averageRating: 0, totalReviewCount: 0 };
   }
 
@@ -42,11 +58,15 @@ class FakeProvider implements InstagramReviewProvider {
     return {
       id: "25928677863496445",
       username: "sixsysma",
-      account_type: "BUSINESS"
+      account_type: "BUSINESS",
     };
   }
 
-  async resolveWebhookAccountId(): Promise<{ id: string; username?: string; accountType?: string }> {
+  async resolveWebhookAccountId(): Promise<{
+    id: string;
+    username?: string;
+    accountType?: string;
+  }> {
     return { id: "25928677863496445" };
   }
 }
@@ -122,7 +142,7 @@ class FakeRepository implements InstagramConnectionRepository {
       status: "CONNECTED",
       connectedAt: input.connectedAt,
       disconnectedAt: null,
-      tokenExpiresAt: input.tokenExpiresAt ?? null
+      tokenExpiresAt: input.tokenExpiresAt ?? null,
     };
     this.connections.set(input.tenantId, connection);
     return connection;
@@ -136,8 +156,7 @@ class FakeRepository implements InstagramConnectionRepository {
     return null;
   }
 
-  async deleteByTenantId(): Promise<void> {
-  }
+  async deleteByTenantId(): Promise<void> {}
 }
 
 describe("CompleteInstagramOAuthCallback", () => {
@@ -158,7 +177,7 @@ describe("CompleteInstagramOAuthCallback", () => {
       tokenCipher,
       instagramConnectionRepository: repository,
       now: () => new Date("2024-01-01T00:00:00Z"),
-      logger: console
+      logger: console,
     });
   });
 
@@ -167,7 +186,7 @@ describe("CompleteInstagramOAuthCallback", () => {
 
     const result = await callback.execute({
       code: "valid-code",
-      state
+      state,
     });
 
     expect(result.tenantId).toBe("tenant-1");
@@ -177,7 +196,9 @@ describe("CompleteInstagramOAuthCallback", () => {
     expect(connection).not.toBeNull();
     expect(connection?.instagramUserId).toBe("25928677863496445");
     expect(connection?.instagramProfessionalAccountId).toBeNull();
-    expect(connection?.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
+    expect(connection?.scope).toBe(
+      "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
+    );
   });
 
   it("preserves professionalAccountId when reconnecting the same Instagram account", async () => {
@@ -192,12 +213,12 @@ describe("CompleteInstagramOAuthCallback", () => {
       encryptedAccessToken: "encrypted-old-token",
       scope: "instagram_business_basic",
       connectedAt: new Date("2024-01-01T00:00:00Z"),
-      tokenExpiresAt: undefined
+      tokenExpiresAt: undefined,
     });
 
     const result = await callback.execute({
       code: "valid-code",
-      state
+      state,
     });
 
     expect(result.tenantId).toBe("tenant-1");
@@ -219,18 +240,23 @@ describe("CompleteInstagramOAuthCallback", () => {
       encryptedAccessToken: "encrypted-old-token",
       scope: "instagram_business_basic",
       connectedAt: new Date("2024-01-01T00:00:00Z"),
-      tokenExpiresAt: undefined
+      tokenExpiresAt: undefined,
     });
 
     const differentProvider = {
       buildAuthorizationUrl(): string {
         return "https://instagram.com/oauth/authorize?state=test";
       },
-      async exchangeAuthorizationCode(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+      async exchangeAuthorizationCode(): Promise<{
+        accessToken: string;
+        expiresInSeconds: number;
+        scope: string;
+      }> {
         return {
           accessToken: "long-lived-token",
           expiresInSeconds: 5184000,
-          scope: "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages"
+          scope:
+            "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
         };
       },
       async refreshAccessToken(): Promise<never> {
@@ -243,19 +269,27 @@ describe("CompleteInstagramOAuthCallback", () => {
       async listLocations(): Promise<{ locations: BusinessProfileLocation[] }> {
         return { locations: [] };
       },
-      async listReviews(): Promise<{ reviews: BusinessReview[]; averageRating: number; totalReviewCount: number }> {
+      async listReviews(): Promise<{
+        reviews: BusinessReview[];
+        averageRating: number;
+        totalReviewCount: number;
+      }> {
         return { reviews: [], averageRating: 0, totalReviewCount: 0 };
       },
       async getUserProfile(): Promise<{ id: string; username: string; account_type: string }> {
         return {
           id: "999999999",
           username: "newaccount",
-          account_type: "BUSINESS"
+          account_type: "BUSINESS",
         };
       },
-      async resolveWebhookAccountId(): Promise<{ id: string; username?: string; accountType?: string }> {
+      async resolveWebhookAccountId(): Promise<{
+        id: string;
+        username?: string;
+        accountType?: string;
+      }> {
         return { id: "999999999" };
-      }
+      },
     };
 
     const differentState = await stateStore.create({ userId: "user-1", tenantId: "tenant-1" });
@@ -266,12 +300,12 @@ describe("CompleteInstagramOAuthCallback", () => {
       tokenCipher,
       instagramConnectionRepository: repository,
       now: () => new Date("2024-01-01T00:00:00Z"),
-      logger: console
+      logger: console,
     });
 
     const result = await differentCallback.execute({
       code: "valid-code",
-      state: differentState
+      state: differentState,
     });
 
     expect(result.tenantId).toBe("tenant-1");
@@ -286,10 +320,10 @@ describe("CompleteInstagramOAuthCallback", () => {
     await expect(
       callback.execute({
         code: "valid-code",
-        state: "invalid-state"
-      })
+        state: "invalid-state",
+      }),
     ).rejects.toMatchObject({
-      code: "INSTAGRAM_INVALID_STATE"
+      code: "INSTAGRAM_INVALID_STATE",
     });
   });
 });

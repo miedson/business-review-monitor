@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+
 import { buildApi } from "../../server/app.js";
 
 const requiredTestEnv = {
-  DATABASE_URL:
-    "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
+  DATABASE_URL: "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
   REDIS_URL: "redis://localhost:6379",
   BRM_QUEUE_PREFIX: "brm",
   JWT_ACCESS_SECRET: "access-secret-with-at-least-32-chars",
@@ -20,7 +20,7 @@ const requiredTestEnv = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 Object.assign(process.env, requiredTestEnv);
@@ -37,8 +37,8 @@ describe("Google accounts routes", () => {
         payload: {
           name: "Google Accounts Test",
           email,
-          password: "password123"
-        }
+          password: "password123",
+        },
       });
       const registerBody = registerResponse.json<{ accessToken: string }>();
 
@@ -46,8 +46,8 @@ describe("Google accounts routes", () => {
         method: "GET",
         url: "/integrations/google/connect",
         headers: {
-          authorization: `Bearer ${registerBody.accessToken}`
-        }
+          authorization: `Bearer ${registerBody.accessToken}`,
+        },
       });
       const authorizationUrl = new URL(connectResponse.headers.location ?? "");
       const state = authorizationUrl.searchParams.get("state");
@@ -57,7 +57,7 @@ describe("Google accounts routes", () => {
 
       const callbackResponse = await app.inject({
         method: "GET",
-        url: `/integrations/google/callback?code=mock-code&state=${state}`
+        url: `/integrations/google/callback?code=mock-code&state=${state}`,
       });
 
       expect(callbackResponse.statusCode).toBe(302);
@@ -66,8 +66,8 @@ describe("Google accounts routes", () => {
         method: "GET",
         url: "/integrations/google/accounts",
         headers: {
-          authorization: `Bearer ${registerBody.accessToken}`
-        }
+          authorization: `Bearer ${registerBody.accessToken}`,
+        },
       });
 
       expect(accountsResponse.statusCode).toBe(200);
@@ -76,14 +76,14 @@ describe("Google accounts routes", () => {
           {
             id: "accounts/1001",
             name: "accounts/1001",
-            accountName: "Matriz BRM"
+            accountName: "Matriz BRM",
           },
           {
             id: "accounts/1002",
             name: "accounts/1002",
-            accountName: "Filial BRM"
-          }
-        ]
+            accountName: "Filial BRM",
+          },
+        ],
       });
     } finally {
       await app.close();

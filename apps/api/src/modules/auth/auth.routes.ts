@@ -1,5 +1,6 @@
 import type { SwaggerTransform } from "@fastify/swagger";
 import type { FastifyInstance, FastifyRequest } from "fastify";
+
 import { unauthorizedError } from "./auth.errors.js";
 import { loginBodySchema, registerBodySchema } from "./auth.schemas.js";
 import type { AuthService } from "./auth.service.js";
@@ -8,7 +9,7 @@ const registerRouteSchema = {
   tags: ["Auth"],
   summary: "Register SaaS user",
   description:
-    "Body: { name: string, email: string, password: string }. Runtime validation is handled with Zod."
+    "Body: { name: string, email: string, password: string }. Runtime validation is handled with Zod.",
 } as const;
 
 const registerBodyDocumentationSchema = {
@@ -17,15 +18,14 @@ const registerBodyDocumentationSchema = {
   properties: {
     name: { type: "string", minLength: 1, maxLength: 120 },
     email: { type: "string", format: "email" },
-    password: { type: "string", minLength: 8, maxLength: 200 }
-  }
+    password: { type: "string", minLength: 8, maxLength: 200 },
+  },
 } as const;
 
 const loginRouteSchema = {
   tags: ["Auth"],
   summary: "Login SaaS user",
-  description:
-    "Body: { email: string, password: string }. Runtime validation is handled with Zod."
+  description: "Body: { email: string, password: string }. Runtime validation is handled with Zod.",
 } as const;
 
 const loginBodyDocumentationSchema = {
@@ -33,54 +33,54 @@ const loginBodyDocumentationSchema = {
   required: ["email", "password"],
   properties: {
     email: { type: "string", format: "email" },
-    password: { type: "string", minLength: 1, maxLength: 200 }
-  }
+    password: { type: "string", minLength: 1, maxLength: 200 },
+  },
 } as const;
 
 const refreshRouteSchema = {
   tags: ["Auth"],
-  summary: "Refresh SaaS access token"
+  summary: "Refresh SaaS access token",
 } as const;
 
 const logoutRouteSchema = {
   tags: ["Auth"],
-  summary: "Logout SaaS user"
+  summary: "Logout SaaS user",
 } as const;
 
 const meRouteSchema = {
   tags: ["Auth"],
   summary: "Get current SaaS session",
-  security: [{ bearerAuth: [] }]
+  security: [{ bearerAuth: [] }],
 } as const;
 
 const registerSwaggerTransform: SwaggerTransform = ({ schema, url }) => ({
   schema: {
     ...schema,
-    body: registerBodyDocumentationSchema
+    body: registerBodyDocumentationSchema,
   },
-  url
+  url,
 });
 
 const loginSwaggerTransform: SwaggerTransform = ({ schema, url }) => ({
   schema: {
     ...schema,
-    body: loginBodyDocumentationSchema
+    body: loginBodyDocumentationSchema,
   },
-  url
+  url,
 });
 
 const registerRouteOptions = {
   schema: registerRouteSchema,
   config: {
-    swaggerTransform: registerSwaggerTransform
-  }
+    swaggerTransform: registerSwaggerTransform,
+  },
 } as const;
 
 const loginRouteOptions = {
   schema: loginRouteSchema,
   config: {
-    swaggerTransform: loginSwaggerTransform
-  }
+    swaggerTransform: loginSwaggerTransform,
+  },
 } as const;
 
 function getBearerToken(request: FastifyRequest): string {
@@ -116,13 +116,13 @@ export function registerAuthRoutes(app: FastifyInstance, authService: AuthServic
       .setCookie(
         authService.refreshCookieName,
         result.tokens.refreshToken,
-        authService.refreshCookieOptions
+        authService.refreshCookieOptions,
       )
       .status(201)
       .send({
         user: result.user,
         tenant: result.tenant,
-        accessToken: result.tokens.accessToken
+        accessToken: result.tokens.accessToken,
       });
   });
 
@@ -134,12 +134,12 @@ export function registerAuthRoutes(app: FastifyInstance, authService: AuthServic
       .setCookie(
         authService.refreshCookieName,
         result.tokens.refreshToken,
-        authService.refreshCookieOptions
+        authService.refreshCookieOptions,
       )
       .send({
         user: result.user,
         tenant: result.tenant,
-        accessToken: result.tokens.accessToken
+        accessToken: result.tokens.accessToken,
       });
   });
 
@@ -150,12 +150,12 @@ export function registerAuthRoutes(app: FastifyInstance, authService: AuthServic
       .setCookie(
         authService.refreshCookieName,
         result.tokens.refreshToken,
-        authService.refreshCookieOptions
+        authService.refreshCookieOptions,
       )
       .send({
         user: result.user,
         tenant: result.tenant,
-        accessToken: result.tokens.accessToken
+        accessToken: result.tokens.accessToken,
       });
   });
 
@@ -163,7 +163,7 @@ export function registerAuthRoutes(app: FastifyInstance, authService: AuthServic
     reply
       .clearCookie(authService.refreshCookieName, authService.clearRefreshCookieOptions)
       .status(204)
-      .send()
+      .send(),
   );
 
   app.get("/auth/me", { schema: meRouteSchema }, async (request) => {

@@ -1,11 +1,12 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@brm/database";
 import { afterAll, describe, expect, it } from "vitest";
+
+import { prisma } from "@brm/database";
+
 import { buildApi } from "../../server/app.js";
 
-const createTestEmail = (): string =>
-  `google-integration-test-${randomUUID()}@example.com`;
+const createTestEmail = (): string => `google-integration-test-${randomUUID()}@example.com`;
 const testConfig = {
   NODE_ENV: "test",
   DATABASE_URL: "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
@@ -25,7 +26,7 @@ const testConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 describe("google integration routes", () => {
@@ -41,9 +42,9 @@ describe("google integration routes", () => {
       url: "/auth/register",
       payload: {
         name: "Google Integration Test",
-      email: createTestEmail(),
-        password: "password123"
-      }
+        email: createTestEmail(),
+        password: "password123",
+      },
     });
     const registerBody = registerResponse.json<{
       accessToken: string;
@@ -54,8 +55,8 @@ describe("google integration routes", () => {
       method: "GET",
       url: "/integrations/google/connect",
       headers: {
-        authorization: `Bearer ${registerBody.accessToken}`
-      }
+        authorization: `Bearer ${registerBody.accessToken}`,
+      },
     });
 
     expect(connectResponse.statusCode).toBe(302);
@@ -67,18 +68,18 @@ describe("google integration routes", () => {
 
     const callbackResponse = await app.inject({
       method: "GET",
-      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`,
     });
 
     expect(callbackResponse.statusCode).toBe(302);
     expect(callbackResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?google=connected"
+      "http://localhost:3000/settings/integrations?google=connected",
     );
 
     const googleConnection = await prisma.googleConnection.findFirstOrThrow({
       where: {
-        tenantId: registerBody.tenant.id
-      }
+        tenantId: registerBody.tenant.id,
+      },
     });
 
     expect(googleConnection.status).toBe("CONNECTED");
@@ -96,17 +97,17 @@ describe("google integration routes", () => {
       url: "/auth/register",
       payload: {
         name: "Google Integration Test",
-      email: createTestEmail(),
-        password: "password123"
-      }
+        email: createTestEmail(),
+        password: "password123",
+      },
     });
     const accessToken = registerResponse.json<{ accessToken: string }>().accessToken;
     const connectResponse = await app.inject({
       method: "GET",
       url: "/integrations/google/connect",
       headers: {
-        authorization: `Bearer ${accessToken}`
-      }
+        authorization: `Bearer ${accessToken}`,
+      },
     });
     const authorizationUrl = new URL(connectResponse.headers.location as string);
     const state = authorizationUrl.searchParams.get("state");
@@ -115,17 +116,17 @@ describe("google integration routes", () => {
 
     await app.inject({
       method: "GET",
-      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`,
     });
 
     const secondCallbackResponse = await app.inject({
       method: "GET",
-      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/google/callback?code=mock-code&state=${stateValue}`,
     });
 
     expect(secondCallbackResponse.statusCode).toBe(302);
     expect(secondCallbackResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?google=error"
+      "http://localhost:3000/settings/integrations?google=error",
     );
 
     await app.close();

@@ -1,17 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
+
 import type {
   BusinessLocationRepository,
   FindBusinessLocationByGoogleIdsInput,
-  StoredBusinessLocation
+  StoredBusinessLocation,
 } from "../ports/business-location-repository.js";
 import type {
   ManualSyncRateLimiter,
   ManualSyncRateLimitInput,
-  ManualSyncRateLimitResult
+  ManualSyncRateLimitResult,
 } from "../ports/manual-sync-rate-limiter.js";
 import type {
   ReviewSyncJobScheduler,
-  ScheduleGoogleReviewSyncInput
+  ScheduleGoogleReviewSyncInput,
 } from "../ports/review-sync-job-scheduler.js";
 import { RequestGoogleReviewSync } from "./request-google-review-sync.js";
 
@@ -23,7 +24,7 @@ describe("RequestGoogleReviewSync", () => {
       googleAccountId: "accounts/1001",
       googleLocationId: "locations/2001",
       name: "Business A",
-      isActive: true
+      isActive: true,
     });
     const rateLimiter = new FakeManualSyncRateLimiter({ allowed: true });
     const jobScheduler = new FakeReviewSyncJobScheduler("job-1");
@@ -31,28 +32,28 @@ describe("RequestGoogleReviewSync", () => {
     const result = await new RequestGoogleReviewSync({
       businessLocationRepository: locationRepository,
       rateLimiter,
-      jobScheduler
+      jobScheduler,
     }).execute({
       tenantId: "tenant-1",
       accountId: "accounts/1001",
-      locationId: "locations/2001"
+      locationId: "locations/2001",
     });
 
     expect(result).toEqual({ jobId: "job-1" });
     expect(locationRepository.findInput).toEqual({
       tenantId: "tenant-1",
       googleAccountId: "accounts/1001",
-      googleLocationId: "locations/2001"
+      googleLocationId: "locations/2001",
     });
     expect(rateLimiter.input).toEqual({
       tenantId: "tenant-1",
       businessLocationId: "business-location-1",
-      windowSeconds: 300
+      windowSeconds: 300,
     });
     expect(jobScheduler.input).toEqual({
       tenantId: "tenant-1",
       accountId: "accounts/1001",
-      locationId: "locations/2001"
+      locationId: "locations/2001",
     });
   });
 
@@ -61,14 +62,14 @@ describe("RequestGoogleReviewSync", () => {
       new RequestGoogleReviewSync({
         businessLocationRepository: new FakeBusinessLocationRepository(null),
         rateLimiter: new FakeManualSyncRateLimiter({ allowed: true }),
-        jobScheduler: new FakeReviewSyncJobScheduler("job-1")
+        jobScheduler: new FakeReviewSyncJobScheduler("job-1"),
       }).execute({
         tenantId: "tenant-1",
         accountId: "accounts/1001",
-        locationId: "locations/2001"
-      })
+        locationId: "locations/2001",
+      }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_LOCATION_NOT_FOUND"
+      code: "GOOGLE_LOCATION_NOT_FOUND",
     });
   });
 
@@ -83,20 +84,20 @@ describe("RequestGoogleReviewSync", () => {
           googleAccountId: "accounts/1001",
           googleLocationId: "locations/2001",
           name: "Business A",
-          isActive: true
+          isActive: true,
         }),
         rateLimiter: new FakeManualSyncRateLimiter({
           allowed: false,
-          retryAfterSeconds: 120
+          retryAfterSeconds: 120,
         }),
-        jobScheduler
+        jobScheduler,
       }).execute({
         tenantId: "tenant-1",
         accountId: "accounts/1001",
-        locationId: "locations/2001"
-      })
+        locationId: "locations/2001",
+      }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_RATE_LIMITED"
+      code: "GOOGLE_RATE_LIMITED",
     });
     expect(jobScheduler.scheduleGoogleReviewSync).not.toHaveBeenCalled();
   });
@@ -108,7 +109,7 @@ class FakeBusinessLocationRepository implements BusinessLocationRepository {
   constructor(private readonly location: StoredBusinessLocation | null) {}
 
   async findByGoogleIds(
-    input: FindBusinessLocationByGoogleIdsInput
+    input: FindBusinessLocationByGoogleIdsInput,
   ): Promise<StoredBusinessLocation | null> {
     this.findInput = input;
     return this.location;
@@ -122,9 +123,7 @@ class FakeManualSyncRateLimiter implements ManualSyncRateLimiter {
 
   constructor(private readonly result: ManualSyncRateLimitResult) {}
 
-  async consume(
-    input: ManualSyncRateLimitInput
-  ): Promise<ManualSyncRateLimitResult> {
+  async consume(input: ManualSyncRateLimitInput): Promise<ManualSyncRateLimitResult> {
     this.input = input;
     return this.result;
   }
@@ -133,12 +132,10 @@ class FakeManualSyncRateLimiter implements ManualSyncRateLimiter {
 class FakeReviewSyncJobScheduler implements ReviewSyncJobScheduler {
   input?: ScheduleGoogleReviewSyncInput;
   scheduleGoogleReviewSync = vi.fn(
-    async (
-      input: ScheduleGoogleReviewSyncInput
-    ): Promise<{ jobId: string }> => {
+    async (input: ScheduleGoogleReviewSyncInput): Promise<{ jobId: string }> => {
       this.input = input;
       return { jobId: this.jobId };
-    }
+    },
   );
 
   constructor(private readonly jobId: string) {}

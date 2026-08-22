@@ -1,8 +1,10 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@brm/database";
 import argon2 from "argon2";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+
+import { prisma } from "@brm/database";
+
 import { buildApi } from "../../server/app.js";
 
 const testEmail = `auth-test-${randomUUID()}@example.com`;
@@ -26,19 +28,19 @@ const testConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 async function deleteTestUser() {
   const users = await prisma.user.findMany({
     where: {
       email: {
-        in: [testEmail, orphanEmail]
-      }
+        in: [testEmail, orphanEmail],
+      },
     },
     select: {
-      id: true
-    }
+      id: true,
+    },
   });
   const userIds = users.map((user) => user.id);
 
@@ -49,39 +51,39 @@ async function deleteTestUser() {
   const tenantUsers = await prisma.tenantUser.findMany({
     where: {
       userId: {
-        in: userIds
-      }
+        in: userIds,
+      },
     },
     select: {
-      tenantId: true
-    }
+      tenantId: true,
+    },
   });
   const tenantIds = tenantUsers.map((tenantUser) => tenantUser.tenantId);
 
   await prisma.tenantUser.deleteMany({
     where: {
       userId: {
-        in: userIds
-      }
-    }
+        in: userIds,
+      },
+    },
   });
 
   if (tenantIds.length > 0) {
     await prisma.tenant.deleteMany({
       where: {
         id: {
-          in: tenantIds
-        }
-      }
+          in: tenantIds,
+        },
+      },
     });
   }
 
   await prisma.user.deleteMany({
     where: {
       id: {
-        in: userIds
-      }
-    }
+        in: userIds,
+      },
+    },
   });
 }
 
@@ -104,8 +106,8 @@ describe("auth routes", () => {
       payload: {
         name: "Auth Test",
         email: testEmail,
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
 
     expect(registerResponse.statusCode).toBe(201);
@@ -126,11 +128,11 @@ describe("auth routes", () => {
     const tenantMembership = await prisma.tenantUser.findFirst({
       where: {
         user: {
-          email: testEmail
+          email: testEmail,
         },
         tenantId: registerBody.tenant.id,
-        role: "OWNER"
-      }
+        role: "OWNER",
+      },
     });
 
     expect(tenantMembership).not.toBeNull();
@@ -139,8 +141,8 @@ describe("auth routes", () => {
       method: "GET",
       url: "/auth/me",
       headers: {
-        authorization: `Bearer ${registerBody.accessToken}`
-      }
+        authorization: `Bearer ${registerBody.accessToken}`,
+      },
     });
 
     expect(meResponse.statusCode).toBe(200);
@@ -156,8 +158,8 @@ describe("auth routes", () => {
       method: "POST",
       url: "/auth/refresh",
       headers: {
-        cookie: String(setCookie)
-      }
+        cookie: String(setCookie),
+      },
     });
 
     expect(refreshResponse.statusCode).toBe(200);
@@ -165,15 +167,15 @@ describe("auth routes", () => {
       refreshResponse.json<{
         tenant: { id: string };
         accessToken: string;
-      }>()
+      }>(),
     ).toMatchObject({
       tenant: { id: registerBody.tenant.id },
-      accessToken: expect.any(String)
+      accessToken: expect.any(String),
     });
 
     const logoutResponse = await app.inject({
       method: "POST",
-      url: "/auth/logout"
+      url: "/auth/logout",
     });
 
     expect(logoutResponse.statusCode).toBe(204);
@@ -184,15 +186,15 @@ describe("auth routes", () => {
   it("rejects login when the user has no tenant membership", async () => {
     const app = await buildApi({ config: testConfig });
     const passwordHash = await argon2.hash("password123", {
-      type: argon2.argon2id
+      type: argon2.argon2id,
     });
 
     await prisma.user.create({
       data: {
         name: "Orphan User",
         email: orphanEmail,
-        passwordHash
-      }
+        passwordHash,
+      },
     });
 
     const response = await app.inject({
@@ -200,8 +202,8 @@ describe("auth routes", () => {
       url: "/auth/login",
       payload: {
         email: orphanEmail,
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
 
     expect(response.statusCode).toBe(403);
@@ -217,8 +219,8 @@ describe("auth routes", () => {
       url: "/auth/login",
       payload: {
         email: testEmail,
-        password: "wrong-password"
-      }
+        password: "wrong-password",
+      },
     });
 
     expect(response.statusCode).toBe(401);
@@ -230,8 +232,8 @@ describe("auth routes", () => {
     const app = await buildApi({
       config: {
         ...testConfig,
-        NODE_ENV: "production"
-      }
+        NODE_ENV: "production",
+      },
     });
 
     const response = await app.inject({
@@ -240,8 +242,8 @@ describe("auth routes", () => {
       payload: {
         name: "Auth Test",
         email: testEmail,
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
 
     expect(response.statusCode).toBe(201);
@@ -260,8 +262,8 @@ describe("auth routes", () => {
       payload: {
         name: "",
         email: "invalid-email",
-        password: "short"
-      }
+        password: "short",
+      },
     });
 
     expect(response.statusCode).toBe(400);

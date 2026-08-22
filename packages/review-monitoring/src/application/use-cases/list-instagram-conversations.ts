@@ -1,6 +1,6 @@
 import type {
+  InstagramConversation,
   InstagramConversationRepository,
-  InstagramConversation
 } from "@brm/review-monitoring";
 
 export type ListInstagramConversationsInput = {
@@ -20,18 +20,14 @@ export type ListInstagramConversationsDependencies = {
 };
 
 export class ListInstagramConversations {
-  constructor(
-    private readonly dependencies: ListInstagramConversationsDependencies
-  ) {}
+  constructor(private readonly dependencies: ListInstagramConversationsDependencies) {}
 
-  async execute(
-    input: ListInstagramConversationsInput
-  ): Promise<ListInstagramConversationsResult> {
+  async execute(input: ListInstagramConversationsInput): Promise<ListInstagramConversationsResult> {
     const result = await this.dependencies.instagramConversationRepository.findByTenant({
       tenantId: input.tenantId,
       instagramConnectionId: input.instagramConnectionId ?? undefined,
       limit: input.limit,
-      cursor: input.cursor ?? undefined
+      cursor: input.cursor ?? undefined,
     });
 
     return result;

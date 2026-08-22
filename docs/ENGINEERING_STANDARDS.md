@@ -150,6 +150,7 @@ Because the repository is early-stage:
 - Are business terms clear?
 - Does a pattern solve a real problem?
 - Can the code be simpler?
+
 ## API Documentation
 
 All API endpoints must be documented through Fastify OpenAPI schemas at the

@@ -1,4 +1,5 @@
-import * as webpackConfigModule from './webpack.config.js';
+import * as webpackConfigModule from "./webpack.config.js";
+
 const webpackConfig = webpackConfigModule.default || webpackConfigModule;
 
 /** @type {import('next').NextConfig} */

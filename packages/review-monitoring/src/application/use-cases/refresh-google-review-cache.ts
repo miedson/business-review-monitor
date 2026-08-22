@@ -1,8 +1,8 @@
+import type { BusinessLocationRepository } from "../ports/business-location-repository.js";
 import type {
   BusinessProfileReviewProvider,
-  ListBusinessReviewsResult
+  ListBusinessReviewsResult,
 } from "../ports/business-profile-review-provider.js";
-import type { BusinessLocationRepository } from "../ports/business-location-repository.js";
 import type { GoogleConnectionRepository } from "../ports/google-connection-repository.js";
 import type { ReviewCacheRepository } from "../ports/review-cache-repository.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
@@ -27,60 +27,46 @@ export type RefreshGoogleReviewCacheDependencies = {
 };
 
 export class RefreshGoogleReviewCache {
-  constructor(
-    private readonly dependencies: RefreshGoogleReviewCacheDependencies
-  ) {}
+  constructor(private readonly dependencies: RefreshGoogleReviewCacheDependencies) {}
 
-  async execute(
-    input: RefreshGoogleReviewCacheInput
-  ): Promise<ListBusinessReviewsResult> {
-    const businessLocation =
-      await this.dependencies.businessLocationRepository.findByGoogleIds({
-        tenantId: input.tenantId,
-        googleAccountId: input.accountId,
-        googleLocationId: input.locationId
-      });
+  async execute(input: RefreshGoogleReviewCacheInput): Promise<ListBusinessReviewsResult> {
+    const businessLocation = await this.dependencies.businessLocationRepository.findByGoogleIds({
+      tenantId: input.tenantId,
+      googleAccountId: input.accountId,
+      googleLocationId: input.locationId,
+    });
 
     if (!businessLocation || !businessLocation.isActive) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_LOCATION_NOT_FOUND",
-        "Business location is not available for this tenant."
+        "Business location is not available for this tenant.",
       );
     }
 
-    const connection =
-      await this.dependencies.googleConnectionRepository.findByTenantId(
-        input.tenantId
-      );
+    const connection = await this.dependencies.googleConnectionRepository.findByTenantId(
+      input.tenantId,
+    );
 
-    if (
-      !connection ||
-      connection.status !== "CONNECTED" ||
-      !connection.encryptedRefreshToken
-    ) {
+    if (!connection || connection.status !== "CONNECTED" || !connection.encryptedRefreshToken) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_AUTH_REQUIRED",
-        "Google connection is required before caching reviews."
+        "Google connection is required before caching reviews.",
       );
     }
 
-    const refreshToken = this.dependencies.tokenCipher.decrypt(
-      connection.encryptedRefreshToken
-    );
+    const refreshToken = this.dependencies.tokenCipher.decrypt(connection.encryptedRefreshToken);
     const tokenSet = await this.dependencies.provider.refreshAccessToken({
-      refreshToken
+      refreshToken,
     });
     const reviewsResult = await this.dependencies.provider.listReviews({
       accessToken: tokenSet.accessToken,
       accountId: input.accountId,
       locationId: input.locationId,
-      ...(input.pageToken ? { pageToken: input.pageToken } : {})
+      ...(input.pageToken ? { pageToken: input.pageToken } : {}),
     });
 
     const cachedAt = new Date();
-    const expiresAt = new Date(
-      cachedAt.getTime() + reviewCacheTtlDays * millisecondsPerDay
-    );
+    const expiresAt = new Date(cachedAt.getTime() + reviewCacheTtlDays * millisecondsPerDay);
 
     await this.dependencies.reviewCacheRepository.upsertMany(
       reviewsResult.reviews.map((review) => ({
@@ -94,14 +80,14 @@ export class RefreshGoogleReviewCache {
         reviewCreatedAt: review.createdAt,
         reviewUpdatedAt: review.updatedAt,
         cachedAt,
-        expiresAt
-      }))
+        expiresAt,
+      })),
     );
 
     await this.dependencies.businessLocationRepository.markSynced({
       tenantId: input.tenantId,
       businessLocationId: businessLocation.id,
-      syncedAt: cachedAt
+      syncedAt: cachedAt,
     });
 
     return reviewsResult;

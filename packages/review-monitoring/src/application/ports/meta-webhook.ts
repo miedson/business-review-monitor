@@ -77,7 +77,7 @@ export class MetaWebhookError extends Error {
   constructor(
     readonly code: MetaWebhookErrorCode,
     message: string,
-    readonly cause?: unknown
+    readonly cause?: unknown,
   ) {
     super(message);
     this.name = "MetaWebhookError";
@@ -85,9 +85,7 @@ export class MetaWebhookError extends Error {
 }
 
 export type MetaWebhookVerifyResult =
-  | { success: true; challenge: string }
-  | { success: false; error: MetaWebhookError };
+  { success: true; challenge: string } | { success: false; error: MetaWebhookError };
 
 export type MetaWebhookProcessResult =
-  | { success: true; eventId: string }
-  | { success: false; error: MetaWebhookError };
+  { success: true; eventId: string } | { success: false; error: MetaWebhookError };

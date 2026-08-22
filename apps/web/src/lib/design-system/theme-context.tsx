@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useContext, createContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type ThemeMode = "light" | "dark" | "system";
 
@@ -53,11 +53,7 @@ export function ThemeProvider({ children, initialThemeMode = "system" }: ThemePr
     setThemeMode,
   };
 
-  return (
-    <ThemeContext.Provider value={contextValue}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
 }
 
 function getStoredTheme(): ThemeMode | null {
@@ -89,8 +85,11 @@ function updateThemeClass(theme: ThemeMode) {
   if (typeof window === "undefined") return;
 
   const html = document.documentElement;
-  
-  const resolvedTheme = theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : theme;
+
+  const resolvedTheme =
+    theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : theme;
   if (resolvedTheme === "dark") {
     html.classList.add("dark");
     html.setAttribute("data-theme", "dark");

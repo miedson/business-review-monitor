@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+
 import type { OAuthStateData, OAuthStateStore } from "@brm/review-monitoring";
 
 type StoredOAuthState = OAuthStateData & {
@@ -27,7 +28,7 @@ export class InMemoryOAuthStateStore implements OAuthStateStore {
 
     this.states.set(state, {
       ...input,
-      expiresAt: this.now() + this.ttlMs
+      expiresAt: this.now() + this.ttlMs,
     });
 
     return state;
@@ -48,7 +49,7 @@ export class InMemoryOAuthStateStore implements OAuthStateStore {
 
     return {
       userId: storedState.userId,
-      tenantId: storedState.tenantId
+      tenantId: storedState.tenantId,
     };
   }
 

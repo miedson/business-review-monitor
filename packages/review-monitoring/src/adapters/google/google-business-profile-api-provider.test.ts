@@ -1,23 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
-import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
 import { GoogleBusinessProfileApiProvider } from "./google-business-profile-api-provider.js";
+import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
 
 type FetchCall = {
   url: string;
   init: RequestInit | undefined;
 };
 
-function createProvider(input: {
-  response?: Response;
-  calls?: FetchCall[];
-} = {}): GoogleBusinessProfileApiProvider {
+function createProvider(
+  input: {
+    response?: Response;
+    calls?: FetchCall[];
+  } = {},
+): GoogleBusinessProfileApiProvider {
   const calls = input.calls ?? [];
   const fetchFn: typeof fetch = async (url, init) => {
     calls.push({
       url: String(url),
-      init
+      init,
     });
 
     return (
@@ -26,7 +28,7 @@ function createProvider(input: {
         access_token: "google-access-token",
         expires_in: 3600,
         refresh_token: "google-refresh-token",
-        scope: GOOGLE_BUSINESS_PROFILE_SCOPE
+        scope: GOOGLE_BUSINESS_PROFILE_SCOPE,
       })
     );
   };
@@ -38,7 +40,7 @@ function createProvider(input: {
     authorizationEndpoint: "https://accounts.example.com/o/oauth2/v2/auth",
     tokenEndpoint: "https://oauth.example.com/token",
     revokeEndpoint: "https://oauth.example.com/revoke",
-    fetchFn
+    fetchFn,
   });
 }
 
@@ -46,24 +48,18 @@ describe("GoogleBusinessProfileApiProvider", () => {
   it("builds the Google OAuth authorization URL for offline consent", () => {
     const provider = createProvider();
 
-    const authorizationUrl = new URL(
-      provider.buildAuthorizationUrl({ state: "secure-state" })
-    );
+    const authorizationUrl = new URL(provider.buildAuthorizationUrl({ state: "secure-state" }));
 
     expect(authorizationUrl.origin).toBe("https://accounts.example.com");
     expect(authorizationUrl.searchParams.get("client_id")).toBe("google-client-id");
     expect(authorizationUrl.searchParams.get("redirect_uri")).toBe(
-      "https://api.example.com/integrations/google/callback"
+      "https://api.example.com/integrations/google/callback",
     );
     expect(authorizationUrl.searchParams.get("response_type")).toBe("code");
-    expect(authorizationUrl.searchParams.get("scope")).toBe(
-      GOOGLE_BUSINESS_PROFILE_SCOPE
-    );
+    expect(authorizationUrl.searchParams.get("scope")).toBe(GOOGLE_BUSINESS_PROFILE_SCOPE);
     expect(authorizationUrl.searchParams.get("access_type")).toBe("offline");
     expect(authorizationUrl.searchParams.get("prompt")).toBe("consent");
-    expect(authorizationUrl.searchParams.get("include_granted_scopes")).toBe(
-      "true"
-    );
+    expect(authorizationUrl.searchParams.get("include_granted_scopes")).toBe("true");
     expect(authorizationUrl.searchParams.get("state")).toBe("secure-state");
   });
 
@@ -72,14 +68,14 @@ describe("GoogleBusinessProfileApiProvider", () => {
     const provider = createProvider({ calls });
 
     const tokenSet = await provider.exchangeAuthorizationCode({
-      code: "authorization-code"
+      code: "authorization-code",
     });
 
     expect(tokenSet).toEqual({
       accessToken: "google-access-token",
       expiresInSeconds: 3600,
       refreshToken: "google-refresh-token",
-      scope: GOOGLE_BUSINESS_PROFILE_SCOPE
+      scope: GOOGLE_BUSINESS_PROFILE_SCOPE,
     });
     expect(calls[0]?.url).toBe("https://oauth.example.com/token");
     expect(calls[0]?.init?.method).toBe("POST");
@@ -88,7 +84,7 @@ describe("GoogleBusinessProfileApiProvider", () => {
       client_secret: "google-client-secret",
       code: "authorization-code",
       grant_type: "authorization_code",
-      redirect_uri: "https://api.example.com/integrations/google/callback"
+      redirect_uri: "https://api.example.com/integrations/google/callback",
     });
   });
 
@@ -98,24 +94,24 @@ describe("GoogleBusinessProfileApiProvider", () => {
       calls,
       response: Response.json({
         access_token: "new-access-token",
-        expires_in: 1800
-      })
+        expires_in: 1800,
+      }),
     });
 
     const tokenSet = await provider.refreshAccessToken({
-      refreshToken: "stored-refresh-token"
+      refreshToken: "stored-refresh-token",
     });
 
     expect(tokenSet).toEqual({
       accessToken: "new-access-token",
       expiresInSeconds: 1800,
-      scope: GOOGLE_BUSINESS_PROFILE_SCOPE
+      scope: GOOGLE_BUSINESS_PROFILE_SCOPE,
     });
     expect(readRequestBody(calls[0]?.init?.body)).toMatchObject({
       client_id: "google-client-id",
       client_secret: "google-client-secret",
       grant_type: "refresh_token",
-      refresh_token: "stored-refresh-token"
+      refresh_token: "stored-refresh-token",
     });
   });
 
@@ -123,39 +119,39 @@ describe("GoogleBusinessProfileApiProvider", () => {
     const calls: FetchCall[] = [];
     const provider = createProvider({
       calls,
-      response: new Response(null, { status: 200 })
+      response: new Response(null, { status: 200 }),
     });
 
     await provider.revokeAuthorization({
-      refreshToken: "stored-refresh-token"
+      refreshToken: "stored-refresh-token",
     });
 
     expect(calls[0]?.url).toBe("https://oauth.example.com/revoke");
     expect(calls[0]?.init?.method).toBe("POST");
     expect(readRequestBody(calls[0]?.init?.body)).toEqual({
-      token: "stored-refresh-token"
+      token: "stored-refresh-token",
     });
   });
 
   it("maps invalid_grant token errors to token revoked", async () => {
     const provider = createProvider({
-      response: Response.json({ error: "invalid_grant" }, { status: 400 })
+      response: Response.json({ error: "invalid_grant" }, { status: 400 }),
     });
 
     await expect(
-      provider.refreshAccessToken({ refreshToken: "stored-refresh-token" })
+      provider.refreshAccessToken({ refreshToken: "stored-refresh-token" }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_TOKEN_REVOKED"
+      code: "GOOGLE_TOKEN_REVOKED",
     });
   });
 
   it("rejects invalid token responses", async () => {
     const provider = createProvider({
-      response: Response.json({ access_token: "" })
+      response: Response.json({ access_token: "" }),
     });
 
     await expect(
-      provider.exchangeAuthorizationCode({ code: "authorization-code" })
+      provider.exchangeAuthorizationCode({ code: "authorization-code" }),
     ).rejects.toBeInstanceOf(GoogleBusinessProfileProviderError);
   });
 
@@ -172,26 +168,26 @@ describe("GoogleBusinessProfileApiProvider", () => {
             comment: "Excelente atendimento",
             reviewReply: {
               comment: "Obrigado pelo feedback!",
-              updateTime: "2026-08-20T12:00:00Z"
+              updateTime: "2026-08-20T12:00:00Z",
             },
             createTime: "2026-08-01T10:00:00Z",
-            updateTime: "2026-08-20T12:00:00Z"
-          }
+            updateTime: "2026-08-20T12:00:00Z",
+          },
         ],
         averageRating: 5,
-        totalReviewCount: 1
-      })
+        totalReviewCount: 1,
+      }),
     });
 
     const result = await provider.listReviews({
       accessToken: "access-token",
       accountId: "accounts/1001",
-      locationId: "locations/2001"
+      locationId: "locations/2001",
     });
 
     expect(result.reviews[0]?.reviewReply).toEqual({
       comment: "Obrigado pelo feedback!",
-      updatedAt: new Date("2026-08-20T12:00:00Z")
+      updatedAt: new Date("2026-08-20T12:00:00Z"),
     });
     expect(calls[0]?.url).toContain("/accounts/1001/locations/2001/reviews");
   });

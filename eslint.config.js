@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import prettierConfig from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -10,7 +11,8 @@ export default tseslint.config(
       "**/.next/**",
       "**/coverage/**",
       "**/graphify-out/**",
-      "node_modules/**"
-    ]
-  }
+      "node_modules/**",
+    ],
+  },
+  prettierConfig,
 );

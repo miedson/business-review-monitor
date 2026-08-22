@@ -1,11 +1,12 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { prisma } from "@brm/database";
 import { afterAll, describe, expect, it } from "vitest";
+
+import { prisma } from "@brm/database";
+
 import { buildApi } from "../../server/app.js";
 
-const createTestEmail = (): string =>
-  `instagram-integration-test-${randomUUID()}@example.com`;
+const createTestEmail = (): string => `instagram-integration-test-${randomUUID()}@example.com`;
 
 const testConfig = {
   NODE_ENV: "test",
@@ -26,7 +27,7 @@ const testConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 describe("instagram integration routes", () => {
@@ -43,8 +44,8 @@ describe("instagram integration routes", () => {
       payload: {
         name: "Instagram Integration Test",
         email: createTestEmail(),
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
     const registerBody = registerResponse.json<{
       accessToken: string;
@@ -55,8 +56,8 @@ describe("instagram integration routes", () => {
       method: "GET",
       url: "/integrations/instagram/connect",
       headers: {
-        authorization: `Bearer ${registerBody.accessToken}`
-      }
+        authorization: `Bearer ${registerBody.accessToken}`,
+      },
     });
 
     expect(connectResponse.statusCode).toBe(302);
@@ -68,18 +69,18 @@ describe("instagram integration routes", () => {
 
     const callbackResponse = await app.inject({
       method: "GET",
-      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`,
     });
 
     expect(callbackResponse.statusCode).toBe(302);
     expect(callbackResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?instagram=connected"
+      "http://localhost:3000/settings/integrations?instagram=connected",
     );
 
     const instagramConnection = await prisma.instagramConnection.findFirstOrThrow({
       where: {
-        tenantId: registerBody.tenant.id
-      }
+        tenantId: registerBody.tenant.id,
+      },
     });
 
     expect(instagramConnection.status).toBe("CONNECTED");
@@ -89,7 +90,9 @@ describe("instagram integration routes", () => {
     expect(instagramConnection.instagramProfessionalAccountId).toBeNull();
     expect(instagramConnection.username).toBe("mock_username");
     expect(instagramConnection.accountType).toBe("BUSINESS");
-    expect(instagramConnection.scope).toBe("instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages");
+    expect(instagramConnection.scope).toBe(
+      "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_messages",
+    );
     expect(instagramConnection.tokenExpiresAt).not.toBeNull();
 
     await app.close();
@@ -104,16 +107,16 @@ describe("instagram integration routes", () => {
       payload: {
         name: "Instagram Integration Test",
         email: createTestEmail(),
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
     const accessToken = registerResponse.json<{ accessToken: string }>().accessToken;
     const connectResponse = await app.inject({
       method: "GET",
       url: "/integrations/instagram/connect",
       headers: {
-        authorization: `Bearer ${accessToken}`
-      }
+        authorization: `Bearer ${accessToken}`,
+      },
     });
     const authorizationUrl = new URL(connectResponse.headers.location as string);
     const state = authorizationUrl.searchParams.get("state");
@@ -122,17 +125,17 @@ describe("instagram integration routes", () => {
 
     await app.inject({
       method: "GET",
-      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`,
     });
 
     const secondCallbackResponse = await app.inject({
       method: "GET",
-      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`
+      url: `/integrations/instagram/callback?code=mock-code&state=${stateValue}`,
     });
 
     expect(secondCallbackResponse.statusCode).toBe(302);
     expect(secondCallbackResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?instagram=error"
+      "http://localhost:3000/settings/integrations?instagram=error",
     );
 
     await app.close();
@@ -147,16 +150,16 @@ describe("instagram integration routes", () => {
       payload: {
         name: "Instagram Integration Test",
         email: createTestEmail(),
-        password: "password123"
-      }
+        password: "password123",
+      },
     });
     const accessToken = registerResponse.json<{ accessToken: string }>().accessToken;
     const connectResponse = await app.inject({
       method: "GET",
       url: "/integrations/instagram/connect",
       headers: {
-        authorization: `Bearer ${accessToken}`
-      }
+        authorization: `Bearer ${accessToken}`,
+      },
     });
     const authorizationUrl = new URL(connectResponse.headers.location as string);
     const state = authorizationUrl.searchParams.get("state");
@@ -165,22 +168,22 @@ describe("instagram integration routes", () => {
 
     const missingCodeResponse = await app.inject({
       method: "GET",
-      url: `/integrations/instagram/callback?state=${stateValue}`
+      url: `/integrations/instagram/callback?state=${stateValue}`,
     });
 
     expect(missingCodeResponse.statusCode).toBe(302);
     expect(missingCodeResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?instagram=error"
+      "http://localhost:3000/settings/integrations?instagram=error",
     );
 
     const missingStateResponse = await app.inject({
       method: "GET",
-      url: `/integrations/instagram/callback?code=mock-code`
+      url: `/integrations/instagram/callback?code=mock-code`,
     });
 
     expect(missingStateResponse.statusCode).toBe(302);
     expect(missingStateResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?instagram=error"
+      "http://localhost:3000/settings/integrations?instagram=error",
     );
 
     await app.close();
@@ -191,12 +194,12 @@ describe("instagram integration routes", () => {
 
     const errorResponse = await app.inject({
       method: "GET",
-      url: "/integrations/instagram/callback?error=access_denied"
+      url: "/integrations/instagram/callback?error=access_denied",
     });
 
     expect(errorResponse.statusCode).toBe(302);
     expect(errorResponse.headers.location).toBe(
-      "http://localhost:3000/settings/integrations?instagram=error"
+      "http://localhost:3000/settings/integrations?instagram=error",
     );
 
     await app.close();

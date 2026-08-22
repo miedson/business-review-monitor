@@ -16,20 +16,16 @@ export type StartGoogleOAuthConnectionDependencies = {
 };
 
 export class StartGoogleOAuthConnection {
-  constructor(
-    private readonly dependencies: StartGoogleOAuthConnectionDependencies
-  ) {}
+  constructor(private readonly dependencies: StartGoogleOAuthConnectionDependencies) {}
 
-  async execute(
-    input: StartGoogleOAuthConnectionInput
-  ): Promise<StartGoogleOAuthConnectionResult> {
+  async execute(input: StartGoogleOAuthConnectionInput): Promise<StartGoogleOAuthConnectionResult> {
     const state = await this.dependencies.stateStore.create({
       userId: input.userId,
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
 
     return {
-      authorizationUrl: this.dependencies.provider.buildAuthorizationUrl({ state })
+      authorizationUrl: this.dependencies.provider.buildAuthorizationUrl({ state }),
     };
   }
 }

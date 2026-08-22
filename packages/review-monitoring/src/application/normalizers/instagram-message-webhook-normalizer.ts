@@ -1,23 +1,21 @@
 import type {
   MetaWebhookEntry,
-  MetaWebhookMessaging
+  MetaWebhookMessaging,
+  NormalizedInstagramMessage,
 } from "@brm/review-monitoring";
-import type { NormalizedInstagramMessage } from "@brm/review-monitoring";
 import { createNormalizedInstagramMessage } from "@brm/review-monitoring";
 
 export interface InstagramMessageWebhookNormalizer {
   normalize(
     entry: MetaWebhookEntry,
-    messaging: MetaWebhookMessaging
+    messaging: MetaWebhookMessaging,
   ): NormalizedInstagramMessage | null;
 }
 
-export class DefaultInstagramMessageWebhookNormalizer
-  implements InstagramMessageWebhookNormalizer
-{
+export class DefaultInstagramMessageWebhookNormalizer implements InstagramMessageWebhookNormalizer {
   normalize(
     entry: MetaWebhookEntry,
-    messaging: MetaWebhookMessaging
+    messaging: MetaWebhookMessaging,
   ): NormalizedInstagramMessage | null {
     const message = messaging.message;
     const externalMessageId = message?.id ?? message?.mid;
@@ -34,7 +32,8 @@ export class DefaultInstagramMessageWebhookNormalizer
     const timestamp = messaging.timestamp;
     const sentAtExternal = timestamp ? new Date(timestamp) : undefined;
 
-    const direction: "INBOUND" | "OUTBOUND" = senderId === instagramAccountId ? "OUTBOUND" : "INBOUND";
+    const direction: "INBOUND" | "OUTBOUND" =
+      senderId === instagramAccountId ? "OUTBOUND" : "INBOUND";
 
     return createNormalizedInstagramMessage({
       instagramAccountId,
@@ -43,7 +42,7 @@ export class DefaultInstagramMessageWebhookNormalizer
       recipientExternalId: recipientId,
       direction,
       text: text ?? undefined,
-      sentAtExternal
+      sentAtExternal,
     });
   }
 }

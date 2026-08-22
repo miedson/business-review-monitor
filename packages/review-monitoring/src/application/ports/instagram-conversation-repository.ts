@@ -37,8 +37,12 @@ export type { InstagramConversation };
 export interface InstagramConversationRepository {
   save(input: SaveInstagramConversationInput): Promise<InstagramConversation>;
   update(input: UpdateInstagramConversationInput): Promise<InstagramConversation>;
-  findByTenant(input: FindInstagramConversationsInput): Promise<{ conversations: InstagramConversation[]; nextCursor: string | null }>;
-  findByIdForTenant(input: FindInstagramConversationByIdInput): Promise<InstagramConversation | null>;
+  findByTenant(
+    input: FindInstagramConversationsInput,
+  ): Promise<{ conversations: InstagramConversation[]; nextCursor: string | null }>;
+  findByIdForTenant(
+    input: FindInstagramConversationByIdInput,
+  ): Promise<InstagramConversation | null>;
   findByConnectionAndParticipant(input: {
     instagramConnectionId: string;
     participantExternalId: string;

@@ -55,7 +55,7 @@ export type NormalizedInstagramMessageInput = {
 };
 
 export function createNormalizedInstagramMessage(
-  input: NormalizedInstagramMessageInput
+  input: NormalizedInstagramMessageInput,
 ): NormalizedInstagramMessage {
   return {
     instagramAccountId: input.instagramAccountId,
@@ -64,6 +64,6 @@ export function createNormalizedInstagramMessage(
     recipientExternalId: input.recipientExternalId,
     direction: input.direction,
     text: input.text ?? undefined,
-    sentAtExternal: input.sentAtExternal ?? undefined
+    sentAtExternal: input.sentAtExternal ?? undefined,
   };
 }

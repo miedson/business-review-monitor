@@ -1,6 +1,6 @@
 import type {
+  InstagramConversation,
   InstagramConversationRepository,
-  InstagramConversation
 } from "@brm/review-monitoring";
 
 export type MarkInstagramConversationAsReadInput = {
@@ -17,16 +17,14 @@ export type MarkInstagramConversationAsReadDependencies = {
 };
 
 export class MarkInstagramConversationAsRead {
-  constructor(
-    private readonly dependencies: MarkInstagramConversationAsReadDependencies
-  ) {}
+  constructor(private readonly dependencies: MarkInstagramConversationAsReadDependencies) {}
 
   async execute(
-    input: MarkInstagramConversationAsReadInput
+    input: MarkInstagramConversationAsReadInput,
   ): Promise<MarkInstagramConversationAsReadResult> {
     const conversation = await this.dependencies.instagramConversationRepository.markAsRead(
       input.conversationId,
-      input.tenantId
+      input.tenantId,
     );
 
     if (!conversation) {

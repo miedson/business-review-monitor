@@ -185,6 +185,7 @@ graphify query apiAppName --graph graphify-out/graph.json
 - TAREFA 08: interface `BusinessProfileReviewProvider`.
 - TAREFA 09: `GoogleBusinessProfileMockProvider`.
 - TAREFA 10: OAuth real no `GoogleBusinessProfileApiProvider`.
+
 ## Primeiro deploy em produção
 
 O deploy inicial esperado é via Coolify usando `docker-compose.prod.yml`.

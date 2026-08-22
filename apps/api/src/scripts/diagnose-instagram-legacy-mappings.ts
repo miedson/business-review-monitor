@@ -1,5 +1,4 @@
 #!/usr/bin/env tsx
-
 import { prisma } from "@brm/database";
 
 async function main() {
@@ -8,8 +7,8 @@ async function main() {
   const suspectConnections = await prisma.instagramConnection.findMany({
     where: {
       instagramProfessionalAccountId: {
-        not: null
-      }
+        not: null,
+      },
     },
     select: {
       id: true,
@@ -18,21 +17,17 @@ async function main() {
       instagramProfessionalAccountId: true,
       username: true,
       status: true,
-      connectedAt: true
-    }
+      connectedAt: true,
+    },
   });
 
   const legacyRecords = suspectConnections.filter(
-    (conn) => conn.instagramProfessionalAccountId === conn.instagramUserId
+    (conn) => conn.instagramProfessionalAccountId === conn.instagramUserId,
   );
 
   console.log("\n=== SUSPECT LEGACY MAPPINGS ===");
-  console.log(
-    `Total connections with professionalAccountId: ${suspectConnections.length}`
-  );
-  console.log(
-    `Legacy mappings (professionalAccountId == userId): ${legacyRecords.length}`
-  );
+  console.log(`Total connections with professionalAccountId: ${suspectConnections.length}`);
+  console.log(`Legacy mappings (professionalAccountId == userId): ${legacyRecords.length}`);
 
   if (legacyRecords.length === 0) {
     console.log("\nNo legacy mappings found.");
@@ -47,7 +42,7 @@ async function main() {
   for (const record of suspectConnections) {
     const isLegacy = record.instagramProfessionalAccountId === record.instagramUserId;
     console.log(
-      `  ${record.id} | tenant=${record.tenantId} | userId=${record.instagramUserId} | proId=${record.instagramProfessionalAccountId} | legacy=${isLegacy}`
+      `  ${record.id} | tenant=${record.tenantId} | userId=${record.instagramUserId} | proId=${record.instagramProfessionalAccountId} | legacy=${isLegacy}`,
     );
   }
 

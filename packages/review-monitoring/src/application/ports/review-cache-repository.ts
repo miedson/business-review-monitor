@@ -29,13 +29,17 @@ export type ListValidReviewCacheInput = {
 export type DeleteExpiredReviewCacheInput = {
   now: Date;
 };
-export type SaveReviewReplyInput = { tenantId: string; businessLocationId: string; googleReviewId: string; comment: string; updatedAt: Date };
+export type SaveReviewReplyInput = {
+  tenantId: string;
+  businessLocationId: string;
+  googleReviewId: string;
+  comment: string;
+  updatedAt: Date;
+};
 
 export interface ReviewCacheRepository {
   upsertMany(reviews: CacheBusinessReviewInput[]): Promise<void>;
-  listValidByLocation(
-    input: ListValidReviewCacheInput
-  ): Promise<CachedBusinessReview[]>;
+  listValidByLocation(input: ListValidReviewCacheInput): Promise<CachedBusinessReview[]>;
   deleteExpired(input: DeleteExpiredReviewCacheInput): Promise<number>;
   saveReply?(input: SaveReviewReplyInput): Promise<void>;
 }

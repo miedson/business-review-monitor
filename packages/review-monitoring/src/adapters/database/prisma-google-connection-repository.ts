@@ -4,45 +4,41 @@ import type {
   DisconnectGoogleConnectionInput,
   GoogleConnectionRepository,
   SaveConnectedGoogleConnectionInput,
-  StoredGoogleConnection
+  StoredGoogleConnection,
 } from "../../application/ports/google-connection-repository.js";
 
-export class PrismaGoogleConnectionRepository
-  implements GoogleConnectionRepository
-{
+export class PrismaGoogleConnectionRepository implements GoogleConnectionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByTenantId(tenantId: string): Promise<StoredGoogleConnection | null> {
     const connection = await this.prisma.googleConnection.findFirst({
       where: {
-        tenantId
-      }
+        tenantId,
+      },
     });
 
     return connection;
   }
 
-  async saveConnected(
-    input: SaveConnectedGoogleConnectionInput
-  ): Promise<StoredGoogleConnection> {
+  async saveConnected(input: SaveConnectedGoogleConnectionInput): Promise<StoredGoogleConnection> {
     const existingConnection = await this.prisma.googleConnection.findFirst({
       where: {
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     if (existingConnection) {
       return this.prisma.googleConnection.update({
         where: {
-          id: existingConnection.id
+          id: existingConnection.id,
         },
         data: {
           encryptedRefreshToken: input.encryptedRefreshToken,
           scope: input.scope,
           status: "CONNECTED",
           connectedAt: input.connectedAt,
-          disconnectedAt: null
-        }
+          disconnectedAt: null,
+        },
       });
     }
 
@@ -52,13 +48,13 @@ export class PrismaGoogleConnectionRepository
         encryptedRefreshToken: input.encryptedRefreshToken,
         scope: input.scope,
         status: "CONNECTED",
-        connectedAt: input.connectedAt
-      }
+        connectedAt: input.connectedAt,
+      },
     });
   }
 
   async disconnectByTenantId(
-    input: DisconnectGoogleConnectionInput
+    input: DisconnectGoogleConnectionInput,
   ): Promise<StoredGoogleConnection | null> {
     const connection = await this.findByTenantId(input.tenantId);
 
@@ -66,11 +62,11 @@ export class PrismaGoogleConnectionRepository
       data: {
         disconnectedAt: input.disconnectedAt,
         encryptedRefreshToken: null,
-        status: "DISCONNECTED"
+        status: "DISCONNECTED",
       },
       where: {
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return connection;

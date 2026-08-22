@@ -1,23 +1,30 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ResolveInstagramWebhookIdentity } from "./resolve-instagram-webhook-identity.js";
-import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import type { InstagramConnectionRepository } from "@brm/review-monitoring";
-import type { InstagramReviewProvider } from "@brm/review-monitoring";
-import type { TokenCipher } from "@brm/review-monitoring";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type {
+  InstagramConnectionRepository,
+  InstagramReviewProvider,
+  StoredInstagramConnection,
+  TokenCipher,
+} from "@brm/review-monitoring";
 import { GoogleBusinessProfileProviderError } from "@brm/review-monitoring";
+
+import { ResolveInstagramWebhookIdentity } from "./resolve-instagram-webhook-identity.js";
 
 class FakeInstagramConnectionRepository implements InstagramConnectionRepository {
   private connectionsByUserId = new Map<string, StoredInstagramConnection>();
   private connectionsByProfessionalAccountId = new Map<string, StoredInstagramConnection>();
   private connectedWithoutProfessionalAccountId: StoredInstagramConnection[] = [];
-  private professionalAccountIdUpdates: Array<{ connectionId: string; professionalAccountId: string }> = [];
+  private professionalAccountIdUpdates: Array<{
+    connectionId: string;
+    professionalAccountId: string;
+  }> = [];
 
   setConnection(connection: StoredInstagramConnection): void {
     this.connectionsByUserId.set(connection.instagramUserId, connection);
     if (connection.instagramProfessionalAccountId) {
       this.connectionsByProfessionalAccountId.set(
         connection.instagramProfessionalAccountId,
-        connection
+        connection,
       );
     }
     if (connection.status === "CONNECTED" && !connection.instagramProfessionalAccountId) {
@@ -33,7 +40,9 @@ class FakeInstagramConnectionRepository implements InstagramConnectionRepository
     return this.connectionsByUserId.get(instagramUserId) ?? null;
   }
 
-  async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
+  async findByProfessionalAccountId(
+    professionalAccountId: string,
+  ): Promise<StoredInstagramConnection | null> {
     return this.connectionsByProfessionalAccountId.get(professionalAccountId) ?? null;
   }
 
@@ -45,9 +54,10 @@ class FakeInstagramConnectionRepository implements InstagramConnectionRepository
     throw new Error("Not implemented in fake");
   }
 
-  async setProfessionalAccountId(
-    input: { connectionId: string; professionalAccountId: string }
-  ): Promise<void> {
+  async setProfessionalAccountId(input: {
+    connectionId: string;
+    professionalAccountId: string;
+  }): Promise<void> {
     this.professionalAccountIdUpdates.push(input);
   }
 
@@ -55,8 +65,7 @@ class FakeInstagramConnectionRepository implements InstagramConnectionRepository
     throw new Error("Not implemented in fake");
   }
 
-  async deleteByTenantId(): Promise<void> {
-  }
+  async deleteByTenantId(): Promise<void> {}
 
   getProfessionalAccountIdUpdates() {
     return this.professionalAccountIdUpdates;
@@ -64,35 +73,45 @@ class FakeInstagramConnectionRepository implements InstagramConnectionRepository
 }
 
 class FakeProvider {
-  private scenarios: Array<{ throwError?: Error; returnProfile?: { id: string; username?: string; account_type?: string } }> = [];
+  private scenarios: Array<{
+    throwError?: Error;
+    returnProfile?: { id: string; username?: string; account_type?: string };
+  }> = [];
   private callIndex = 0;
   private defaultReturn = { id: "mock-resolved-id", username: "mock", account_type: "BUSINESS" };
-  resolveWebhookAccountId = vi.fn(async (): Promise<{ id: string; username?: string; accountType?: string }> => {
-    const scenario = this.scenarios[this.callIndex] ?? {};
-    this.callIndex++;
-    if (scenario.throwError) {
-      throw scenario.throwError;
-    }
-    if (scenario.returnProfile) {
-      const result: { id: string; username?: string; accountType?: string } = {
-        id: scenario.returnProfile.id
+  resolveWebhookAccountId = vi.fn(
+    async (): Promise<{ id: string; username?: string; accountType?: string }> => {
+      const scenario = this.scenarios[this.callIndex] ?? {};
+      this.callIndex++;
+      if (scenario.throwError) {
+        throw scenario.throwError;
+      }
+      if (scenario.returnProfile) {
+        const result: { id: string; username?: string; accountType?: string } = {
+          id: scenario.returnProfile.id,
+        };
+        if (scenario.returnProfile.username !== undefined) {
+          result.username = scenario.returnProfile.username;
+        }
+        if (scenario.returnProfile.account_type !== undefined) {
+          result.accountType = scenario.returnProfile.account_type;
+        }
+        return result;
+      }
+      return {
+        id: this.defaultReturn.id,
+        username: this.defaultReturn.username,
+        accountType: this.defaultReturn.account_type,
       };
-      if (scenario.returnProfile.username !== undefined) {
-        result.username = scenario.returnProfile.username;
-      }
-      if (scenario.returnProfile.account_type !== undefined) {
-        result.accountType = scenario.returnProfile.account_type;
-      }
-      return result;
-    }
-    return {
-      id: this.defaultReturn.id,
-      username: this.defaultReturn.username,
-      accountType: this.defaultReturn.account_type
-    };
-  });
+    },
+  );
 
-  setScenarios(scenarios: Array<{ throwError?: Error; returnProfile?: { id: string; username?: string; account_type?: string } }>): void {
+  setScenarios(
+    scenarios: Array<{
+      throwError?: Error;
+      returnProfile?: { id: string; username?: string; account_type?: string };
+    }>,
+  ): void {
     this.scenarios = scenarios;
     this.callIndex = 0;
   }
@@ -105,11 +124,19 @@ class FakeProvider {
     return "";
   }
 
-  async exchangeAuthorizationCode(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+  async exchangeAuthorizationCode(): Promise<{
+    accessToken: string;
+    expiresInSeconds: number;
+    scope: string;
+  }> {
     return { accessToken: "token", expiresInSeconds: 3600, scope: "instagram_business_basic" };
   }
 
-  async refreshAccessToken(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+  async refreshAccessToken(): Promise<{
+    accessToken: string;
+    expiresInSeconds: number;
+    scope: string;
+  }> {
     return { accessToken: "token", expiresInSeconds: 3600, scope: "instagram_business_basic" };
   }
 
@@ -131,7 +158,7 @@ class FakeProvider {
     return {
       id: "mock-user-id",
       username: "mock",
-      account_type: "BUSINESS"
+      account_type: "BUSINESS",
     };
   }
 }
@@ -159,7 +186,7 @@ describe("ResolveInstagramWebhookIdentity", () => {
     useCase = new ResolveInstagramWebhookIdentity({
       instagramConnectionRepository: connectionRepo,
       provider: provider as unknown as InstagramReviewProvider,
-      tokenCipher
+      tokenCipher,
     });
   });
 
@@ -176,12 +203,12 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connection);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).not.toBeNull();
@@ -203,16 +230,18 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connection);
 
     provider.setScenarios([
-      { returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" } }
+      {
+        returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" },
+      },
     ]);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).not.toBeNull();
@@ -221,7 +250,7 @@ describe("ResolveInstagramWebhookIdentity", () => {
     expect(connectionRepo.getProfessionalAccountIdUpdates()).toHaveLength(1);
     expect(connectionRepo.getProfessionalAccountIdUpdates()[0]).toMatchObject({
       connectionId: "conn_1",
-      professionalAccountId: "17841480590934524"
+      professionalAccountId: "17841480590934524",
     });
   });
 
@@ -238,16 +267,18 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connection);
 
     provider.setScenarios([
-      { returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" } }
+      {
+        returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" },
+      },
     ]);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).toBeNull();
@@ -267,7 +298,7 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     const connectionB: StoredInstagramConnection = {
       id: "conn_b",
@@ -281,18 +312,25 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connectionA);
     connectionRepo.setConnection(connectionB);
 
     provider.setScenarios([
-      { throwError: new GoogleBusinessProfileProviderError("INSTAGRAM_PERMISSION_DENIED", "Instagram permission denied") },
-      { returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" } }
+      {
+        throwError: new GoogleBusinessProfileProviderError(
+          "INSTAGRAM_PERMISSION_DENIED",
+          "Instagram permission denied",
+        ),
+      },
+      {
+        returnProfile: { id: "25928677863496445", username: "sixsysma", account_type: "BUSINESS" },
+      },
     ]);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).not.toBeNull();
@@ -313,17 +351,22 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connection);
 
     provider.setScenarios([
-      { throwError: new GoogleBusinessProfileProviderError("INSTAGRAM_API_UNAVAILABLE", "Instagram API unavailable") }
+      {
+        throwError: new GoogleBusinessProfileProviderError(
+          "INSTAGRAM_API_UNAVAILABLE",
+          "Instagram API unavailable",
+        ),
+      },
     ]);
 
-    await expect(
-      useCase.execute({ webhookAccountId: "17841480590934524" })
-    ).rejects.toThrow("Instagram API unavailable");
+    await expect(useCase.execute({ webhookAccountId: "17841480590934524" })).rejects.toThrow(
+      "Instagram API unavailable",
+    );
   });
 
   it("skips candidate with missing encryptedAccessToken", async () => {
@@ -339,12 +382,12 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(connection);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).toBeNull();
@@ -363,12 +406,12 @@ describe("ResolveInstagramWebhookIdentity", () => {
       status: "DISCONNECTED",
       connectedAt: new Date(),
       disconnectedAt: new Date(),
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
     connectionRepo.setConnection(disconnected);
 
     const result = await useCase.execute({
-      webhookAccountId: "17841480590934524"
+      webhookAccountId: "17841480590934524",
     });
 
     expect(result).toBeNull();

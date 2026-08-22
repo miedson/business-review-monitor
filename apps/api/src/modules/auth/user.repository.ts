@@ -12,13 +12,13 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
   }
 
   async findById(id: string): Promise<User | null> {
     return this.prisma.user.findUnique({
-      where: { id }
+      where: { id },
     });
   }
 
@@ -29,20 +29,20 @@ export class UserRepository {
   }): Promise<UserWithTenant> {
     return this.prisma.$transaction(async (transaction) => {
       const user = await transaction.user.create({
-        data: input
+        data: input,
       });
       const tenant = await transaction.tenant.create({
         data: {
-          name: input.name
-        }
+          name: input.name,
+        },
       });
 
       await transaction.tenantUser.create({
         data: {
           tenantId: tenant.id,
           userId: user.id,
-          role: "OWNER"
-        }
+          role: "OWNER",
+        },
       });
 
       return { user, tenant };
@@ -53,11 +53,11 @@ export class UserRepository {
     const tenantUser = await this.prisma.tenantUser.findFirst({
       where: { userId },
       orderBy: {
-        createdAt: "asc"
+        createdAt: "asc",
       },
       include: {
-        tenant: true
-      }
+        tenant: true,
+      },
     });
 
     return tenantUser?.tenant ?? null;
@@ -69,13 +69,13 @@ export function toPublicUser(user: User): PublicUser {
     id: user.id,
     name: user.name,
     email: user.email,
-    createdAt: user.createdAt
+    createdAt: user.createdAt,
   };
 }
 
 export function toPublicTenant(tenant: Tenant): PublicTenant {
   return {
     id: tenant.id,
-    name: tenant.name
+    name: tenant.name,
   };
 }

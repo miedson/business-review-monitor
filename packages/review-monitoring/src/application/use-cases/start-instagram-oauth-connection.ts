@@ -16,20 +16,18 @@ export type StartInstagramOAuthConnectionDependencies = {
 };
 
 export class StartInstagramOAuthConnection {
-  constructor(
-    private readonly dependencies: StartInstagramOAuthConnectionDependencies
-  ) {}
+  constructor(private readonly dependencies: StartInstagramOAuthConnectionDependencies) {}
 
   async execute(
-    input: StartInstagramOAuthConnectionInput
+    input: StartInstagramOAuthConnectionInput,
   ): Promise<StartInstagramOAuthConnectionResult> {
     const state = await this.dependencies.stateStore.create({
       userId: input.userId,
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
 
     return {
-      authorizationUrl: this.dependencies.provider.buildAuthorizationUrl({ state })
+      authorizationUrl: this.dependencies.provider.buildAuthorizationUrl({ state }),
     };
   }
 }

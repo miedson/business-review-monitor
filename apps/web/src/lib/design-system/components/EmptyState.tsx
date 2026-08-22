@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Text, Button } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
 
@@ -41,7 +41,7 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
       className,
       ...rest
     },
-    ref
+    ref,
   ) => {
     const { p, gap, iconSize, titleSize, descSize } = sizes[size];
 
@@ -65,36 +65,100 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
         {...rest}
       >
         {icon ? (
-          <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", color: "text.quaternary", flexShrink: 0, w: iconSize, h: iconSize, fontSize: iconSize / 2 }}>
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "text.quaternary",
+              flexShrink: 0,
+              w: iconSize,
+              h: iconSize,
+              fontSize: iconSize / 2,
+            }}
+          >
             {icon}
           </Box>
         ) : (
-          <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", color: "text.quaternary", bg: "surface.tertiary", borderRadius: "full", flexShrink: 0, w: iconSize, h: iconSize }}>
-            <svg width={iconSize * 0.5} height={iconSize * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "text.quaternary",
+              bg: "surface.tertiary",
+              borderRadius: "full",
+              flexShrink: 0,
+              w: iconSize,
+              h: iconSize,
+            }}
+          >
+            <svg
+              width={iconSize * 0.5}
+              height={iconSize * 0.5}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </Box>
         )}
-        <Text css={{ fontSize: titleSize, fontWeight: "semibold", color: "text.primary", lineHeight: "snug", margin: 0 }}>
+        <Text
+          css={{
+            fontSize: titleSize,
+            fontWeight: "semibold",
+            color: "text.primary",
+            lineHeight: "snug",
+            margin: 0,
+          }}
+        >
           {title}
         </Text>
         {description && (
-          <Text css={{ fontSize: descSize, color: "text.tertiary", lineHeight: "normal", margin: 0, maxWidth: "400px" }}>
+          <Text
+            css={{
+              fontSize: descSize,
+              color: "text.tertiary",
+              lineHeight: "normal",
+              margin: 0,
+              maxWidth: "400px",
+            }}
+          >
             {description}
           </Text>
         )}
         {(action || secondaryAction) && (
-          <Box css={{ display: "flex", alignItems: "center", gap: 3, mt: 2, flexWrap: "wrap", justifyContent: "center", width: "full" }}>
-            {secondaryAction && <Button variant="ghost" size="sm" onClick={secondaryAction.onClick}>{secondaryAction.label}</Button>}
-            {action && <Button variant={action.variant ?? "solid"} size="md" onClick={action.onClick}>{action.label}</Button>}
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              mt: 2,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              width: "full",
+            }}
+          >
+            {secondaryAction && (
+              <Button variant="ghost" size="sm" onClick={secondaryAction.onClick}>
+                {secondaryAction.label}
+              </Button>
+            )}
+            {action && (
+              <Button variant={action.variant ?? "solid"} size="md" onClick={action.onClick}>
+                {action.label}
+              </Button>
+            )}
           </Box>
         )}
         {children}
       </Box>
     );
-  }
+  },
 );
 
 EmptyState.displayName = "EmptyState";

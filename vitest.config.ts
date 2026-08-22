@@ -6,6 +6,6 @@ export default defineConfig({
     fileParallelism: false,
     globals: false,
     passWithNoTests: true,
-    setupFiles: [new URL("./vitest.setup.ts", import.meta.url).pathname]
-  }
+    setupFiles: [new URL("./vitest.setup.ts", import.meta.url).pathname],
+  },
 });

@@ -1,22 +1,22 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import type {
-  ListInstagramConversations,
-  ListInstagramConversationsInput
-} from "@brm/review-monitoring";
+
 import type {
   ListInstagramConversationMessages,
-  ListInstagramConversationMessagesInput
+  ListInstagramConversationMessagesInput,
+  ListInstagramConversations,
+  ListInstagramConversationsInput,
 } from "@brm/review-monitoring";
 import {
   MarkInstagramConversationAsRead,
-  SendInstagramDirectMessage
+  SendInstagramDirectMessage,
 } from "@brm/review-monitoring";
+
 import type { RealtimeGateway } from "./realtime-gateway.js";
 
 const listConversationsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
-  cursor: z.string().optional()
+  cursor: z.string().optional(),
 });
 
 const conversationResponseSchema = {
@@ -31,13 +31,13 @@ const conversationResponseSchema = {
         externalId: { type: "string" },
         username: { type: ["string", "null"] },
         name: { type: ["string", "null"] },
-        profilePictureUrl: { type: ["string", "null"] }
-      }
+        profilePictureUrl: { type: ["string", "null"] },
+      },
     },
     lastMessagePreview: { type: ["string", "null"] },
     lastMessageAt: { type: "string", format: "date-time" },
-    unreadCount: { type: "integer" }
-  }
+    unreadCount: { type: "integer" },
+  },
 };
 
 const listConversationsRouteSchema = {
@@ -48,8 +48,8 @@ const listConversationsRouteSchema = {
     type: "object",
     properties: {
       limit: { type: "integer", minimum: 1, maximum: 100 },
-      cursor: { type: "string" }
-    }
+      cursor: { type: "string" },
+    },
   },
   response: {
     200: {
@@ -58,25 +58,25 @@ const listConversationsRouteSchema = {
       properties: {
         conversations: {
           type: "array",
-          items: conversationResponseSchema
+          items: conversationResponseSchema,
         },
-        nextCursor: { type: ["string", "null"] }
-      }
+        nextCursor: { type: ["string", "null"] },
+      },
     },
     401: {
       type: "object",
       required: ["error", "requestId"],
       properties: {
         error: { type: "string" },
-        requestId: { type: "string" }
-      }
-    }
-  }
+        requestId: { type: "string" },
+      },
+    },
+  },
 };
 
 const listMessagesQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50).optional(),
-  cursor: z.string().optional()
+  cursor: z.string().optional(),
 });
 
 const messageResponseSchema = {
@@ -90,8 +90,8 @@ const messageResponseSchema = {
     recipient: { type: "string" },
     text: { type: ["string", "null"] },
     sentAt: { type: "string", format: "date-time" },
-    status: { type: "string", enum: ["SENT", "DELIVERED", "READ", "FAILED"] }
-  }
+    status: { type: "string", enum: ["SENT", "DELIVERED", "READ", "FAILED"] },
+  },
 };
 
 const listMessagesRouteSchema = {
@@ -102,15 +102,15 @@ const listMessagesRouteSchema = {
     type: "object",
     required: ["id"],
     properties: {
-      id: { type: "string" }
-    }
+      id: { type: "string" },
+    },
   },
   querystring: {
     type: "object",
     properties: {
       limit: { type: "integer", minimum: 1, maximum: 100 },
-      cursor: { type: "string" }
-    }
+      cursor: { type: "string" },
+    },
   },
   response: {
     200: {
@@ -119,28 +119,28 @@ const listMessagesRouteSchema = {
       properties: {
         messages: {
           type: "array",
-          items: messageResponseSchema
+          items: messageResponseSchema,
         },
-        nextCursor: { type: ["string", "null"] }
-      }
+        nextCursor: { type: ["string", "null"] },
+      },
     },
     401: {
       type: "object",
       required: ["error", "requestId"],
       properties: {
         error: { type: "string" },
-        requestId: { type: "string" }
-      }
+        requestId: { type: "string" },
+      },
     },
     404: {
       type: "object",
       required: ["error", "requestId"],
       properties: {
         error: { type: "string" },
-        requestId: { type: "string" }
-      }
-    }
-  }
+        requestId: { type: "string" },
+      },
+    },
+  },
 };
 
 const markAsReadRouteSchema = {
@@ -151,8 +151,8 @@ const markAsReadRouteSchema = {
     type: "object",
     required: ["id"],
     properties: {
-      id: { type: "string" }
-    }
+      id: { type: "string" },
+    },
   },
   response: {
     200: {
@@ -160,26 +160,26 @@ const markAsReadRouteSchema = {
       required: ["id", "unreadCount"],
       properties: {
         id: { type: "string" },
-        unreadCount: { type: "integer" }
-      }
+        unreadCount: { type: "integer" },
+      },
     },
     401: {
       type: "object",
       required: ["error", "requestId"],
       properties: {
         error: { type: "string" },
-        requestId: { type: "string" }
-      }
+        requestId: { type: "string" },
+      },
     },
     404: {
       type: "object",
       required: ["error", "requestId"],
       properties: {
         error: { type: "string" },
-        requestId: { type: "string" }
-      }
-    }
-  }
+        requestId: { type: "string" },
+      },
+    },
+  },
 };
 
 const sendMessageRouteSchema = {
@@ -187,15 +187,25 @@ const sendMessageRouteSchema = {
   summary: "Send an Instagram direct message",
   security: [{ bearerAuth: [] }],
   params: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
-  body: { type: "object", required: ["message"], properties: { message: { type: "string", minLength: 1, maxLength: 1000 } } },
+  body: {
+    type: "object",
+    required: ["message"],
+    properties: { message: { type: "string", minLength: 1, maxLength: 1000 } },
+  },
   response: {
-    200: { type: "object", required: ["id", "externalMessageId"], properties: { id: { type: "string" }, externalMessageId: { type: "string" } } }
-  }
+    200: {
+      type: "object",
+      required: ["id", "externalMessageId"],
+      properties: { id: { type: "string" }, externalMessageId: { type: "string" } },
+    },
+  },
 };
 
 export type RegisterInboxRoutesOptions = {
   authService: {
-    getCurrentSession: (userId: string) => Promise<{ user: { id: string }; tenant: { id: string } }>;
+    getCurrentSession: (
+      userId: string,
+    ) => Promise<{ user: { id: string }; tenant: { id: string } }>;
   };
   listInstagramConversations: ListInstagramConversations;
   listInstagramConversationMessages: ListInstagramConversationMessages;
@@ -206,7 +216,7 @@ export type RegisterInboxRoutesOptions = {
 
 export function registerInboxRoutes(
   app: FastifyInstance,
-  options: RegisterInboxRoutesOptions
+  options: RegisterInboxRoutesOptions,
 ): void {
   app.get<{
     Querystring: ListInstagramConversationsInput;
@@ -219,7 +229,7 @@ export function registerInboxRoutes(
       tenantId: session.tenant.id,
       instagramConnectionId: undefined,
       limit: query.limit,
-      cursor: query.cursor ?? undefined
+      cursor: query.cursor ?? undefined,
     });
 
     const conversations = result.conversations.map((conversation) => ({
@@ -229,51 +239,55 @@ export function registerInboxRoutes(
         externalId: conversation.participantExternalId,
         username: conversation.participantUsername,
         name: conversation.participantName,
-        profilePictureUrl: conversation.participantProfilePictureUrl
+        profilePictureUrl: conversation.participantProfilePictureUrl,
       },
       lastMessagePreview: conversation.lastMessagePreview,
       lastMessageAt: conversation.lastMessageAt?.toISOString() ?? null,
-      unreadCount: conversation.unreadCount
+      unreadCount: conversation.unreadCount,
     }));
 
     return reply.send({
       conversations,
-      nextCursor: result.nextCursor
+      nextCursor: result.nextCursor,
     });
   });
 
   app.get<{
     Params: { id: string };
     Querystring: ListInstagramConversationMessagesInput;
-  }>("/inbox/conversations/:id/messages", { schema: listMessagesRouteSchema }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const params = request.params as { id: string };
-    const query = listMessagesQuerySchema.parse(request.query);
+  }>(
+    "/inbox/conversations/:id/messages",
+    { schema: listMessagesRouteSchema },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const params = request.params as { id: string };
+      const query = listMessagesQuerySchema.parse(request.query);
 
-    const messages = await options.listInstagramConversationMessages.execute({
-      tenantId: session.tenant.id,
-      instagramConversationId: params.id,
-      limit: query.limit,
-      cursor: query.cursor
-    });
+      const messages = await options.listInstagramConversationMessages.execute({
+        tenantId: session.tenant.id,
+        instagramConversationId: params.id,
+        limit: query.limit,
+        cursor: query.cursor,
+      });
 
-    const mappedMessages = messages.messages.map((message) => ({
-      id: message.id,
-      provider: "instagram" as const,
-      direction: message.direction,
-      sender: message.senderExternalId,
-      recipient: message.recipientExternalId,
-      text: message.text,
-      sentAt: message.sentAtExternal?.toISOString() ?? message.createdAt.toISOString(),
-      status: message.status
-    }));
+      const mappedMessages = messages.messages.map((message) => ({
+        id: message.id,
+        provider: "instagram" as const,
+        direction: message.direction,
+        sender: message.senderExternalId,
+        recipient: message.recipientExternalId,
+        text: message.text,
+        sentAt: message.sentAtExternal?.toISOString() ?? message.createdAt.toISOString(),
+        status: message.status,
+      }));
 
-    return reply.send({
-      messages: mappedMessages,
-      nextCursor: messages.nextCursor
-    });
-  });
+      return reply.send({
+        messages: mappedMessages,
+        nextCursor: messages.nextCursor,
+      });
+    },
+  );
 
   app.post<{
     Params: { id: string };
@@ -284,36 +298,38 @@ export function registerInboxRoutes(
 
     const result = await options.markInstagramConversationAsRead.execute({
       conversationId: params.id,
-      tenantId: session.tenant.id
+      tenantId: session.tenant.id,
     });
 
     return reply.send({
       id: result.conversation.id,
-      unreadCount: result.conversation.unreadCount
+      unreadCount: result.conversation.unreadCount,
     });
   });
 
-  app.post<{ Params: { id: string }; Body: { message: string } }>("/inbox/conversations/:id/messages", { schema: sendMessageRouteSchema }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const body = z.object({ message: z.string().trim().min(1).max(1000) }).parse(request.body);
-    const result = await options.sendInstagramDirectMessage.execute({
-      tenantId: session.tenant.id,
-      conversationId: request.params.id,
-      message: body.message
-    });
-    await options.realtimeGateway.publish({
-      tenantId: session.tenant.id,
-      type: "instagram.message.sent",
-      payload: { conversationId: result.conversationId, messageId: result.messageId }
-    });
-    return reply.send({ id: result.messageId, externalMessageId: result.externalMessageId });
-  });
+  app.post<{ Params: { id: string }; Body: { message: string } }>(
+    "/inbox/conversations/:id/messages",
+    { schema: sendMessageRouteSchema },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const body = z.object({ message: z.string().trim().min(1).max(1000) }).parse(request.body);
+      const result = await options.sendInstagramDirectMessage.execute({
+        tenantId: session.tenant.id,
+        conversationId: request.params.id,
+        message: body.message,
+      });
+      await options.realtimeGateway.publish({
+        tenantId: session.tenant.id,
+        type: "instagram.message.sent",
+        payload: { conversationId: result.conversationId, messageId: result.messageId },
+      });
+      return reply.send({ id: result.messageId, externalMessageId: result.externalMessageId });
+    },
+  );
 }
 
-async function getAuthenticatedUserId(
-  request: import("fastify").FastifyRequest
-): Promise<string> {
+async function getAuthenticatedUserId(request: import("fastify").FastifyRequest): Promise<string> {
   try {
     const authorization = request.headers.authorization;
     if (!authorization?.startsWith("Bearer ")) {

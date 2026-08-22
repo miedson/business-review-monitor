@@ -1,6 +1,13 @@
 "use client";
 
-import { Alert, AlertTitle, AlertDescription, AlertIndicator, Box, type BoxProps } from "@chakra-ui/react";
+import {
+  Alert,
+  AlertDescription,
+  AlertIndicator,
+  AlertTitle,
+  Box,
+  type BoxProps,
+} from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
 
@@ -24,12 +31,7 @@ const AlertWrapper = forwardRef<HTMLDivElement, AlertProps>(
     const config = toneMap[tone];
 
     return (
-      <Alert.Root
-        ref={ref}
-        status={config.status}
-        variant={config.variant}
-        {...rest}
-      >
+      <Alert.Root ref={ref} status={config.status} variant={config.variant} {...rest}>
         <AlertIndicator />
         <Box css={{ flex: 1, minWidth: 0 }}>
           {title && <AlertTitle>{title}</AlertTitle>}
@@ -56,7 +58,15 @@ const AlertWrapper = forwardRef<HTMLDivElement, AlertProps>(
             }}
             aria-label="Fechar alerta"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -64,7 +74,7 @@ const AlertWrapper = forwardRef<HTMLDivElement, AlertProps>(
         )}
       </Alert.Root>
     );
-  }
+  },
 );
 
 AlertWrapper.displayName = "Alert";

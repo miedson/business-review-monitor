@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
+
 import { ConfigValidationError, parseEnv } from "./env.js";
 
 const validEnv = {
@@ -19,7 +20,7 @@ const validEnv = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 };
 
 describe("parseEnv", () => {
@@ -48,8 +49,8 @@ describe("parseEnv", () => {
     expect(() =>
       parseEnv({
         ...validEnv,
-        TOKEN_ENCRYPTION_KEY: "not-a-32-byte-key"
-      })
+        TOKEN_ENCRYPTION_KEY: "not-a-32-byte-key",
+      }),
     ).toThrow(ConfigValidationError);
   });
 
@@ -57,7 +58,7 @@ describe("parseEnv", () => {
     try {
       parseEnv({
         ...validEnv,
-        JWT_ACCESS_SECRET: "short"
+        JWT_ACCESS_SECRET: "short",
       });
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigValidationError);

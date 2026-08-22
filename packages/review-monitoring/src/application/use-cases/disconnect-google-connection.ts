@@ -1,5 +1,5 @@
-import type { StoredGoogleConnection } from "../ports/google-connection-repository.js";
 import type { BusinessProfileReviewProvider } from "../ports/business-profile-review-provider.js";
+import type { StoredGoogleConnection } from "../ports/google-connection-repository.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 
 export type DisconnectGoogleConnectionInput = {
@@ -30,12 +30,10 @@ export type DisconnectGoogleConnectionDependencies = {
 export class DisconnectGoogleConnection {
   constructor(private readonly dependencies: DisconnectGoogleConnectionDependencies) {}
 
-  async execute(
-    input: DisconnectGoogleConnectionInput
-  ): Promise<DisconnectGoogleConnectionResult> {
+  async execute(input: DisconnectGoogleConnectionInput): Promise<DisconnectGoogleConnectionResult> {
     const connection = await this.dependencies.googleConnectionRepository.disconnectByTenantId({
       disconnectedAt: new Date(),
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
 
     await this.dependencies.businessLocationRepository.deactivateForTenant(input.tenantId);
@@ -47,7 +45,7 @@ export class DisconnectGoogleConnection {
 
     try {
       await this.dependencies.provider.revokeAuthorization({
-        refreshToken: this.dependencies.tokenCipher.decrypt(connection.encryptedRefreshToken)
+        refreshToken: this.dependencies.tokenCipher.decrypt(connection.encryptedRefreshToken),
       });
     } catch {
       return { disconnected: true };

@@ -1,10 +1,17 @@
 export const colors = {
   light: {
     surface: {
-      primary: "#ffffff", secondary: "#ffffff", tertiary: "#f1f1f1", border: "#e7e7e7", borderStrong: "#d8d8d8",
+      primary: "#ffffff",
+      secondary: "#ffffff",
+      tertiary: "#f1f1f1",
+      border: "#e7e7e7",
+      borderStrong: "#d8d8d8",
     },
     text: {
-      primary: "#181818", secondary: "#5f5f5f", tertiary: "#5f5f5f", quaternary: "#8a8a8a",
+      primary: "#181818",
+      secondary: "#5f5f5f",
+      tertiary: "#5f5f5f",
+      quaternary: "#8a8a8a",
       inverse: "#ffffff",
       link: "#0d9488",
       linkHover: "#0f766e",
@@ -38,10 +45,17 @@ export const colors = {
   },
   dark: {
     surface: {
-      primary: "#121212", secondary: "#0b0b0b", tertiary: "#202020", border: "#292929", borderStrong: "#383838",
+      primary: "#121212",
+      secondary: "#0b0b0b",
+      tertiary: "#202020",
+      border: "#292929",
+      borderStrong: "#383838",
     },
     text: {
-      primary: "#ededed", secondary: "#ababab", tertiary: "#ababab", quaternary: "#737373",
+      primary: "#ededed",
+      secondary: "#ababab",
+      tertiary: "#ababab",
+      quaternary: "#737373",
       inverse: "#ffffff",
       link: "#2dd4bf",
       linkHover: "#34d399",
@@ -184,7 +198,11 @@ export const spacing = {
 
 export const borderRadius = {
   none: "0",
-  sm: "0.25rem", md: "0.375rem", lg: "0.5rem", xl: "0.625rem", "2xl": "0.75rem",
+  sm: "0.25rem",
+  md: "0.375rem",
+  lg: "0.5rem",
+  xl: "0.625rem",
+  "2xl": "0.75rem",
   full: "9999px",
 } as const;
 
@@ -196,11 +214,13 @@ export const typography = {
   fontSizes: {
     xs: "0.75rem",
     sm: "0.875rem",
-  md: "0.875rem",
+    md: "0.875rem",
     lg: "1.125rem",
     xl: "1.25rem",
     "2xl": "1.5rem",
-  "3xl": "1.5rem", "4xl": "1.875rem", "5xl": "2.25rem",
+    "3xl": "1.5rem",
+    "4xl": "1.875rem",
+    "5xl": "2.25rem",
   },
   fontWeights: {
     normal: 400,
@@ -224,7 +244,12 @@ export const typography = {
 
 export const shadows = {
   none: "none",
-  xs: "0 1px 2px rgb(0 0 0 / 0.03)", sm: "0 1px 2px rgb(0 0 0 / 0.04)", md: "0 2px 6px rgb(0 0 0 / 0.06)", lg: "0 4px 10px rgb(0 0 0 / 0.08)", xl: "0 8px 20px rgb(0 0 0 / 0.10)", "2xl": "0 12px 28px rgb(0 0 0 / 0.14)",
+  xs: "0 1px 2px rgb(0 0 0 / 0.03)",
+  sm: "0 1px 2px rgb(0 0 0 / 0.04)",
+  md: "0 2px 6px rgb(0 0 0 / 0.06)",
+  lg: "0 4px 10px rgb(0 0 0 / 0.08)",
+  xl: "0 8px 20px rgb(0 0 0 / 0.10)",
+  "2xl": "0 12px 28px rgb(0 0 0 / 0.14)",
   inner: "inset 0 2px 4px 0 rgb(0 0 0 / 0.05)",
   focus: "0 0 0 3px rgba(13, 148, 136, 0.35)",
 } as const;

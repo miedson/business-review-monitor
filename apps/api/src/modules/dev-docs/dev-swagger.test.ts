@@ -1,11 +1,12 @@
-import type { AppConfig } from "@brm/config";
 import { describe, expect, it } from "vitest";
+
+import type { AppConfig } from "@brm/config";
+
 import { buildApi } from "../../server/app.js";
 
 const baseConfig: AppConfig = {
   NODE_ENV: "development",
-  DATABASE_URL:
-    "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
+  DATABASE_URL: "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
   REDIS_URL: "redis://localhost:6379",
   BRM_QUEUE_PREFIX: "brm",
   JWT_ACCESS_SECRET: "access-secret-with-at-least-32-chars",
@@ -22,7 +23,7 @@ const baseConfig: AppConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 };
 
 describe("development Swagger documentation", () => {
@@ -32,11 +33,11 @@ describe("development Swagger documentation", () => {
     try {
       const response = await app.inject({
         method: "GET",
-        url: "/dev/docs/json"
+        url: "/dev/docs/json",
       });
       const uiResponse = await app.inject({
         method: "GET",
-        url: "/dev/docs"
+        url: "/dev/docs",
       });
 
       expect(response.statusCode).toBe(200);
@@ -52,7 +53,7 @@ describe("development Swagger documentation", () => {
         >;
       }>();
 
-expect(Object.keys(document.paths).sort()).toEqual([
+      expect(Object.keys(document.paths).sort()).toEqual([
         "/auth/login",
         "/auth/logout",
         "/auth/me",
@@ -78,7 +79,7 @@ expect(Object.keys(document.paths).sort()).toEqual([
         "/integrations/instagram/connect",
         "/integrations/instagram/connect-url",
         "/integrations/instagram/disconnect",
-        "/webhooks/meta"
+        "/webhooks/meta",
       ]);
       expect(document.paths["/auth/register"]?.post?.requestBody).toBeDefined();
       expect(document.paths["/auth/login"]?.post?.requestBody).toBeDefined();
@@ -91,14 +92,14 @@ expect(Object.keys(document.paths).sort()).toEqual([
     const app = await buildApi({
       config: {
         ...baseConfig,
-        NODE_ENV: "production"
-      }
+        NODE_ENV: "production",
+      },
     });
 
     try {
       const response = await app.inject({
         method: "GET",
-        url: "/dev/docs/json"
+        url: "/dev/docs/json",
       });
 
       expect(response.statusCode).toBe(404);

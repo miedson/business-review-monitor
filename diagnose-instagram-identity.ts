@@ -1,12 +1,11 @@
 #!/usr/bin/env tsx
-
 import { loadConfig } from "@brm/config";
 import { prisma } from "@brm/database";
 import {
   DiagnoseInstagramIdentity,
-  PrismaInstagramConnectionRepository,
+  EncryptionTokenCipher,
   InstagramApiProvider,
-  EncryptionTokenCipher
+  PrismaInstagramConnectionRepository,
 } from "@brm/review-monitoring";
 import { createEncryptionServiceFromBase64Key } from "@brm/shared";
 
@@ -18,23 +17,21 @@ async function main() {
     metaProvider: config.META_PROVIDER,
     metaAppId: config.META_APP_ID,
     graphApiVersion: config.META_GRAPH_API_VERSION,
-    graphApiBase: "https://graph.instagram.com"
+    graphApiBase: "https://graph.instagram.com",
   });
 
   const tokenCipher = new EncryptionTokenCipher(
-    createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY)
+    createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY),
   );
 
-  const instagramConnectionRepository = new PrismaInstagramConnectionRepository(
-    prisma
-  );
+  const instagramConnectionRepository = new PrismaInstagramConnectionRepository(prisma);
 
   const instagramProvider = new InstagramApiProvider({
     appId: config.META_APP_ID,
     appSecret: config.META_APP_SECRET,
     redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
     graphApiVersion: config.META_GRAPH_API_VERSION,
-    logger: console
+    logger: console,
   });
 
   const diagnoseUseCase = new DiagnoseInstagramIdentity({
@@ -43,7 +40,7 @@ async function main() {
     tokenCipher,
     graphApiBase: "https://graph.instagram.com",
     graphApiVersion: config.META_GRAPH_API_VERSION,
-    logger: console
+    logger: console,
   });
 
   const tenantId = process.argv[2];

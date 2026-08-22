@@ -5,19 +5,17 @@ import type {
   InstagramConnectionRepository,
   SaveConnectedInstagramConnectionInput,
   SetProfessionalAccountIdInput,
-  StoredInstagramConnection
+  StoredInstagramConnection,
 } from "../../application/ports/instagram-connection-repository.js";
 
-export class PrismaInstagramConnectionRepository
-  implements InstagramConnectionRepository
-{
+export class PrismaInstagramConnectionRepository implements InstagramConnectionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByTenantId(tenantId: string): Promise<StoredInstagramConnection | null> {
     const connection = await this.prisma.instagramConnection.findFirst({
       where: {
-        tenantId
-      }
+        tenantId,
+      },
     });
 
     return connection;
@@ -26,18 +24,20 @@ export class PrismaInstagramConnectionRepository
   async findByInstagramUserId(instagramUserId: string): Promise<StoredInstagramConnection | null> {
     const connection = await this.prisma.instagramConnection.findFirst({
       where: {
-        instagramUserId
-      }
+        instagramUserId,
+      },
     });
 
     return connection;
   }
 
-  async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
+  async findByProfessionalAccountId(
+    professionalAccountId: string,
+  ): Promise<StoredInstagramConnection | null> {
     const connection = await this.prisma.instagramConnection.findFirst({
       where: {
-        instagramProfessionalAccountId: professionalAccountId
-      }
+        instagramProfessionalAccountId: professionalAccountId,
+      },
     });
 
     return connection;
@@ -47,38 +47,36 @@ export class PrismaInstagramConnectionRepository
     return this.prisma.instagramConnection.findMany({
       where: {
         status: "CONNECTED",
-        instagramProfessionalAccountId: null
-      }
+        instagramProfessionalAccountId: null,
+      },
     });
   }
 
-  async setProfessionalAccountId(
-    input: SetProfessionalAccountIdInput
-  ): Promise<void> {
+  async setProfessionalAccountId(input: SetProfessionalAccountIdInput): Promise<void> {
     await this.prisma.instagramConnection.updateMany({
       where: {
         id: input.connectionId,
-        instagramProfessionalAccountId: null
+        instagramProfessionalAccountId: null,
       },
       data: {
-        instagramProfessionalAccountId: input.professionalAccountId
-      }
+        instagramProfessionalAccountId: input.professionalAccountId,
+      },
     });
   }
 
   async saveConnected(
-    input: SaveConnectedInstagramConnectionInput
+    input: SaveConnectedInstagramConnectionInput,
   ): Promise<StoredInstagramConnection> {
     const existingConnection = await this.prisma.instagramConnection.findFirst({
       where: {
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     if (existingConnection) {
       return this.prisma.instagramConnection.update({
         where: {
-          id: existingConnection.id
+          id: existingConnection.id,
         },
         data: {
           instagramUserId: input.instagramUserId,
@@ -90,8 +88,8 @@ export class PrismaInstagramConnectionRepository
           disconnectedAt: null,
           ...(input.username !== undefined && { username: input.username }),
           ...(input.accountType !== undefined && { accountType: input.accountType }),
-          ...(input.tokenExpiresAt !== undefined && { tokenExpiresAt: input.tokenExpiresAt })
-        }
+          ...(input.tokenExpiresAt !== undefined && { tokenExpiresAt: input.tokenExpiresAt }),
+        },
       });
     }
 
@@ -106,13 +104,13 @@ export class PrismaInstagramConnectionRepository
         connectedAt: input.connectedAt,
         ...(input.username !== undefined && { username: input.username }),
         ...(input.accountType !== undefined && { accountType: input.accountType }),
-        ...(input.tokenExpiresAt !== undefined && { tokenExpiresAt: input.tokenExpiresAt })
-      }
+        ...(input.tokenExpiresAt !== undefined && { tokenExpiresAt: input.tokenExpiresAt }),
+      },
     });
   }
 
   async disconnectByTenantId(
-    input: DisconnectInstagramConnectionInput
+    input: DisconnectInstagramConnectionInput,
   ): Promise<StoredInstagramConnection | null> {
     const connection = await this.findByTenantId(input.tenantId);
 
@@ -120,11 +118,11 @@ export class PrismaInstagramConnectionRepository
       data: {
         disconnectedAt: input.disconnectedAt,
         encryptedAccessToken: null,
-        status: "DISCONNECTED"
+        status: "DISCONNECTED",
       },
       where: {
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return connection;
@@ -133,8 +131,8 @@ export class PrismaInstagramConnectionRepository
   async deleteByTenantId(tenantId: string): Promise<void> {
     await this.prisma.instagramConnection.deleteMany({
       where: {
-        tenantId
-      }
+        tenantId,
+      },
     });
   }
 }

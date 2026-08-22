@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ProcessInstagramDirectMessage } from "./process-instagram-direct-message.js";
-import type { StoredInstagramConnection } from "@brm/review-monitoring";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type {
   InstagramConversation,
   InstagramMessage,
-  NormalizedInstagramMessage
+  NormalizedInstagramMessage,
+  StoredInstagramConnection,
 } from "@brm/review-monitoring";
+
+import { ProcessInstagramDirectMessage } from "./process-instagram-direct-message.js";
 
 type ConversationRepoMock = {
   findByConnectionAndParticipant: ReturnType<typeof vi.fn>;
@@ -41,7 +43,7 @@ function createConversationRepoMock(): ConversationRepoMock {
       lastMessagePreview: "Hello",
       unreadCount: 1,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as InstagramConversation),
     update: vi.fn().mockResolvedValue({
       id: "conv_1",
@@ -55,13 +57,13 @@ function createConversationRepoMock(): ConversationRepoMock {
       lastMessagePreview: "Hello",
       unreadCount: 1,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as InstagramConversation),
     findByTenant: vi.fn().mockResolvedValue({ conversations: [], nextCursor: null }),
     findByIdForTenant: vi.fn().mockResolvedValue(null),
     incrementUnreadCount: vi.fn().mockResolvedValue(null),
     markAsRead: vi.fn().mockResolvedValue(null),
-    deleteByConnectionId: vi.fn().mockResolvedValue(undefined)
+    deleteByConnectionId: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -79,12 +81,12 @@ function createMessageRepoMock(): MessageRepoMock {
       sentAtExternal: new Date(),
       status: "DELIVERED",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as InstagramMessage),
     findByConversation: vi.fn().mockResolvedValue({ messages: [], nextCursor: null }),
     findByIdForTenant: vi.fn().mockResolvedValue(null),
     findByExternalId: vi.fn().mockResolvedValue(null),
-    deleteByConnectionId: vi.fn().mockResolvedValue(undefined)
+    deleteByConnectionId: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -98,7 +100,7 @@ describe("ProcessInstagramDirectMessage", () => {
     messageRepo = createMessageRepoMock();
     useCase = new ProcessInstagramDirectMessage({
       instagramConversationRepository: conversationRepo,
-      instagramMessageRepository: messageRepo
+      instagramMessageRepository: messageRepo,
     });
   });
 
@@ -115,7 +117,7 @@ describe("ProcessInstagramDirectMessage", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
 
     const normalizedMessage: NormalizedInstagramMessage = {
@@ -125,7 +127,7 @@ describe("ProcessInstagramDirectMessage", () => {
       recipientExternalId: "recipient_1",
       direction: "INBOUND",
       text: "Hello",
-      sentAtExternal: new Date()
+      sentAtExternal: new Date(),
     };
 
     const result = await useCase.execute({ connection, normalizedMessage });
@@ -148,7 +150,7 @@ describe("ProcessInstagramDirectMessage", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
 
     messageRepo.findByExternalId.mockResolvedValue({
@@ -163,7 +165,7 @@ describe("ProcessInstagramDirectMessage", () => {
       sentAtExternal: new Date(),
       status: "DELIVERED",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as InstagramMessage);
 
     conversationRepo.findByConnectionAndParticipant.mockResolvedValue({
@@ -178,7 +180,7 @@ describe("ProcessInstagramDirectMessage", () => {
       lastMessagePreview: "Hello",
       unreadCount: 1,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     } as InstagramConversation);
 
     const normalizedMessage: NormalizedInstagramMessage = {
@@ -188,7 +190,7 @@ describe("ProcessInstagramDirectMessage", () => {
       recipientExternalId: "recipient_1",
       direction: "INBOUND",
       text: "Hello",
-      sentAtExternal: new Date()
+      sentAtExternal: new Date(),
     };
 
     const result = await useCase.execute({ connection, normalizedMessage });

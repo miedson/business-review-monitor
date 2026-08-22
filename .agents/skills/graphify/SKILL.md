@@ -80,8 +80,17 @@ Saved as `graphify-out/graph.json`:
 
 ```json
 {
-  "nodes": [{ "id": "main::app", "label": "App", "sourceFile": "main.py", "sourceLocation": "main.py:5" }],
-  "edges": [{ "source": "file::main", "target": "main::app", "relation": "contains", "confidence": "EXTRACTED" }],
+  "nodes": [
+    { "id": "main::app", "label": "App", "sourceFile": "main.py", "sourceLocation": "main.py:5" }
+  ],
+  "edges": [
+    {
+      "source": "file::main",
+      "target": "main::app",
+      "relation": "contains",
+      "confidence": "EXTRACTED"
+    }
+  ],
   "metadata": { "files": 10, "nodes": 45, "edges": 62 }
 }
 ```

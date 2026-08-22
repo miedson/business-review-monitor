@@ -1,7 +1,7 @@
 import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
 import type { InstagramConnectionRepository } from "../ports/instagram-connection-repository.js";
-import type { TokenCipher } from "../ports/token-cipher.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
+import type { TokenCipher } from "../ports/token-cipher.js";
 
 type Logger = {
   info: (meta: Record<string, unknown>, msg?: string) => void;
@@ -40,46 +40,38 @@ export type DiagnoseInstagramIdentityDependencies = {
 };
 
 export class DiagnoseInstagramIdentity {
-  constructor(
-    private readonly dependencies: DiagnoseInstagramIdentityDependencies
-  ) {}
+  constructor(private readonly dependencies: DiagnoseInstagramIdentityDependencies) {}
 
-  async execute(
-    tenantId: string
-  ): Promise<InstagramIdentityDiagnosisResult> {
+  async execute(tenantId: string): Promise<InstagramIdentityDiagnosisResult> {
     const logger = this.dependencies.logger ?? console;
 
     logger.info({
       operation: "instagram_identity_diagnosis_started",
-      tenantId
+      tenantId,
     });
 
     const connection =
-      await this.dependencies.instagramConnectionRepository.findByTenantId(
-        tenantId
-      );
+      await this.dependencies.instagramConnectionRepository.findByTenantId(tenantId);
 
     if (!connection) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_ACCOUNT_NOT_FOUND",
-        "Instagram connection not found for tenant"
+        "Instagram connection not found for tenant",
       );
     }
 
     if (!connection.encryptedAccessToken) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_AUTH_REQUIRED",
-        "Instagram access token not available"
+        "Instagram access token not available",
       );
     }
 
-    const accessToken = this.dependencies.tokenCipher.decrypt(
-      connection.encryptedAccessToken
-    );
+    const accessToken = this.dependencies.tokenCipher.decrypt(connection.encryptedAccessToken);
 
     logger.info({
       operation: "instagram_token_decrypted",
-      hasToken: accessToken.length > 0
+      hasToken: accessToken.length > 0,
     });
 
     const apiVersion = this.dependencies.graphApiVersion;
@@ -89,14 +81,14 @@ export class DiagnoseInstagramIdentity {
       accessToken,
       graphApiBase,
       apiVersion,
-      logger
+      logger,
     );
 
     const additionalEndpoints = await this.callAdditionalEndpoints(
       accessToken,
       graphApiBase,
       apiVersion,
-      logger
+      logger,
     );
 
     const result: InstagramIdentityDiagnosisResult = {
@@ -107,7 +99,7 @@ export class DiagnoseInstagramIdentity {
       additionalEndpoints,
       tokenValid: true,
       apiVersion,
-      graphApiHost: graphApiBase
+      graphApiHost: graphApiBase,
     };
 
     logger.info({
@@ -117,9 +109,9 @@ export class DiagnoseInstagramIdentity {
       webhookEntryId: result.webhookEntryId,
       profileEndpoint: {
         httpStatus: profileResult.httpStatus,
-        responseKeys: profileResult.responseKeys
+        responseKeys: profileResult.responseKeys,
       },
-      additionalEndpointsCount: additionalEndpoints.length
+      additionalEndpointsCount: additionalEndpoints.length,
     });
 
     return result;
@@ -129,7 +121,7 @@ export class DiagnoseInstagramIdentity {
     accessToken: string,
     graphApiBase: string,
     apiVersion: string,
-    logger: Logger
+    logger: Logger,
   ): Promise<InstagramIdentityDiagnosisResult["profileEndpoint"]> {
     const url = new URL(`${graphApiBase}/${apiVersion}/me`);
     url.searchParams.set("fields", "id,username,account_type,media_count");
@@ -138,13 +130,13 @@ export class DiagnoseInstagramIdentity {
     logger.info({
       operation: "instagram_diagnose_call_started",
       endpoint: "/me",
-      fields: "id,username,account_type,media_count"
+      fields: "id,username,account_type,media_count",
     });
 
     const response = await fetch(url, {
       headers: {
-        Accept: "application/json"
-      }
+        Accept: "application/json",
+      },
     });
 
     const payload = (await response.json()) as Record<string, unknown>;
@@ -153,14 +145,14 @@ export class DiagnoseInstagramIdentity {
       endpoint: `/${apiVersion}/me?fields=id,username,account_type,media_count`,
       httpStatus: response.status,
       responseKeys: Object.keys(payload),
-      fields: payload
+      fields: payload,
     };
 
     logger.info({
       operation: "instagram_diagnose_call_completed",
       endpoint: "/me",
       httpStatus: response.status,
-      responseKeys: result.responseKeys
+      responseKeys: result.responseKeys,
     });
 
     return result;
@@ -170,23 +162,23 @@ export class DiagnoseInstagramIdentity {
     accessToken: string,
     graphApiBase: string,
     apiVersion: string,
-    logger: Logger
+    logger: Logger,
   ): Promise<InstagramIdentityDiagnosisResult["additionalEndpoints"]> {
     const endpoints: InstagramIdentityDiagnosisResult["additionalEndpoints"] = [];
 
     const endpointConfigs = [
       {
         path: "/me",
-        fields: "id,username,account_type,media_count,ig_id"
+        fields: "id,username,account_type,media_count,ig_id",
       },
       {
         path: "/me",
-        fields: "id,username,account_type,media_count,professional_account_id"
+        fields: "id,username,account_type,media_count,professional_account_id",
       },
       {
         path: "/me",
-        fields: "id,username,account_type,media_count,business_discovery.username"
-      }
+        fields: "id,username,account_type,media_count,business_discovery.username",
+      },
     ];
 
     for (const config of endpointConfigs) {
@@ -197,13 +189,13 @@ export class DiagnoseInstagramIdentity {
       logger.info({
         operation: "instagram_diagnose_call_started",
         endpoint: config.path,
-        fields: config.fields
+        fields: config.fields,
       });
 
       const response = await fetch(url, {
         headers: {
-          Accept: "application/json"
-        }
+          Accept: "application/json",
+        },
       });
 
       const payload = (await response.json()) as Record<string, unknown>;
@@ -212,14 +204,14 @@ export class DiagnoseInstagramIdentity {
         endpoint: `${config.path}?fields=${config.fields}`,
         httpStatus: response.status,
         responseKeys: Object.keys(payload),
-        fields: payload
+        fields: payload,
       };
 
       logger.info({
         operation: "instagram_diagnose_call_completed",
         endpoint: config.path,
         httpStatus: response.status,
-        responseKeys: result.responseKeys
+        responseKeys: result.responseKeys,
       });
 
       endpoints.push(result);

@@ -1,5 +1,6 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react";
-import { colors, spacing, borderRadius, typography, shadows } from "./tokens";
+
+import { borderRadius, colors, shadows, spacing, typography } from "./tokens";
 
 const config = defineConfig({
   theme: {
@@ -19,72 +20,90 @@ const config = defineConfig({
           quaternary: { value: { base: "#999999", _dark: "#727272" } },
         },
         status: {
-          success: { bg: { value: { base: "#f4fbf6", _dark: "#13251a" } }, border: { value: { base: "#cfe9d8", _dark: "#285438" } }, text: { value: { base: "#1e7a42", _dark: "#78c997" } }, icon: { value: { base: "#18a058", _dark: "#45b978" } } },
-          warning: { bg: { value: { base: "#fffaf0", _dark: "#2a2110" } }, border: { value: { base: "#eedca8", _dark: "#5b4822" } }, text: { value: { base: "#8a620b", _dark: "#d6b45c" } }, icon: { value: { base: "#b78113", _dark: "#d6a94a" } } },
-          error: { bg: { value: { base: "#fff6f5", _dark: "#2a1514" } }, border: { value: { base: "#f1cfca", _dark: "#5d302d" } }, text: { value: { base: "#ad3c35", _dark: "#e0847d" } }, icon: { value: { base: "#d14e45", _dark: "#e56e66" } } },
-          info: { bg: { value: { base: "#f5f9fd", _dark: "#14202d" } }, border: { value: { base: "#ceddeb", _dark: "#29435d" } }, text: { value: { base: "#396b99", _dark: "#83afd7" } }, icon: { value: { base: "#4a83b8", _dark: "#75a7dd" } } },
+          success: {
+            bg: { value: { base: "#f4fbf6", _dark: "#13251a" } },
+            border: { value: { base: "#cfe9d8", _dark: "#285438" } },
+            text: { value: { base: "#1e7a42", _dark: "#78c997" } },
+            icon: { value: { base: "#18a058", _dark: "#45b978" } },
+          },
+          warning: {
+            bg: { value: { base: "#fffaf0", _dark: "#2a2110" } },
+            border: { value: { base: "#eedca8", _dark: "#5b4822" } },
+            text: { value: { base: "#8a620b", _dark: "#d6b45c" } },
+            icon: { value: { base: "#b78113", _dark: "#d6a94a" } },
+          },
+          error: {
+            bg: { value: { base: "#fff6f5", _dark: "#2a1514" } },
+            border: { value: { base: "#f1cfca", _dark: "#5d302d" } },
+            text: { value: { base: "#ad3c35", _dark: "#e0847d" } },
+            icon: { value: { base: "#d14e45", _dark: "#e56e66" } },
+          },
+          info: {
+            bg: { value: { base: "#f5f9fd", _dark: "#14202d" } },
+            border: { value: { base: "#ceddeb", _dark: "#29435d" } },
+            text: { value: { base: "#396b99", _dark: "#83afd7" } },
+            icon: { value: { base: "#4a83b8", _dark: "#75a7dd" } },
+          },
         },
       },
     },
     tokens: {
       colors: {
         brand: Object.fromEntries(
-          Object.entries(colors.brand).map(([key, value]) => [key, { value }])
+          Object.entries(colors.brand).map(([key, value]) => [key, { value }]),
         ),
         teal: Object.fromEntries(
-          Object.entries(colors.teal).map(([key, value]) => [key, { value }])
+          Object.entries(colors.teal).map(([key, value]) => [key, { value }]),
         ),
         slate: Object.fromEntries(
-          Object.entries(colors.slate).map(([key, value]) => [key, { value }])
+          Object.entries(colors.slate).map(([key, value]) => [key, { value }]),
         ),
         amber: Object.fromEntries(
-          Object.entries(colors.amber).map(([key, value]) => [key, { value }])
+          Object.entries(colors.amber).map(([key, value]) => [key, { value }]),
         ),
-        red: Object.fromEntries(
-          Object.entries(colors.red).map(([key, value]) => [key, { value }])
-        ),
+        red: Object.fromEntries(Object.entries(colors.red).map(([key, value]) => [key, { value }])),
         green: Object.fromEntries(
-          Object.entries(colors.green).map(([key, value]) => [key, { value }])
+          Object.entries(colors.green).map(([key, value]) => [key, { value }]),
         ),
         channel: {
           google: Object.fromEntries(
-            Object.entries(colors.channel.google).map(([key, value]) => [key, { value }])
+            Object.entries(colors.channel.google).map(([key, value]) => [key, { value }]),
           ),
           instagram: Object.fromEntries(
-            Object.entries(colors.channel.instagram).map(([key, value]) => [key, { value }])
+            Object.entries(colors.channel.instagram).map(([key, value]) => [key, { value }]),
           ),
           facebook: Object.fromEntries(
-            Object.entries(colors.channel.facebook).map(([key, value]) => [key, { value }])
+            Object.entries(colors.channel.facebook).map(([key, value]) => [key, { value }]),
           ),
         },
         light: {
           canvas: { value: "#ffffff" },
           surface: {
             primary: Object.fromEntries(
-              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }]),
             ),
             secondary: Object.fromEntries(
-              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }]),
             ),
             tertiary: Object.fromEntries(
-              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }]),
             ),
             border: Object.fromEntries(
-              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.surface).map(([key, value]) => [key, { value }]),
             ),
           },
           text: {
             primary: Object.fromEntries(
-              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }]),
             ),
             secondary: Object.fromEntries(
-              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }]),
             ),
             tertiary: Object.fromEntries(
-              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }]),
             ),
             quaternary: Object.fromEntries(
-              Object.entries(colors.light.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.light.text).map(([key, value]) => [key, { value }]),
             ),
           },
         },
@@ -92,39 +111,37 @@ const config = defineConfig({
           canvas: { value: "#0f172a" },
           surface: {
             primary: Object.fromEntries(
-              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }]),
             ),
             secondary: Object.fromEntries(
-              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }]),
             ),
             tertiary: Object.fromEntries(
-              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }]),
             ),
             border: Object.fromEntries(
-              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.surface).map(([key, value]) => [key, { value }]),
             ),
           },
           text: {
             primary: Object.fromEntries(
-              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }]),
             ),
             secondary: Object.fromEntries(
-              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }]),
             ),
             tertiary: Object.fromEntries(
-              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }]),
             ),
             quaternary: Object.fromEntries(
-              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }])
+              Object.entries(colors.dark.text).map(([key, value]) => [key, { value }]),
             ),
           },
         },
       },
-      spacing: Object.fromEntries(
-        Object.entries(spacing).map(([key, value]) => [key, { value }])
-      ),
+      spacing: Object.fromEntries(Object.entries(spacing).map(([key, value]) => [key, { value }])),
       radii: Object.fromEntries(
-        Object.entries(borderRadius).map(([key, value]) => [key, { value }])
+        Object.entries(borderRadius).map(([key, value]) => [key, { value }]),
       ),
       fonts: {
         heading: { value: typography.fontFamilies.sans },
@@ -132,20 +149,18 @@ const config = defineConfig({
         mono: { value: typography.fontFamilies.mono },
       },
       fontSizes: Object.fromEntries(
-        Object.entries(typography.fontSizes).map(([key, value]) => [key, { value }])
+        Object.entries(typography.fontSizes).map(([key, value]) => [key, { value }]),
       ),
       fontWeights: Object.fromEntries(
-        Object.entries(typography.fontWeights).map(([key, value]) => [key, { value }])
+        Object.entries(typography.fontWeights).map(([key, value]) => [key, { value }]),
       ),
       lineHeights: Object.fromEntries(
-        Object.entries(typography.lineHeights).map(([key, value]) => [key, { value }])
+        Object.entries(typography.lineHeights).map(([key, value]) => [key, { value }]),
       ),
       letterSpacings: Object.fromEntries(
-        Object.entries(typography.letterSpacings).map(([key, value]) => [key, { value }])
+        Object.entries(typography.letterSpacings).map(([key, value]) => [key, { value }]),
       ),
-      shadows: Object.fromEntries(
-        Object.entries(shadows).map(([key, value]) => [key, { value }])
-      ),
+      shadows: Object.fromEntries(Object.entries(shadows).map(([key, value]) => [key, { value }])),
       durations: {
         fast: { value: "150ms" },
         normal: { value: "200ms" },
@@ -164,7 +179,7 @@ const config = defineConfig({
           lg: "64rem",
           xl: "80rem",
           "2xl": "96rem",
-        }).map(([key, value]) => [key, { value }])
+        }).map(([key, value]) => [key, { value }]),
       ),
       zIndex: Object.fromEntries(
         Object.entries({
@@ -177,7 +192,7 @@ const config = defineConfig({
           popover: 500,
           toast: 600,
           tooltip: 700,
-        }).map(([key, value]) => [key, { value }])
+        }).map(([key, value]) => [key, { value }]),
       ),
     },
   },

@@ -1,8 +1,8 @@
 import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
 import type { InstagramConnectionRepository } from "../ports/instagram-connection-repository.js";
 import type { OAuthStateStore } from "../ports/oauth-state-store.js";
-import type { TokenCipher } from "../ports/token-cipher.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
+import type { TokenCipher } from "../ports/token-cipher.js";
 
 type Logger = {
   info: (meta: Record<string, unknown>, msg?: string) => void;
@@ -30,18 +30,16 @@ export type CompleteInstagramOAuthCallbackDependencies = {
 };
 
 export class CompleteInstagramOAuthCallback {
-  constructor(
-    private readonly dependencies: CompleteInstagramOAuthCallbackDependencies
-  ) {}
+  constructor(private readonly dependencies: CompleteInstagramOAuthCallbackDependencies) {}
 
   async execute(
-    input: CompleteInstagramOAuthCallbackInput
+    input: CompleteInstagramOAuthCallbackInput,
   ): Promise<CompleteInstagramOAuthCallbackResult> {
     const logger = this.dependencies.logger ?? console;
 
     logger.info({
       provider: "instagram",
-      operation: "oauth_callback_started"
+      operation: "oauth_callback_started",
     });
 
     const stateData = await this.dependencies.stateStore.consume(input.state);
@@ -49,40 +47,36 @@ export class CompleteInstagramOAuthCallback {
     if (!stateData) {
       logger.warn({
         provider: "instagram",
-        operation: "oauth_state_invalid_or_expired"
+        operation: "oauth_state_invalid_or_expired",
       });
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_INVALID_STATE",
-        "Instagram OAuth state is invalid or expired"
+        "Instagram OAuth state is invalid or expired",
       );
     }
 
     logger.info({
       provider: "instagram",
       operation: "oauth_state_validated",
-      tenantId: stateData.tenantId
+      tenantId: stateData.tenantId,
     });
 
     const tokenSet = await this.dependencies.provider.exchangeAuthorizationCode({
-      code: input.code
+      code: input.code,
     });
 
     logger.info({
       provider: "instagram",
-      operation: "authorization_code_exchange_completed"
+      operation: "authorization_code_exchange_completed",
     });
 
-    await this.dependencies.instagramConnectionRepository.findByTenantId(
-      stateData.tenantId
-    );
+    await this.dependencies.instagramConnectionRepository.findByTenantId(stateData.tenantId);
 
-    const encryptedAccessToken = this.dependencies.tokenCipher.encrypt(
-      tokenSet.accessToken
-    );
+    const encryptedAccessToken = this.dependencies.tokenCipher.encrypt(tokenSet.accessToken);
 
     logger.info({
       provider: "instagram",
-      operation: "token_encrypted"
+      operation: "token_encrypted",
     });
 
     const tokenExpiresAt = tokenSet.expiresInSeconds
@@ -91,7 +85,7 @@ export class CompleteInstagramOAuthCallback {
 
     logger.info({
       provider: "instagram",
-      operation: "instagram_profile_resolution_started"
+      operation: "instagram_profile_resolution_started",
     });
 
     const profile = await this.dependencies.provider.getUserProfile(tokenSet.accessToken);
@@ -101,13 +95,12 @@ export class CompleteInstagramOAuthCallback {
       operation: "instagram_profile_resolved",
       instagramUserId: profile.id,
       username: profile.username,
-      accountType: profile.account_type
+      accountType: profile.account_type,
     });
 
-    const existingConnection =
-      await this.dependencies.instagramConnectionRepository.findByTenantId(
-        stateData.tenantId
-      );
+    const existingConnection = await this.dependencies.instagramConnectionRepository.findByTenantId(
+      stateData.tenantId,
+    );
 
     let instagramProfessionalAccountId: string | null = null;
 
@@ -121,11 +114,11 @@ export class CompleteInstagramOAuthCallback {
       provider: "instagram",
       operation: "instagram_connection_identity_initialized",
       instagramUserId: profile.id,
-      hasWebhookAccountMapping: instagramProfessionalAccountId !== null
+      hasWebhookAccountMapping: instagramProfessionalAccountId !== null,
     });
 
-    const instagramConnection =
-      await this.dependencies.instagramConnectionRepository.saveConnected({
+    const instagramConnection = await this.dependencies.instagramConnectionRepository.saveConnected(
+      {
         tenantId: stateData.tenantId,
         instagramUserId: profile.id,
         instagramProfessionalAccountId: instagramProfessionalAccountId ?? undefined,
@@ -134,8 +127,9 @@ export class CompleteInstagramOAuthCallback {
         encryptedAccessToken,
         scope: tokenSet.scope,
         connectedAt: this.dependencies.now(),
-        tokenExpiresAt
-      });
+        tokenExpiresAt,
+      },
+    );
 
     logger.info({
       provider: "instagram",
@@ -143,12 +137,12 @@ export class CompleteInstagramOAuthCallback {
       instagramUserId: profile.id,
       instagramProfessionalAccountId,
       instagramConnectionId: instagramConnection.id,
-      tenantId: stateData.tenantId
+      tenantId: stateData.tenantId,
     });
 
     return {
       tenantId: stateData.tenantId,
-      instagramConnectionId: instagramConnection.id
+      instagramConnectionId: instagramConnection.id,
     };
   }
 }

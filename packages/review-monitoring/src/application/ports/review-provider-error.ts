@@ -20,7 +20,7 @@ export const reviewProviderErrorCodes = [
   "INSTAGRAM_RATE_LIMITED",
   "INSTAGRAM_API_UNAVAILABLE",
   "INSTAGRAM_ACCOUNT_NOT_FOUND",
-  "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED"
+  "INSTAGRAM_PROFESSIONAL_ACCOUNT_ID_RESOLUTION_FAILED",
 ] as const;
 
 export type ReviewProviderErrorCode = (typeof reviewProviderErrorCodes)[number];
@@ -29,7 +29,7 @@ export class ReviewProviderError extends Error {
   constructor(
     readonly code: ReviewProviderErrorCode,
     message: string,
-    readonly cause?: unknown
+    readonly cause?: unknown,
   ) {
     super(message);
     this.name = "ReviewProviderError";
@@ -39,11 +39,7 @@ export class ReviewProviderError extends Error {
 export const googleBusinessProfileErrorCodes = reviewProviderErrorCodes;
 export type GoogleBusinessProfileErrorCode = ReviewProviderErrorCode;
 export class GoogleBusinessProfileProviderError extends ReviewProviderError {
-  constructor(
-    code: GoogleBusinessProfileErrorCode,
-    message: string,
-    cause?: unknown
-  ) {
+  constructor(code: GoogleBusinessProfileErrorCode, message: string, cause?: unknown) {
     super(code, message, cause);
     this.name = "GoogleBusinessProfileProviderError";
   }

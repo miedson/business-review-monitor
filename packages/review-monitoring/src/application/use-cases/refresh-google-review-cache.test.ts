@@ -1,30 +1,29 @@
 import { describe, expect, it, vi } from "vitest";
+
+import type {
+  BusinessLocationRepository,
+  FindBusinessLocationByGoogleIdsInput,
+  MarkBusinessLocationSyncedInput,
+  StoredBusinessLocation,
+} from "../ports/business-location-repository.js";
 import type {
   BusinessProfileReviewProvider,
   ListBusinessProfileAccountsResult,
   ListBusinessProfileLocationsResult,
   ListBusinessReviewsResult,
   ProviderTokenSet,
-  RefreshProviderAccessTokenInput
+  RefreshProviderAccessTokenInput,
 } from "../ports/business-profile-review-provider.js";
-import type {
-  BusinessLocationRepository,
-  FindBusinessLocationByGoogleIdsInput,
-  MarkBusinessLocationSyncedInput,
-  StoredBusinessLocation
-} from "../ports/business-location-repository.js";
 import type { GoogleConnectionRepository } from "../ports/google-connection-repository.js";
 import type {
   CacheBusinessReviewInput,
-  ReviewCacheRepository
+  ReviewCacheRepository,
 } from "../ports/review-cache-repository.js";
 import { GoogleBusinessProfileProviderError } from "../ports/review-provider-error.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 import { RefreshGoogleReviewCache } from "./refresh-google-review-cache.js";
 
-type GoogleConnectionRecord = Awaited<
-  ReturnType<GoogleConnectionRepository["findByTenantId"]>
->;
+type GoogleConnectionRecord = Awaited<ReturnType<GoogleConnectionRepository["findByTenantId"]>>;
 
 class FakeBusinessLocationRepository implements BusinessLocationRepository {
   findInput?: FindBusinessLocationByGoogleIdsInput;
@@ -33,7 +32,7 @@ class FakeBusinessLocationRepository implements BusinessLocationRepository {
   constructor(private readonly location: StoredBusinessLocation | null) {}
 
   async findByGoogleIds(
-    input: FindBusinessLocationByGoogleIdsInput
+    input: FindBusinessLocationByGoogleIdsInput,
   ): Promise<StoredBusinessLocation | null> {
     this.findInput = input;
 
@@ -95,15 +94,13 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
     throw new Error("Not implemented for this test.");
   }
 
-  async refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet> {
+  async refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet> {
     this.refreshTokenInput = input;
 
     return {
       accessToken: "access-token",
       expiresInSeconds: 3600,
-      scope: "https://www.googleapis.com/auth/business.manage"
+      scope: "https://www.googleapis.com/auth/business.manage",
     };
   }
 
@@ -120,7 +117,7 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
   }
 
   async listReviews(
-    input: Parameters<BusinessProfileReviewProvider["listReviews"]>[0]
+    input: Parameters<BusinessProfileReviewProvider["listReviews"]>[0],
   ): Promise<ListBusinessReviewsResult> {
     this.reviewsInput = input;
 
@@ -132,11 +129,11 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
           starRating: "FIVE",
           comment: "Excelente atendimento",
           createdAt: new Date("2026-08-01T10:00:00.000Z"),
-          updatedAt: new Date("2026-08-02T10:00:00.000Z")
-        }
+          updatedAt: new Date("2026-08-02T10:00:00.000Z"),
+        },
       ],
       averageRating: 4.8,
-      totalReviewCount: 128
+      totalReviewCount: 128,
     };
   }
 }
@@ -155,7 +152,7 @@ describe("RefreshGoogleReviewCache", () => {
         googleAccountId: "accounts/1001",
         googleLocationId: "locations/2001",
         name: "BRM Matriz",
-        isActive: true
+        isActive: true,
       });
       const useCase = new RefreshGoogleReviewCache({
         businessLocationRepository,
@@ -164,33 +161,33 @@ describe("RefreshGoogleReviewCache", () => {
           tenantId: "tenant-1",
           encryptedRefreshToken: "encrypted-refresh-token",
           scope: "https://www.googleapis.com/auth/business.manage",
-          status: "CONNECTED"
+          status: "CONNECTED",
         }),
         provider,
         reviewCacheRepository,
-        tokenCipher: new FakeTokenCipher()
+        tokenCipher: new FakeTokenCipher(),
       });
 
       await useCase.execute({
         tenantId: "tenant-1",
         accountId: "accounts/1001",
         locationId: "locations/2001",
-        pageToken: "page-2"
+        pageToken: "page-2",
       });
 
       expect(businessLocationRepository.findInput).toEqual({
         tenantId: "tenant-1",
         googleAccountId: "accounts/1001",
-        googleLocationId: "locations/2001"
+        googleLocationId: "locations/2001",
       });
       expect(provider.refreshTokenInput).toEqual({
-        refreshToken: "decrypted:encrypted-refresh-token"
+        refreshToken: "decrypted:encrypted-refresh-token",
       });
       expect(provider.reviewsInput).toEqual({
         accessToken: "access-token",
         accountId: "accounts/1001",
         locationId: "locations/2001",
-        pageToken: "page-2"
+        pageToken: "page-2",
       });
       expect(reviewCacheRepository.upsertedReviews).toEqual([
         {
@@ -203,8 +200,8 @@ describe("RefreshGoogleReviewCache", () => {
           reviewCreatedAt: new Date("2026-08-01T10:00:00.000Z"),
           reviewUpdatedAt: new Date("2026-08-02T10:00:00.000Z"),
           cachedAt: new Date("2026-08-15T12:00:00.000Z"),
-          expiresAt: new Date("2026-08-22T12:00:00.000Z")
-        }
+          expiresAt: new Date("2026-08-22T12:00:00.000Z"),
+        },
       ]);
     } finally {
       vi.useRealTimers();
@@ -217,15 +214,15 @@ describe("RefreshGoogleReviewCache", () => {
       googleConnectionRepository: new FakeGoogleConnectionRepository(null),
       provider: new FakeBusinessProfileProvider(),
       reviewCacheRepository: new FakeReviewCacheRepository(),
-      tokenCipher: new FakeTokenCipher()
+      tokenCipher: new FakeTokenCipher(),
     });
 
     await expect(
       useCase.execute({
         tenantId: "tenant-1",
         accountId: "accounts/1001",
-        locationId: "locations/2001"
-      })
+        locationId: "locations/2001",
+      }),
     ).rejects.toBeInstanceOf(GoogleBusinessProfileProviderError);
   });
 });

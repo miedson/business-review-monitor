@@ -1,8 +1,8 @@
+import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
 import type {
   InstagramConnectionRepository,
-  StoredInstagramConnection
+  StoredInstagramConnection,
 } from "../ports/instagram-connection-repository.js";
-import type { InstagramReviewProvider } from "../ports/business-profile-review-provider.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 
 type Logger = {
@@ -28,23 +28,21 @@ export type ResolveInstagramWebhookIdentityDependencies = {
 };
 
 export class ResolveInstagramWebhookIdentity {
-  constructor(
-    private readonly dependencies: ResolveInstagramWebhookIdentityDependencies
-  ) {}
+  constructor(private readonly dependencies: ResolveInstagramWebhookIdentityDependencies) {}
 
   async execute(
-    input: ResolveInstagramWebhookIdentityInput
+    input: ResolveInstagramWebhookIdentityInput,
   ): Promise<ResolveInstagramWebhookIdentityResult | null> {
     const logger = this.dependencies.logger ?? console;
 
     logger.info({
       operation: "instagram_webhook_identity_resolution_started",
-      webhookAccountId: input.webhookAccountId
+      webhookAccountId: input.webhookAccountId,
     });
 
     const existingConnection =
       await this.dependencies.instagramConnectionRepository.findByProfessionalAccountId(
-        input.webhookAccountId
+        input.webhookAccountId,
       );
 
     if (existingConnection) {
@@ -52,12 +50,12 @@ export class ResolveInstagramWebhookIdentity {
         operation: "instagram_webhook_identity_fast_path_resolved",
         webhookAccountId: input.webhookAccountId,
         connectionId: existingConnection.id,
-        tenantId: existingConnection.tenantId
+        tenantId: existingConnection.tenantId,
       });
 
       return {
         connection: existingConnection,
-        resolvedInstagramUserId: existingConnection.instagramUserId
+        resolvedInstagramUserId: existingConnection.instagramUserId,
       };
     }
 
@@ -67,7 +65,7 @@ export class ResolveInstagramWebhookIdentity {
     logger.info({
       operation: "instagram_webhook_identity_discovery_started",
       webhookAccountId: input.webhookAccountId,
-      candidateCount: candidates.length
+      candidateCount: candidates.length,
     });
 
     for (const candidate of candidates) {
@@ -76,19 +74,17 @@ export class ResolveInstagramWebhookIdentity {
           operation: "instagram_webhook_identity_candidate_skipped",
           webhookAccountId: input.webhookAccountId,
           connectionId: candidate.id,
-          reason: "missing_encrypted_access_token"
+          reason: "missing_encrypted_access_token",
         });
         continue;
       }
 
-      const accessToken = this.dependencies.tokenCipher.decrypt(
-        candidate.encryptedAccessToken
-      );
+      const accessToken = this.dependencies.tokenCipher.decrypt(candidate.encryptedAccessToken);
 
       try {
         const resolved = await this.dependencies.provider.resolveWebhookAccountId({
           webhookAccountId: input.webhookAccountId,
-          accessToken
+          accessToken,
         });
 
         logger.info({
@@ -96,31 +92,29 @@ export class ResolveInstagramWebhookIdentity {
           webhookAccountId: input.webhookAccountId,
           candidateConnectionId: candidate.id,
           returnedInstagramUserId: resolved.id,
-          matched: resolved.id === candidate.instagramUserId
+          matched: resolved.id === candidate.instagramUserId,
         });
 
         if (resolved.id === candidate.instagramUserId) {
-          await this.dependencies.instagramConnectionRepository.setProfessionalAccountId(
-            {
-              connectionId: candidate.id,
-              professionalAccountId: input.webhookAccountId
-            }
-          );
+          await this.dependencies.instagramConnectionRepository.setProfessionalAccountId({
+            connectionId: candidate.id,
+            professionalAccountId: input.webhookAccountId,
+          });
 
           logger.info({
             operation: "instagram_webhook_identity_persisted",
             webhookAccountId: input.webhookAccountId,
             instagramUserId: candidate.instagramUserId,
             connectionId: candidate.id,
-            tenantId: candidate.tenantId
+            tenantId: candidate.tenantId,
           });
 
           return {
             connection: {
               ...candidate,
-              instagramProfessionalAccountId: input.webhookAccountId
+              instagramProfessionalAccountId: input.webhookAccountId,
             },
-            resolvedInstagramUserId: candidate.instagramUserId
+            resolvedInstagramUserId: candidate.instagramUserId,
           };
         }
       } catch (error) {
@@ -131,7 +125,7 @@ export class ResolveInstagramWebhookIdentity {
             operation: "instagram_webhook_identity_resolution_transient_error",
             webhookAccountId: input.webhookAccountId,
             candidateConnectionId: candidate.id,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
           throw error;
         }
@@ -140,7 +134,7 @@ export class ResolveInstagramWebhookIdentity {
           operation: "instagram_webhook_identity_candidate_rejected",
           webhookAccountId: input.webhookAccountId,
           candidateConnectionId: candidate.id,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -148,7 +142,7 @@ export class ResolveInstagramWebhookIdentity {
     logger.info({
       operation: "instagram_webhook_identity_resolution_failed",
       webhookAccountId: input.webhookAccountId,
-      reason: "no_matching_connection"
+      reason: "no_matching_connection",
     });
 
     return null;
@@ -162,10 +156,7 @@ export class ResolveInstagramWebhookIdentity {
       typeof (error as Record<string, unknown>).code === "string"
     ) {
       const code = (error as Record<string, unknown>).code as string;
-      return (
-        code === "INSTAGRAM_API_UNAVAILABLE" ||
-        code === "INSTAGRAM_RATE_LIMITED"
-      );
+      return code === "INSTAGRAM_API_UNAVAILABLE" || code === "INSTAGRAM_RATE_LIMITED";
     }
 
     return false;

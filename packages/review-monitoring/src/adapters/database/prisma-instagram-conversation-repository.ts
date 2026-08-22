@@ -1,17 +1,15 @@
 import type { PrismaClient } from "@brm/database";
 
 import type {
+  FindInstagramConversationByIdInput,
+  FindInstagramConversationsInput,
+  InstagramConversation,
   InstagramConversationRepository,
   SaveInstagramConversationInput,
   UpdateInstagramConversationInput,
-  FindInstagramConversationsInput,
-  FindInstagramConversationByIdInput,
-  InstagramConversation
 } from "../../application/ports/instagram-conversation-repository.js";
 
-export class PrismaInstagramConversationRepository
-  implements InstagramConversationRepository
-{
+export class PrismaInstagramConversationRepository implements InstagramConversationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async save(input: SaveInstagramConversationInput): Promise<InstagramConversation> {
@@ -25,8 +23,8 @@ export class PrismaInstagramConversationRepository
         participantProfilePictureUrl: input.participantProfilePictureUrl ?? null,
         lastMessageAt: input.lastMessageAt ?? null,
         lastMessagePreview: input.lastMessagePreview ?? null,
-        unreadCount: input.unreadCount ?? 0
-      }
+        unreadCount: input.unreadCount ?? 0,
+      },
     });
 
     return this.mapToDomain(conversation);
@@ -41,15 +39,17 @@ export class PrismaInstagramConversationRepository
 
     const conversation = await this.prisma.instagramConversation.update({
       where: { id: input.conversationId },
-      data
+      data,
     });
 
     return this.mapToDomain(conversation);
   }
 
-  async findByTenant(input: FindInstagramConversationsInput): Promise<{ conversations: InstagramConversation[]; nextCursor: string | null }> {
+  async findByTenant(
+    input: FindInstagramConversationsInput,
+  ): Promise<{ conversations: InstagramConversation[]; nextCursor: string | null }> {
     const where: Record<string, unknown> = {
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     };
 
     if (input.instagramConnectionId) {
@@ -64,7 +64,7 @@ export class PrismaInstagramConversationRepository
     } = {
       where,
       orderBy: { lastMessageAt: "desc" },
-      take: input.limit ?? 50
+      take: input.limit ?? 50,
     };
 
     if (input.cursor) {
@@ -73,20 +73,25 @@ export class PrismaInstagramConversationRepository
 
     const conversations = await this.prisma.instagramConversation.findMany(findManyArgs);
 
-    const nextCursor = conversations.length === (input.limit ?? 50) ? conversations[conversations.length - 1]!.id : null;
+    const nextCursor =
+      conversations.length === (input.limit ?? 50)
+        ? conversations[conversations.length - 1]!.id
+        : null;
 
     return {
       conversations: conversations.map(this.mapToDomain),
-      nextCursor
+      nextCursor,
     };
   }
 
-  async findByIdForTenant(input: FindInstagramConversationByIdInput): Promise<InstagramConversation | null> {
+  async findByIdForTenant(
+    input: FindInstagramConversationByIdInput,
+  ): Promise<InstagramConversation | null> {
     const conversation = await this.prisma.instagramConversation.findFirst({
       where: {
         id: input.id,
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return conversation ? this.mapToDomain(conversation) : null;
@@ -99,8 +104,8 @@ export class PrismaInstagramConversationRepository
     const conversation = await this.prisma.instagramConversation.findFirst({
       where: {
         instagramConnectionId: input.instagramConnectionId,
-        participantExternalId: input.participantExternalId
-      }
+        participantExternalId: input.participantExternalId,
+      },
     });
 
     return conversation ? this.mapToDomain(conversation) : null;
@@ -109,19 +114,22 @@ export class PrismaInstagramConversationRepository
   async incrementUnreadCount(conversationId: string): Promise<InstagramConversation | null> {
     const conversation = await this.prisma.instagramConversation.update({
       where: { id: conversationId },
-      data: { unreadCount: { increment: 1 } }
+      data: { unreadCount: { increment: 1 } },
     });
 
     return this.mapToDomain(conversation);
   }
 
-  async markAsRead(conversationId: string, tenantId: string): Promise<InstagramConversation | null> {
+  async markAsRead(
+    conversationId: string,
+    tenantId: string,
+  ): Promise<InstagramConversation | null> {
     const conversation = await this.prisma.instagramConversation.updateMany({
       where: {
         id: conversationId,
-        tenantId
+        tenantId,
       },
-      data: { unreadCount: 0 }
+      data: { unreadCount: 0 },
     });
 
     if (conversation.count === 0) {
@@ -129,7 +137,7 @@ export class PrismaInstagramConversationRepository
     }
 
     const updated = await this.prisma.instagramConversation.findUnique({
-      where: { id: conversationId }
+      where: { id: conversationId },
     });
 
     return updated ? this.mapToDomain(updated) : null;
@@ -137,7 +145,7 @@ export class PrismaInstagramConversationRepository
 
   async deleteByConnectionId(connectionId: string): Promise<void> {
     await this.prisma.instagramConversation.deleteMany({
-      where: { instagramConnectionId: connectionId }
+      where: { instagramConnectionId: connectionId },
     });
   }
 
@@ -167,7 +175,7 @@ export class PrismaInstagramConversationRepository
       lastMessagePreview: conversation.lastMessagePreview,
       unreadCount: conversation.unreadCount,
       createdAt: conversation.createdAt,
-      updatedAt: conversation.updatedAt
+      updatedAt: conversation.updatedAt,
     };
   }
 }

@@ -4,5 +4,5 @@ export {
   metaWebhookQueueName,
   syncGoogleReviewsJobName,
   cleanupExpiredReviewCacheJobName,
-  processMetaWebhookEventJobName
+  processMetaWebhookEventJobName,
 } from "./queue-names.js";

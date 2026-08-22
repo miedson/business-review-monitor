@@ -20,7 +20,5 @@ export type DisconnectGoogleConnectionInput = {
 
 export interface GoogleConnectionRepository {
   findByTenantId(tenantId: string): Promise<StoredGoogleConnection | null>;
-  saveConnected(
-    input: SaveConnectedGoogleConnectionInput
-  ): Promise<StoredGoogleConnection>;
+  saveConnected(input: SaveConnectedGoogleConnectionInput): Promise<StoredGoogleConnection>;
 }

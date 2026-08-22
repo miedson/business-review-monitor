@@ -1,23 +1,25 @@
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { z } from "zod";
+
 import type {
   CompleteInstagramOAuthCallback,
   DisconnectInstagramConnection,
+  InstagramConnectionRepository,
   ListInstagramAccounts,
-  StartInstagramOAuthConnection
+  StartInstagramOAuthConnection,
 } from "@brm/review-monitoring";
 import { GoogleBusinessProfileProviderError } from "@brm/review-monitoring";
-import type { FastifyInstance, FastifyRequest } from "fastify";
-import { z } from "zod";
+
 import type { AuthService } from "../auth/auth.service.js";
-import type { InstagramConnectionRepository } from "@brm/review-monitoring";
 
 const callbackQuerySchema = z.object({
   code: z.string().min(1).optional(),
   state: z.string().min(1).optional(),
-  error: z.string().min(1).optional()
+  error: z.string().min(1).optional(),
 });
 
 const accountsQuerySchema = z.object({
-  pageToken: z.string().min(1).optional()
+  pageToken: z.string().min(1).optional(),
 });
 
 const instagramErrorResponseSchema = {
@@ -26,8 +28,8 @@ const instagramErrorResponseSchema = {
   properties: {
     error: { type: "string" },
     code: { type: "string" },
-    requestId: { type: "string" }
-  }
+    requestId: { type: "string" },
+  },
 };
 
 const instagramConnectRouteSchema = {
@@ -39,10 +41,10 @@ const instagramConnectRouteSchema = {
   response: {
     302: {
       description: "Redirects to Instagram OAuth authorization URL",
-      type: "string"
+      type: "string",
     },
-    401: instagramErrorResponseSchema
-  }
+    401: instagramErrorResponseSchema,
+  },
 };
 
 const instagramConnectUrlRouteSchema = {
@@ -54,13 +56,13 @@ const instagramConnectUrlRouteSchema = {
   response: {
     200: {
       properties: {
-        authorizationUrl: { type: "string" }
+        authorizationUrl: { type: "string" },
       },
       required: ["authorizationUrl"],
-      type: "object"
+      type: "object",
     },
-    401: instagramErrorResponseSchema
-  }
+    401: instagramErrorResponseSchema,
+  },
 };
 
 const instagramCallbackRouteSchema = {
@@ -71,20 +73,20 @@ const instagramCallbackRouteSchema = {
     properties: {
       code: { type: "string" },
       state: { type: "string" },
-      error: { type: "string" }
-    }
+      error: { type: "string" },
+    },
   },
   response: {
     302: {
       description: "Redirects to the web integration settings page",
-      type: "string"
+      type: "string",
     },
     400: instagramErrorResponseSchema,
     401: instagramErrorResponseSchema,
     403: instagramErrorResponseSchema,
     429: instagramErrorResponseSchema,
-    502: instagramErrorResponseSchema
-  }
+    502: instagramErrorResponseSchema,
+  },
 };
 
 const instagramAccountsRouteSchema = {
@@ -94,8 +96,8 @@ const instagramAccountsRouteSchema = {
   querystring: {
     type: "object",
     properties: {
-      pageToken: { type: "string" }
-    }
+      pageToken: { type: "string" },
+    },
   },
   response: {
     200: {
@@ -110,23 +112,23 @@ const instagramAccountsRouteSchema = {
             properties: {
               id: { type: "string" },
               name: { type: "string" },
-              username: { type: "string" }
-            }
-          }
+              username: { type: "string" },
+            },
+          },
         },
-        nextPageToken: { type: "string" }
-      }
+        nextPageToken: { type: "string" },
+      },
     },
     400: instagramErrorResponseSchema,
     401: instagramErrorResponseSchema,
     403: instagramErrorResponseSchema,
     429: instagramErrorResponseSchema,
-    502: instagramErrorResponseSchema
-  }
+    502: instagramErrorResponseSchema,
+  },
 };
 
 const instagramDisconnectBodySchema = z.object({
-  deleteData: z.boolean().default(false).optional()
+  deleteData: z.boolean().default(false).optional(),
 });
 
 const instagramDisconnectRouteSchema = {
@@ -136,23 +138,23 @@ const instagramDisconnectRouteSchema = {
   body: {
     type: "object",
     properties: {
-      deleteData: { type: "boolean", default: false }
-    }
+      deleteData: { type: "boolean", default: false },
+    },
   },
   response: {
     200: {
       type: "object",
       required: ["disconnected"],
       properties: {
-        disconnected: { type: "boolean" }
-      }
+        disconnected: { type: "boolean" },
+      },
     },
     400: instagramErrorResponseSchema,
     401: instagramErrorResponseSchema,
     403: instagramErrorResponseSchema,
     429: instagramErrorResponseSchema,
-    502: instagramErrorResponseSchema
-  }
+    502: instagramErrorResponseSchema,
+  },
 };
 
 export type RegisterInstagramIntegrationRoutesOptions = {
@@ -167,18 +169,22 @@ export type RegisterInstagramIntegrationRoutesOptions = {
 
 export function registerInstagramIntegrationRoutes(
   app: FastifyInstance,
-  options: RegisterInstagramIntegrationRoutesOptions
+  options: RegisterInstagramIntegrationRoutesOptions,
 ): void {
-  app.get("/integrations/instagram/connect", { schema: instagramConnectRouteSchema }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const result = await options.startInstagramOAuthConnection.execute({
-      userId: session.user.id,
-      tenantId: session.tenant.id
-    });
+  app.get(
+    "/integrations/instagram/connect",
+    { schema: instagramConnectRouteSchema },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const result = await options.startInstagramOAuthConnection.execute({
+        userId: session.user.id,
+        tenantId: session.tenant.id,
+      });
 
-    return reply.redirect(result.authorizationUrl);
-  });
+      return reply.redirect(result.authorizationUrl);
+    },
+  );
 
   app.get(
     "/integrations/instagram/connect-url",
@@ -188,149 +194,188 @@ export function registerInstagramIntegrationRoutes(
       const session = await options.authService.getCurrentSession(userId);
       const result = await options.startInstagramOAuthConnection.execute({
         userId: session.user.id,
-        tenantId: session.tenant.id
+        tenantId: session.tenant.id,
       });
 
       return { authorizationUrl: result.authorizationUrl };
-    }
+    },
   );
 
-  app.get("/integrations/instagram/callback", { schema: instagramCallbackRouteSchema }, async (request, reply) => {
-    const query = callbackQuerySchema.parse(request.query);
-
-    request.log.info({
-      provider: "instagram",
-      operation: "oauth_callback_received",
-      hasCode: !!query.code,
-      hasState: !!query.state,
-      hasError: !!query.error
-    });
-
-    if (query.error) {
-      request.log.warn({
-        provider: "instagram",
-        operation: "oauth_callback_error_from_meta",
-        metaError: query.error
-      });
-      return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
-    }
-
-    if (!query.code || !query.state) {
-      request.log.warn({
-        provider: "instagram",
-        operation: "oauth_callback_invalid_missing_params"
-      });
-      return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
-    }
-
-    try {
-      await options.completeInstagramOAuthCallback.execute({
-        code: query.code,
-        state: query.state
-      });
+  app.get(
+    "/integrations/instagram/callback",
+    { schema: instagramCallbackRouteSchema },
+    async (request, reply) => {
+      const query = callbackQuerySchema.parse(request.query);
 
       request.log.info({
         provider: "instagram",
-        operation: "oauth_callback_completed_success"
+        operation: "oauth_callback_received",
+        hasCode: !!query.code,
+        hasState: !!query.state,
+        hasError: !!query.error,
       });
-    } catch (error) {
-      if (error instanceof GoogleBusinessProfileProviderError) {
-        request.log.error({
+
+      if (query.error) {
+        request.log.warn({
           provider: "instagram",
-          operation: "oauth_callback_provider_error",
-          errorCode: error.code,
-          errorMessage: error.message
+          operation: "oauth_callback_error_from_meta",
+          metaError: query.error,
+        });
+        return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
+      }
+
+      if (!query.code || !query.state) {
+        request.log.warn({
+          provider: "instagram",
+          operation: "oauth_callback_invalid_missing_params",
+        });
+        return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
+      }
+
+      try {
+        await options.completeInstagramOAuthCallback.execute({
+          code: query.code,
+          state: query.state,
         });
 
-        const redirectOnError = [
-          "INSTAGRAM_INVALID_STATE",
-          "INSTAGRAM_TOKEN_REVOKED",
-          "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
-          "INSTAGRAM_PERMISSION_DENIED",
-          "INSTAGRAM_RATE_LIMITED",
-          "INSTAGRAM_REFRESH_FAILED",
-          "INSTAGRAM_API_UNAVAILABLE"
-        ].includes(error.code);
+        request.log.info({
+          provider: "instagram",
+          operation: "oauth_callback_completed_success",
+        });
+      } catch (error) {
+        if (error instanceof GoogleBusinessProfileProviderError) {
+          request.log.error({
+            provider: "instagram",
+            operation: "oauth_callback_provider_error",
+            errorCode: error.code,
+            errorMessage: error.message,
+          });
 
-        if (redirectOnError) {
-          return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
+          const redirectOnError = [
+            "INSTAGRAM_INVALID_STATE",
+            "INSTAGRAM_TOKEN_REVOKED",
+            "INSTAGRAM_TOKEN_EXCHANGE_FAILED",
+            "INSTAGRAM_PERMISSION_DENIED",
+            "INSTAGRAM_RATE_LIMITED",
+            "INSTAGRAM_REFRESH_FAILED",
+            "INSTAGRAM_API_UNAVAILABLE",
+          ].includes(error.code);
+
+          if (redirectOnError) {
+            return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "error"));
+          }
+
+          return reply.status(mapProviderErrorStatus(error)).send({
+            error: error.message,
+            code: error.code,
+            requestId: request.id,
+          });
         }
 
-        return reply.status(mapProviderErrorStatus(error)).send({
-          error: error.message,
-          code: error.code,
-          requestId: request.id
+        request.log.error({
+          provider: "instagram",
+          operation: "oauth_callback_unexpected_error",
+          errorName: error instanceof Error ? error.name : "Unknown",
+          errorMessage: error instanceof Error ? error.message : String(error),
         });
+        throw error;
       }
 
-      request.log.error({
-        provider: "instagram",
-        operation: "oauth_callback_unexpected_error",
-        errorName: error instanceof Error ? error.name : "Unknown",
-        errorMessage: error instanceof Error ? error.message : String(error)
-      });
-      throw error;
-    }
+      return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "connected"));
+    },
+  );
 
-    return reply.redirect(buildInstagramRedirectUrl(options.webUrl, "connected"));
-  });
+  app.get(
+    "/integrations/instagram/accounts",
+    { schema: instagramAccountsRouteSchema },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const query = accountsQuerySchema.parse(request.query);
 
-  app.get("/integrations/instagram/accounts", { schema: instagramAccountsRouteSchema }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const query = accountsQuerySchema.parse(request.query);
-
-    try {
-      const result = await options.listInstagramAccounts.execute({
-        tenantId: session.tenant.id,
-        ...(query.pageToken ? { pageToken: query.pageToken } : {})
-      });
-
-      return reply.send(result);
-    } catch (error) {
-      if (error instanceof GoogleBusinessProfileProviderError) {
-        return reply.status(mapProviderErrorStatus(error)).send({
-          error: error.message,
-          code: error.code,
-          requestId: request.id
+      try {
+        const result = await options.listInstagramAccounts.execute({
+          tenantId: session.tenant.id,
+          ...(query.pageToken ? { pageToken: query.pageToken } : {}),
         });
+
+        return reply.send(result);
+      } catch (error) {
+        if (error instanceof GoogleBusinessProfileProviderError) {
+          return reply.status(mapProviderErrorStatus(error)).send({
+            error: error.message,
+            code: error.code,
+            requestId: request.id,
+          });
+        }
+
+        throw error;
       }
+    },
+  );
 
-      throw error;
-    }
-  });
-
-  app.get("/integrations/instagram/status", { schema: { tags: ["Instagram Integration"], summary: "Get Instagram connection status", security: [{ bearerAuth: [] }], response: { 200: { type: "object", required: ["connected"], properties: { connected: { type: "boolean" }, username: { type: ["string", "null"] }, status: { type: "string" } } } } } }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const connection = await options.instagramConnectionRepository.findByTenantId(session.tenant.id);
-    return reply.send({ connected: connection?.status === "CONNECTED" && Boolean(connection.encryptedAccessToken), username: connection?.username ?? null, status: connection?.status ?? "DISCONNECTED" });
-  });
-
-  app.post("/integrations/instagram/disconnect", { schema: instagramDisconnectRouteSchema }, async (request, reply) => {
-    const userId = await getAuthenticatedUserId(request);
-    const session = await options.authService.getCurrentSession(userId);
-    const body = instagramDisconnectBodySchema.parse(request.body);
-
-    try {
-      const result = await options.disconnectInstagramConnection.execute({
-        tenantId: session.tenant.id,
-        deleteData: body.deleteData ?? false
+  app.get(
+    "/integrations/instagram/status",
+    {
+      schema: {
+        tags: ["Instagram Integration"],
+        summary: "Get Instagram connection status",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            type: "object",
+            required: ["connected"],
+            properties: {
+              connected: { type: "boolean" },
+              username: { type: ["string", "null"] },
+              status: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const connection = await options.instagramConnectionRepository.findByTenantId(
+        session.tenant.id,
+      );
+      return reply.send({
+        connected: connection?.status === "CONNECTED" && Boolean(connection.encryptedAccessToken),
+        username: connection?.username ?? null,
+        status: connection?.status ?? "DISCONNECTED",
       });
+    },
+  );
 
-      return reply.send(result);
-    } catch (error) {
-      if (error instanceof GoogleBusinessProfileProviderError) {
-        return reply.status(mapProviderErrorStatus(error)).send({
-          error: error.message,
-          code: error.code,
-          requestId: request.id
+  app.post(
+    "/integrations/instagram/disconnect",
+    { schema: instagramDisconnectRouteSchema },
+    async (request, reply) => {
+      const userId = await getAuthenticatedUserId(request);
+      const session = await options.authService.getCurrentSession(userId);
+      const body = instagramDisconnectBodySchema.parse(request.body);
+
+      try {
+        const result = await options.disconnectInstagramConnection.execute({
+          tenantId: session.tenant.id,
+          deleteData: body.deleteData ?? false,
         });
-      }
 
-      throw error;
-    }
-  });
+        return reply.send(result);
+      } catch (error) {
+        if (error instanceof GoogleBusinessProfileProviderError) {
+          return reply.status(mapProviderErrorStatus(error)).send({
+            error: error.message,
+            code: error.code,
+            requestId: request.id,
+          });
+        }
+
+        throw error;
+      }
+    },
+  );
 }
 
 function buildInstagramRedirectUrl(webUrl: string, status: "connected" | "error"): string {
@@ -369,18 +414,14 @@ function authenticationRequiredError(): Error & { statusCode: number } {
   return error;
 }
 
-function mapProviderErrorStatus(error: GoogleBusinessProfileProviderError): 400 | 401 | 403 | 429 | 502 {
-  if (
-    error.code === "INSTAGRAM_INVALID_CALLBACK" ||
-    error.code === "INSTAGRAM_INVALID_STATE"
-  ) {
+function mapProviderErrorStatus(
+  error: GoogleBusinessProfileProviderError,
+): 400 | 401 | 403 | 429 | 502 {
+  if (error.code === "INSTAGRAM_INVALID_CALLBACK" || error.code === "INSTAGRAM_INVALID_STATE") {
     return 400;
   }
 
-  if (
-    error.code === "INSTAGRAM_AUTH_REQUIRED" ||
-    error.code === "INSTAGRAM_TOKEN_REVOKED"
-  ) {
+  if (error.code === "INSTAGRAM_AUTH_REQUIRED" || error.code === "INSTAGRAM_TOKEN_REVOKED") {
     return 401;
   }
 

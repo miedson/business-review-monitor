@@ -1,16 +1,14 @@
 import type { PrismaClient } from "@brm/database";
 
 import type {
+  FindInstagramMessageByIdInput,
+  FindInstagramMessagesInput,
+  InstagramMessage,
   InstagramMessageRepository,
   SaveInstagramMessageInput,
-  FindInstagramMessagesInput,
-  FindInstagramMessageByIdInput,
-  InstagramMessage
 } from "../../application/ports/instagram-message-repository.js";
 
-export class PrismaInstagramMessageRepository
-  implements InstagramMessageRepository
-{
+export class PrismaInstagramMessageRepository implements InstagramMessageRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async save(input: SaveInstagramMessageInput): Promise<InstagramMessage> {
@@ -24,14 +22,16 @@ export class PrismaInstagramMessageRepository
         direction: input.direction,
         text: input.text ?? null,
         sentAtExternal: input.sentAtExternal ?? null,
-        status: input.status ?? "DELIVERED"
-      }
+        status: input.status ?? "DELIVERED",
+      },
     });
 
     return this.mapToDomain(message);
   }
 
-  async findByConversation(input: FindInstagramMessagesInput): Promise<{ messages: InstagramMessage[]; nextCursor: string | null }> {
+  async findByConversation(
+    input: FindInstagramMessagesInput,
+  ): Promise<{ messages: InstagramMessage[]; nextCursor: string | null }> {
     const findManyArgs: {
       where: { instagramConversationId: string };
       orderBy: { sentAtExternal: "asc" };
@@ -39,10 +39,10 @@ export class PrismaInstagramMessageRepository
       cursor?: { id: string };
     } = {
       where: {
-        instagramConversationId: input.instagramConversationId
+        instagramConversationId: input.instagramConversationId,
       },
       orderBy: { sentAtExternal: "asc" },
-      take: input.limit ?? 50
+      take: input.limit ?? 50,
     };
 
     if (input.cursor) {
@@ -51,11 +51,12 @@ export class PrismaInstagramMessageRepository
 
     const messages = await this.prisma.instagramMessage.findMany(findManyArgs);
 
-    const nextCursor = messages.length === (input.limit ?? 50) ? messages[messages.length - 1]!.id : null;
+    const nextCursor =
+      messages.length === (input.limit ?? 50) ? messages[messages.length - 1]!.id : null;
 
     return {
       messages: messages.map(this.mapToDomain),
-      nextCursor
+      nextCursor,
     };
   }
 
@@ -63,8 +64,8 @@ export class PrismaInstagramMessageRepository
     const message = await this.prisma.instagramMessage.findFirst({
       where: {
         id: input.id,
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return message ? this.mapToDomain(message) : null;
@@ -77,8 +78,8 @@ export class PrismaInstagramMessageRepository
     const message = await this.prisma.instagramMessage.findFirst({
       where: {
         instagramConversationId: input.instagramConversationId,
-        externalMessageId: input.externalMessageId
-      }
+        externalMessageId: input.externalMessageId,
+      },
     });
 
     return message ? this.mapToDomain(message) : null;
@@ -88,9 +89,9 @@ export class PrismaInstagramMessageRepository
     await this.prisma.instagramMessage.deleteMany({
       where: {
         instagramConversation: {
-          instagramConnectionId: connectionId
-        }
-      }
+          instagramConnectionId: connectionId,
+        },
+      },
     });
   }
 
@@ -120,7 +121,7 @@ export class PrismaInstagramMessageRepository
       sentAtExternal: message.sentAtExternal,
       status: message.status,
       createdAt: message.createdAt,
-      updatedAt: message.updatedAt
+      updatedAt: message.updatedAt,
     };
   }
 }

@@ -36,11 +36,12 @@ export function updateThemeClass(theme: ThemeMode) {
   if (typeof window === "undefined") return;
 
   const html = document.documentElement;
-  const resolvedTheme = theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : theme;
+  const resolvedTheme =
+    theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : theme;
   const className = THEME_CLASS_MAPPING[resolvedTheme];
-  
+
   if (className) {
     html.classList.add(className);
     html.setAttribute("data-theme", "dark");

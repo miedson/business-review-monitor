@@ -1,8 +1,8 @@
 import { z } from "zod";
+
 import { clearStoredSession, storeSession } from "./auth-session";
 
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:3333";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:3333";
 export const getApiBaseUrl = (): string => apiBaseUrl;
 
 const authUserSchema = z.object({
@@ -46,18 +46,14 @@ const googleLocationsResponseSchema = z.object({
 const googleReviewSchema = z.object({
   id: z.string(),
   reviewerName: z.string().nullable().optional(),
-  starRating: z.enum([
-    "ONE",
-    "TWO",
-    "THREE",
-    "FOUR",
-    "FIVE",
-    "STAR_RATING_UNSPECIFIED",
-  ]),
+  starRating: z.enum(["ONE", "TWO", "THREE", "FOUR", "FIVE", "STAR_RATING_UNSPECIFIED"]),
   comment: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  reviewReply: z.object({ comment: z.string(), updatedAt: z.string().optional() }).nullable().optional(),
+  reviewReply: z
+    .object({ comment: z.string(), updatedAt: z.string().optional() })
+    .nullable()
+    .optional(),
 });
 
 const googleReviewsResponseSchema = z.object({
@@ -101,7 +97,19 @@ const instagramCommentSchema = z.object({
   commentId: z.string(),
   mediaId: z.string().nullable().optional(),
   author: instagramCommentAuthorSchema,
-  media: z.object({ id: z.string(), media_type: z.string().optional(), media_product_type: z.string().optional(), media_url: z.string().optional(), thumbnail_url: z.string().optional(), permalink: z.string().optional(), caption: z.string().optional(), timestamp: z.string().optional() }).nullable().optional(),
+  media: z
+    .object({
+      id: z.string(),
+      media_type: z.string().optional(),
+      media_product_type: z.string().optional(),
+      media_url: z.string().optional(),
+      thumbnail_url: z.string().optional(),
+      permalink: z.string().optional(),
+      caption: z.string().optional(),
+      timestamp: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
   text: z.string().nullable().optional(),
   createdAt: z.string(),
   status: z.enum(["NEW", "READ"]),
@@ -132,7 +140,11 @@ export type InstagramCommentAuthor = z.infer<typeof instagramCommentAuthorSchema
 export type InstagramComment = z.infer<typeof instagramCommentSchema>;
 export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponseSchema>;
 
-const attentionSummarySchema = z.object({ googleReviewsPendingReply: z.number().int(), instagramCommentsPendingReply: z.number().int(), total: z.number().int() });
+const attentionSummarySchema = z.object({
+  googleReviewsPendingReply: z.number().int(),
+  instagramCommentsPendingReply: z.number().int(),
+  total: z.number().int(),
+});
 export type AttentionSummary = z.infer<typeof attentionSummarySchema>;
 export async function getAttentionSummary(accessToken: string): Promise<AttentionSummary> {
   return attentionSummarySchema.parse(await requestJson("/attention-summary", { accessToken }));
@@ -146,20 +158,35 @@ const notificationSchema = z.object({
   resourceType: z.string(),
   resourceId: z.string(),
   readAt: z.string().datetime().nullable(),
-  createdAt: z.string().datetime()
+  createdAt: z.string().datetime(),
 });
-const notificationsResponseSchema = z.object({ notifications: z.array(notificationSchema), unreadCount: z.number().int() });
+const notificationsResponseSchema = z.object({
+  notifications: z.array(notificationSchema),
+  unreadCount: z.number().int(),
+});
 export type AppNotification = z.infer<typeof notificationSchema>;
 
-export async function getNotifications(input: { accessToken: string; unreadOnly?: boolean; limit?: number }): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
+export async function getNotifications(input: {
+  accessToken: string;
+  unreadOnly?: boolean;
+  limit?: number;
+}): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
   const params = new URLSearchParams();
   if (input.unreadOnly) params.set("unreadOnly", "true");
   if (input.limit) params.set("limit", String(input.limit));
-  return notificationsResponseSchema.parse(await requestJson(`/notifications?${params.toString()}`, { accessToken: input.accessToken }));
+  return notificationsResponseSchema.parse(
+    await requestJson(`/notifications?${params.toString()}`, { accessToken: input.accessToken }),
+  );
 }
 
-export async function markNotificationRead(input: { accessToken: string; id: string }): Promise<void> {
-  await requestJson(`/notifications/${encodeURIComponent(input.id)}/read`, { accessToken: input.accessToken, method: "POST" });
+export async function markNotificationRead(input: {
+  accessToken: string;
+  id: string;
+}): Promise<void> {
+  await requestJson(`/notifications/${encodeURIComponent(input.id)}/read`, {
+    accessToken: input.accessToken,
+    method: "POST",
+  });
 }
 
 export async function markAllNotificationsRead(accessToken: string): Promise<void> {
@@ -172,38 +199,33 @@ export async function register(input: {
   password: string;
 }): Promise<AuthResponse> {
   return authResponseSchema.parse(
-    await requestJson("/auth/register", { body: input, method: "POST" })
+    await requestJson("/auth/register", { body: input, method: "POST" }),
   );
 }
 
-export async function login(input: {
-  email: string;
-  password: string;
-}): Promise<AuthResponse> {
+export async function login(input: { email: string; password: string }): Promise<AuthResponse> {
   return authResponseSchema.parse(
-    await requestJson("/auth/login", { body: input, method: "POST" })
+    await requestJson("/auth/login", { body: input, method: "POST" }),
   );
 }
 
 export async function buildGoogleConnectUrl(accessToken: string): Promise<string> {
   const result = googleConnectUrlResponseSchema.parse(
-    await requestJson("/integrations/google/connect-url", { accessToken })
+    await requestJson("/integrations/google/connect-url", { accessToken }),
   );
   return result.authorizationUrl;
 }
 
 export async function listGoogleAccounts(
   accessToken: string,
-  pageToken?: string
+  pageToken?: string,
 ): Promise<{ accounts: GoogleAccount[]; nextPageToken?: string | null | undefined }> {
   const params = new URLSearchParams();
   if (pageToken) params.set("pageToken", pageToken);
   const path = params.size
     ? `/integrations/google/accounts?${params.toString()}`
     : "/integrations/google/accounts";
-  return googleAccountsResponseSchema.parse(
-    await requestJson(path, { accessToken })
-  );
+  return googleAccountsResponseSchema.parse(await requestJson(path, { accessToken }));
 }
 
 export async function listGoogleLocations(input: {
@@ -216,7 +238,7 @@ export async function listGoogleLocations(input: {
   return googleLocationsResponseSchema.parse(
     await requestJson(`/integrations/google/locations?${params.toString()}`, {
       accessToken: input.accessToken,
-    })
+    }),
   );
 }
 
@@ -232,12 +254,22 @@ export async function listGoogleReviews(input: {
   return googleReviewsResponseSchema.parse(
     await requestJson(`/integrations/google/reviews?${params.toString()}`, {
       accessToken: input.accessToken,
-    })
+    }),
   );
 }
 
-export async function replyToGoogleReview(input: { accessToken: string; reviewId: string; accountId: string; locationId: string; message: string }): Promise<void> {
-  await requestJson(`/reviews/${encodeURIComponent(input.reviewId)}/reply`, { accessToken: input.accessToken, method: "POST", body: { accountId: input.accountId, locationId: input.locationId, message: input.message } });
+export async function replyToGoogleReview(input: {
+  accessToken: string;
+  reviewId: string;
+  accountId: string;
+  locationId: string;
+  message: string;
+}): Promise<void> {
+  await requestJson(`/reviews/${encodeURIComponent(input.reviewId)}/reply`, {
+    accessToken: input.accessToken,
+    method: "POST",
+    body: { accountId: input.accountId, locationId: input.locationId, message: input.message },
+  });
 }
 
 export async function requestGoogleReviewSync(input: {
@@ -253,7 +285,7 @@ export async function requestGoogleReviewSync(input: {
         locationId: input.locationId,
       },
       method: "POST",
-    })
+    }),
   );
 }
 
@@ -264,28 +296,26 @@ export async function selectBusinessLocation(input: {
   await requestJson("/business-locations/select", {
     accessToken: input.accessToken,
     body: {
-      locationId: input.businessLocationId
+      locationId: input.businessLocationId,
     },
-    method: "POST"
+    method: "POST",
   });
 }
 
 export async function disconnectGoogle(input: {
   accessToken: string;
 }): Promise<{ disconnected: boolean }> {
-  return z
-    .object({ disconnected: z.boolean() })
-    .parse(
-      await requestJson("/integrations/google/disconnect", {
-        accessToken: input.accessToken,
-        method: "POST"
-      })
-    );
+  return z.object({ disconnected: z.boolean() }).parse(
+    await requestJson("/integrations/google/disconnect", {
+      accessToken: input.accessToken,
+      method: "POST",
+    }),
+  );
 }
 
 export async function buildInstagramConnectUrl(accessToken: string): Promise<string> {
   const result = instagramConnectUrlResponseSchema.parse(
-    await requestJson("/integrations/instagram/connect-url", { accessToken })
+    await requestJson("/integrations/instagram/connect-url", { accessToken }),
   );
   return result.authorizationUrl;
 }
@@ -294,22 +324,20 @@ export async function disconnectInstagram(input: {
   accessToken: string;
   deleteData?: boolean;
 }): Promise<{ disconnected: boolean }> {
-  return z
-    .object({ disconnected: z.boolean() })
-    .parse(
-      await requestJson("/integrations/instagram/disconnect", {
-        accessToken: input.accessToken,
-        body: { deleteData: input.deleteData ?? false },
-        method: "POST"
-      })
-    );
+  return z.object({ disconnected: z.boolean() }).parse(
+    await requestJson("/integrations/instagram/disconnect", {
+      accessToken: input.accessToken,
+      body: { deleteData: input.deleteData ?? false },
+      method: "POST",
+    }),
+  );
 }
 
 export async function listInstagramAccounts(
-  accessToken: string
+  accessToken: string,
 ): Promise<{ accounts: InstagramAccount[] }> {
   return instagramAccountsResponseSchema.parse(
-    await requestJson("/integrations/instagram/accounts", { accessToken })
+    await requestJson("/integrations/instagram/accounts", { accessToken }),
   );
 }
 
@@ -329,20 +357,46 @@ export async function listInstagramComments(input: {
   return instagramCommentsResponseSchema.parse(
     await requestJson(`/instagram/comments?${params.toString()}`, {
       accessToken: input.accessToken,
-    })
+    }),
   );
 }
 
-export async function replyToInstagramComment(input: { accessToken: string; id: string; message: string }): Promise<void> {
-  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/reply`, { accessToken: input.accessToken, method: "POST", body: { message: input.message } });
+export async function replyToInstagramComment(input: {
+  accessToken: string;
+  id: string;
+  message: string;
+}): Promise<void> {
+  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/reply`, {
+    accessToken: input.accessToken,
+    method: "POST",
+    body: { message: input.message },
+  });
 }
 
-export async function markInstagramCommentReplied(input: { accessToken: string; id: string }): Promise<void> {
-  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/mark-replied`, { accessToken: input.accessToken, method: "POST" });
+export async function markInstagramCommentReplied(input: {
+  accessToken: string;
+  id: string;
+}): Promise<void> {
+  await requestJson(`/instagram/comments/${encodeURIComponent(input.id)}/mark-replied`, {
+    accessToken: input.accessToken,
+    method: "POST",
+  });
 }
 
-export async function getInstagramConnectionStatus(accessToken: string): Promise<{ connected: boolean; username: string | null; status: string }> {
-  return z.object({ connected: z.boolean(), username: z.string().nullable().optional(), status: z.string() }).parse(await requestJson("/integrations/instagram/status", { accessToken })) as { connected: boolean; username: string | null; status: string };
+export async function getInstagramConnectionStatus(
+  accessToken: string,
+): Promise<{ connected: boolean; username: string | null; status: string }> {
+  return z
+    .object({
+      connected: z.boolean(),
+      username: z.string().nullable().optional(),
+      status: z.string(),
+    })
+    .parse(await requestJson("/integrations/instagram/status", { accessToken })) as {
+    connected: boolean;
+    username: string | null;
+    status: string;
+  };
 }
 
 export type InboxConversation = {
@@ -389,19 +443,19 @@ export async function listInboxConversations(input: {
             externalId: z.string(),
             username: z.string().nullable().optional(),
             name: z.string().nullable().optional(),
-            profilePictureUrl: z.string().nullable().optional()
+            profilePictureUrl: z.string().nullable().optional(),
           }),
           lastMessagePreview: z.string().nullable().optional(),
           lastMessageAt: z.string().nullable().optional(),
-          unreadCount: z.number()
-        })
+          unreadCount: z.number(),
+        }),
       ),
-      nextCursor: z.string().nullable().optional()
+      nextCursor: z.string().nullable().optional(),
     })
     .parse(
       await requestJson(`/inbox/conversations?${params.toString()}`, {
         accessToken: input.accessToken,
-      })
+      }),
     ) as { conversations: InboxConversation[]; nextCursor: string | null };
 }
 
@@ -426,15 +480,18 @@ export async function listInboxConversationMessages(input: {
           recipient: z.string(),
           text: z.string().nullable().optional(),
           sentAt: z.string(),
-          status: z.enum(["SENT", "DELIVERED", "READ", "FAILED"])
-        })
+          status: z.enum(["SENT", "DELIVERED", "READ", "FAILED"]),
+        }),
       ),
-      nextCursor: z.string().nullable().optional()
+      nextCursor: z.string().nullable().optional(),
     })
     .parse(
-      await requestJson(`/inbox/conversations/${input.conversationId}/messages?${params.toString()}`, {
-        accessToken: input.accessToken,
-      })
+      await requestJson(
+        `/inbox/conversations/${input.conversationId}/messages?${params.toString()}`,
+        {
+          accessToken: input.accessToken,
+        },
+      ),
     ) as { messages: InboxMessage[]; nextCursor: string | null };
 }
 
@@ -445,13 +502,13 @@ export async function markInboxConversationAsRead(input: {
   return z
     .object({
       id: z.string(),
-      unreadCount: z.number()
+      unreadCount: z.number(),
     })
     .parse(
       await requestJson(`/inbox/conversations/${input.conversationId}/read`, {
         accessToken: input.accessToken,
-        method: "POST"
-      })
+        method: "POST",
+      }),
     );
 }
 
@@ -464,8 +521,8 @@ export async function sendInstagramDirectMessage(input: {
     await requestJson(`/inbox/conversations/${encodeURIComponent(input.conversationId)}/messages`, {
       accessToken: input.accessToken,
       method: "POST",
-      body: { message: input.message }
-    })
+      body: { message: input.message },
+    }),
   );
 }
 
@@ -585,12 +642,9 @@ function mapErrorCode(code: string | undefined): string | undefined {
   }
 
   const messages: Record<string, string> = {
-    GOOGLE_AUTH_REQUIRED:
-      "Conecte sua conta Google Business Profile para continuar.",
-    GOOGLE_INVALID_STATE:
-      "A conexao com o Google expirou. Inicie a conexao novamente.",
-    GOOGLE_PERMISSION_DENIED:
-      "Sua conta Google nao tem permissao para acessar esta empresa.",
+    GOOGLE_AUTH_REQUIRED: "Conecte sua conta Google Business Profile para continuar.",
+    GOOGLE_INVALID_STATE: "A conexao com o Google expirou. Inicie a conexao novamente.",
+    GOOGLE_PERMISSION_DENIED: "Sua conta Google nao tem permissao para acessar esta empresa.",
     GOOGLE_RATE_LIMITED:
       "O Google limitou temporariamente as requisicoes. Tente novamente em alguns minutos.",
     GOOGLE_TOKEN_REVOKED:

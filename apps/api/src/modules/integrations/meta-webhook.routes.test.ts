@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
+
 import { buildApi } from "../../server/app.js";
 
 const testConfig = {
@@ -21,11 +22,10 @@ const testConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 describe("meta webhook routes", () => {
-
   describe("GET /webhooks/meta", () => {
     it("returns challenge when verify token matches and mode is subscribe", async () => {
       const app = await buildApi({ config: testConfig });
@@ -33,7 +33,7 @@ describe("meta webhook routes", () => {
       const challenge = "123456789";
       const response = await app.inject({
         method: "GET",
-        url: `/webhooks/meta?hub.mode=subscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=${challenge}`
+        url: `/webhooks/meta?hub.mode=subscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=${challenge}`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -48,7 +48,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/webhooks/meta?hub.mode=subscribe&hub.verify_token=wrong-token&hub.challenge=123456"
+        url: "/webhooks/meta?hub.mode=subscribe&hub.verify_token=wrong-token&hub.challenge=123456",
       });
 
       expect(response.statusCode).toBe(403);
@@ -65,7 +65,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: `/webhooks/meta?hub.mode=unsubscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=123456`
+        url: `/webhooks/meta?hub.mode=unsubscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=123456`,
       });
 
       expect(response.statusCode).toBe(403);
@@ -81,7 +81,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/webhooks/meta"
+        url: "/webhooks/meta",
       });
 
       expect(response.statusCode).toBe(400);
@@ -94,7 +94,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: `/webhooks/meta?hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=123456`
+        url: `/webhooks/meta?hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}&hub.challenge=123456`,
       });
 
       expect(response.statusCode).toBe(400);
@@ -107,7 +107,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/webhooks/meta?hub.mode=subscribe&hub.challenge=123456"
+        url: "/webhooks/meta?hub.mode=subscribe&hub.challenge=123456",
       });
 
       expect(response.statusCode).toBe(400);
@@ -120,7 +120,7 @@ describe("meta webhook routes", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: `/webhooks/meta?hub.mode=subscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}`
+        url: `/webhooks/meta?hub.mode=subscribe&hub.verify_token=${testConfig.META_WEBHOOK_VERIFY_TOKEN}`,
       });
 
       expect(response.statusCode).toBe(400);
@@ -138,8 +138,8 @@ describe("meta webhook routes", () => {
         url: "/webhooks/meta",
         payload: {
           object: "instagram",
-          entry: []
-        }
+          entry: [],
+        },
       });
 
       expect(response.statusCode).toBe(401);
@@ -157,12 +157,12 @@ describe("meta webhook routes", () => {
         method: "POST",
         url: "/webhooks/meta",
         headers: {
-          "x-hub-signature-256": "sha256=invalid-signature"
+          "x-hub-signature-256": "sha256=invalid-signature",
         },
         payload: {
           object: "instagram",
-          entry: []
-        }
+          entry: [],
+        },
       });
 
       expect(response.statusCode).toBe(401);
@@ -180,11 +180,11 @@ describe("meta webhook routes", () => {
         method: "POST",
         url: "/webhooks/meta",
         headers: {
-          "x-hub-signature-256": "sha256=invalid-signature"
+          "x-hub-signature-256": "sha256=invalid-signature",
         },
         payload: {
-          invalid: "payload"
-        }
+          invalid: "payload",
+        },
       });
 
       expect(response.statusCode).toBe(401);

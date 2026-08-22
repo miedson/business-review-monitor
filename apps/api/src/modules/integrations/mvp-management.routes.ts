@@ -1,9 +1,10 @@
+import type { FastifyInstance, FastifyRequest } from "fastify";
+
 import {
   DisconnectGoogleConnection,
   GoogleBusinessProfileProviderError,
-  SelectBusinessLocation
+  SelectBusinessLocation,
 } from "@brm/review-monitoring";
-import type { FastifyInstance, FastifyRequest } from "fastify";
 
 import type { AuthService } from "../auth/auth.service.js";
 
@@ -11,10 +12,10 @@ const errorResponseSchema = {
   properties: {
     code: { type: "string" },
     error: { type: "string" },
-    requestId: { type: "string" }
+    requestId: { type: "string" },
   },
   required: ["error", "requestId"],
-  type: "object"
+  type: "object",
 };
 
 export type RegisterMvpManagementRoutesOptions = {
@@ -25,7 +26,7 @@ export type RegisterMvpManagementRoutesOptions = {
 
 export function registerMvpManagementRoutes(
   app: FastifyInstance,
-  options: RegisterMvpManagementRoutesOptions
+  options: RegisterMvpManagementRoutesOptions,
 ): void {
   app.post(
     "/business-locations/select",
@@ -33,21 +34,21 @@ export function registerMvpManagementRoutes(
       schema: {
         body: {
           properties: {
-            locationId: { minLength: 1, type: "string" }
+            locationId: { minLength: 1, type: "string" },
           },
           required: ["locationId"],
-          type: "object"
+          type: "object",
         },
         response: {
           204: { description: "Business location selected" },
           400: errorResponseSchema,
           401: errorResponseSchema,
-          404: errorResponseSchema
+          404: errorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
         summary: "Select business location to monitor",
-        tags: ["Business Locations"]
-      }
+        tags: ["Business Locations"],
+      },
     },
     async (request, reply) => {
       try {
@@ -56,7 +57,7 @@ export function registerMvpManagementRoutes(
 
         await options.selectBusinessLocation.execute({
           businessLocationId: body.locationId,
-          tenantId: session.tenant.id
+          tenantId: session.tenant.id,
         });
 
         return reply.status(204).send();
@@ -65,13 +66,13 @@ export function registerMvpManagementRoutes(
           return reply.status(mapProviderErrorStatus(error)).send({
             code: error.code,
             error: error.message,
-            requestId: request.id
+            requestId: request.id,
           });
         }
 
         throw error;
       }
-    }
+    },
   );
 
   app.post(
@@ -80,21 +81,21 @@ export function registerMvpManagementRoutes(
       schema: {
         params: {
           properties: {
-            id: { minLength: 1, type: "string" }
+            id: { minLength: 1, type: "string" },
           },
           required: ["id"],
-          type: "object"
+          type: "object",
         },
         response: {
           204: { description: "Business location selected" },
           400: errorResponseSchema,
           401: errorResponseSchema,
-          404: errorResponseSchema
+          404: errorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
         summary: "Select business location to monitor",
-        tags: ["Business Locations"]
-      }
+        tags: ["Business Locations"],
+      },
     },
     async (request, reply) => {
       try {
@@ -103,7 +104,7 @@ export function registerMvpManagementRoutes(
 
         await options.selectBusinessLocation.execute({
           businessLocationId: params.id,
-          tenantId: session.tenant.id
+          tenantId: session.tenant.id,
         });
 
         return reply.status(204).send();
@@ -112,13 +113,13 @@ export function registerMvpManagementRoutes(
           return reply.status(mapProviderErrorStatus(error)).send({
             code: error.code,
             error: error.message,
-            requestId: request.id
+            requestId: request.id,
           });
         }
 
         throw error;
       }
-    }
+    },
   );
 
   app.post(
@@ -128,31 +129,31 @@ export function registerMvpManagementRoutes(
         response: {
           200: {
             properties: {
-              disconnected: { type: "boolean" }
+              disconnected: { type: "boolean" },
             },
             required: ["disconnected"],
-            type: "object"
+            type: "object",
           },
-          401: errorResponseSchema
+          401: errorResponseSchema,
         },
         security: [{ bearerAuth: [] }],
         summary: "Disconnect Google Business Profile",
-        tags: ["Google Integration"]
-      }
+        tags: ["Google Integration"],
+      },
     },
     async (request) => {
       const session = await getCurrentSession(request, options.authService);
 
       return options.disconnectGoogleConnection.execute({
-        tenantId: session.tenant.id
+        tenantId: session.tenant.id,
       });
-    }
+    },
   );
 }
 
 async function getCurrentSession(
   request: FastifyRequest,
-  authService: AuthService
+  authService: AuthService,
 ): ReturnType<AuthService["getCurrentSession"]> {
   try {
     const authorization = request.headers.authorization;

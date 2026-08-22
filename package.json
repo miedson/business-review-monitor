@@ -5,6 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "prepare": "husky",
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "DATABASE_URL=postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor vitest run",
@@ -16,14 +17,19 @@
     "dev:api": "pnpm --filter @brm/api dev",
     "dev:web": "pnpm --filter @brm/web dev",
     "dev:worker": "pnpm --filter @brm/worker dev",
-    "check:deploy": "pnpm -r typecheck && pnpm --filter @brm/web build && pnpm --filter @brm/api build && pnpm --filter @brm/worker build"
+    "check:deploy": "pnpm -r typecheck && pnpm --filter @brm/web build && pnpm --filter @brm/api build && pnpm --filter @brm/worker build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
     "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
+    "prettier": "^3.9.6",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "vitest": "^2.1.8"

@@ -28,7 +28,9 @@ export type FindInstagramMessageByIdInput = {
 
 export interface InstagramMessageRepository {
   save(input: SaveInstagramMessageInput): Promise<InstagramMessage>;
-  findByConversation(input: FindInstagramMessagesInput): Promise<{ messages: InstagramMessage[]; nextCursor: string | null }>;
+  findByConversation(
+    input: FindInstagramMessagesInput,
+  ): Promise<{ messages: InstagramMessage[]; nextCursor: string | null }>;
   findByIdForTenant(input: FindInstagramMessageByIdInput): Promise<InstagramMessage | null>;
   findByExternalId(input: {
     instagramConversationId: string;

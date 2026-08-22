@@ -1,6 +1,12 @@
 "use client";
 
-import { Input as ChakraInput, Text, Field, Box, type InputProps as ChakraInputProps } from "@chakra-ui/react";
+import {
+  Box,
+  Input as ChakraInput,
+  Field,
+  Text,
+  type InputProps as ChakraInputProps,
+} from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { forwardRef, useId, useState } from "react";
 
@@ -31,7 +37,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
       type: providedType,
       ...rest
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId();
     const id = providedId ?? generatedId;
@@ -45,7 +51,9 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
     };
 
     const inputType: InputType = isPassword
-      ? (showPassword ? "text" : "password")
+      ? showPassword
+        ? "text"
+        : "password"
       : (providedType ?? "text");
 
     const describedBy = [error && errorId, hint && hintId].filter(Boolean).join(" ") || undefined;
@@ -53,9 +61,22 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
     return (
       <Field.Root disabled={disabled}>
         {label && (
-          <Field.Label htmlFor={id} css={{ fontSize: "sm", fontWeight: "medium", color: "text.secondary", mb: 1.5, display: "block" }}>
+          <Field.Label
+            htmlFor={id}
+            css={{
+              fontSize: "sm",
+              fontWeight: "medium",
+              color: "text.secondary",
+              mb: 1.5,
+              display: "block",
+            }}
+          >
             {label}
-            {required && <span style={{ color: "var(--colors-status-error-icon)", marginLeft: "0.25rem" }}>*</span>}
+            {required && (
+              <span style={{ color: "var(--colors-status-error-icon)", marginLeft: "0.25rem" }}>
+                *
+              </span>
+            )}
           </Field.Label>
         )}
         <Box
@@ -81,7 +102,16 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
           }}
         >
           {leftElement && (
-            <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", color: "text.quaternary", padding: "0 12px", height: "100%" }}>
+            <Box
+              css={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "text.quaternary",
+                padding: "0 12px",
+                height: "100%",
+              }}
+            >
               {leftElement}
             </Box>
           )}
@@ -115,9 +145,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: showPassword
-                  ? "var(--colors-brand-600)"
-                  : "var(--colors-text-quaternary)",
+                color: showPassword ? "var(--colors-brand-600)" : "var(--colors-text-quaternary)",
                 padding: "0 12px",
                 height: "100%",
                 background: "none",
@@ -127,29 +155,71 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
               }}
             >
               {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                   <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                   <circle cx="12" cy="12" r="3" />
                 </svg>
-               )}
+              )}
             </button>
           )}
           {rightElement && (
-            <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", color: "text.quaternary", padding: "0 12px", height: "100%" }}>
+            <Box
+              css={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "text.quaternary",
+                padding: "0 12px",
+                height: "100%",
+              }}
+            >
               {rightElement}
             </Box>
           )}
         </Box>
-        {error && <Text id={errorId} css={{ fontSize: "xs", color: "status.error.text", display: "flex", alignItems: "center", gap: 1 }}>{error}</Text>}
-        {hint && !error && <Text id={hintId} css={{ fontSize: "xs", color: "text.quaternary" }}>{hint}</Text>}
+        {error && (
+          <Text
+            id={errorId}
+            css={{
+              fontSize: "xs",
+              color: "status.error.text",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            {error}
+          </Text>
+        )}
+        {hint && !error && (
+          <Text id={hintId} css={{ fontSize: "xs", color: "text.quaternary" }}>
+            {hint}
+          </Text>
+        )}
       </Field.Root>
     );
-  }
+  },
 );
 
 InputWrapper.displayName = "Input";

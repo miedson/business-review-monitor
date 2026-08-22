@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type {
   BusinessProfileReviewProvider,
   ListBusinessProfileAccountsResult,
@@ -12,9 +13,7 @@ import { GoogleBusinessProfileProviderError } from "../ports/review-provider-err
 import type { TokenCipher } from "../ports/token-cipher.js";
 import { ListGoogleLocations } from "./list-google-locations.js";
 
-type GoogleConnectionRecord = Awaited<
-  ReturnType<GoogleConnectionRepository["findByTenantId"]>
->;
+type GoogleConnectionRecord = Awaited<ReturnType<GoogleConnectionRepository["findByTenantId"]>>;
 
 class FakeGoogleConnectionRepository implements GoogleConnectionRepository {
   constructor(private readonly connection: GoogleConnectionRecord) {}
@@ -50,15 +49,13 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
     throw new Error("Not implemented for this test.");
   }
 
-  async refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet> {
+  async refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet> {
     this.refreshTokenInput = input;
 
     return {
       accessToken: "access-token",
       expiresInSeconds: 3600,
-      scope: "https://www.googleapis.com/auth/business.manage"
+      scope: "https://www.googleapis.com/auth/business.manage",
     };
   }
 
@@ -71,7 +68,7 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
   }
 
   async listLocations(
-    input: Parameters<BusinessProfileReviewProvider["listLocations"]>[0]
+    input: Parameters<BusinessProfileReviewProvider["listLocations"]>[0],
   ): Promise<ListBusinessProfileLocationsResult> {
     this.locationsInput = input;
 
@@ -80,10 +77,10 @@ class FakeBusinessProfileProvider implements BusinessProfileReviewProvider {
         {
           id: "locations/2001",
           accountId: input.accountId,
-          name: "BRM Matriz"
-        }
+          name: "BRM Matriz",
+        },
       ],
-      nextPageToken: "next-page"
+      nextPageToken: "next-page",
     };
   }
 
@@ -101,25 +98,25 @@ describe("ListGoogleLocations", () => {
         tenantId: "tenant-1",
         encryptedRefreshToken: "encrypted-refresh-token",
         scope: "https://www.googleapis.com/auth/business.manage",
-        status: "CONNECTED"
+        status: "CONNECTED",
       }),
       provider,
-      tokenCipher: new FakeTokenCipher()
+      tokenCipher: new FakeTokenCipher(),
     });
 
     const result = await useCase.execute({
       tenantId: "tenant-1",
       accountId: "accounts/1001",
-      pageToken: "page-2"
+      pageToken: "page-2",
     });
 
     expect(provider.refreshTokenInput).toEqual({
-      refreshToken: "decrypted:encrypted-refresh-token"
+      refreshToken: "decrypted:encrypted-refresh-token",
     });
     expect(provider.locationsInput).toEqual({
       accessToken: "access-token",
       accountId: "accounts/1001",
-      pageToken: "page-2"
+      pageToken: "page-2",
     });
     expect(result.locations).toHaveLength(1);
     expect(result.nextPageToken).toBe("next-page");
@@ -129,14 +126,14 @@ describe("ListGoogleLocations", () => {
     const useCase = new ListGoogleLocations({
       googleConnectionRepository: new FakeGoogleConnectionRepository(null),
       provider: new FakeBusinessProfileProvider(),
-      tokenCipher: new FakeTokenCipher()
+      tokenCipher: new FakeTokenCipher(),
     });
 
     await expect(
       useCase.execute({
         tenantId: "tenant-1",
-        accountId: "accounts/1001"
-      })
+        accountId: "accounts/1001",
+      }),
     ).rejects.toBeInstanceOf(GoogleBusinessProfileProviderError);
   });
 });

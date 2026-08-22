@@ -1,25 +1,26 @@
 "use client";
 
+import { getInstagramConnectionStatus } from "@/lib/api-client";
+import { clearStoredSession, getStoredSession } from "@/lib/auth-session";
+import { useBrhRealtime } from "@/lib/use-brh-realtime";
 import {
+  Box,
   Drawer,
   DrawerBackdrop,
-  DrawerPositioner,
-  DrawerContent,
-  DrawerHeader,
   DrawerBody,
   DrawerCloseTrigger,
-  Box,
+  DrawerContent,
+  DrawerHeader,
+  DrawerPositioner,
   Flex,
-  Text,
   IconButton,
+  Text,
 } from "@chakra-ui/react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getStoredSession, clearStoredSession } from "@/lib/auth-session";
+
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { useBrhRealtime } from "@/lib/use-brh-realtime";
-import { getInstagramConnectionStatus } from "@/lib/api-client";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -35,7 +36,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const openSidebar = () => setIsSidebarOpen(true);
   const handleSidebarOpenChange = (details: { open: boolean }) => setIsSidebarOpen(details.open);
   const [session, setSession] = useState<ReturnType<typeof getStoredSession>>(null);
-  const [connectedProviders, setConnectedProviders] = useState<("google" | "instagram" | "facebook")[]>([]);
+  const [connectedProviders, setConnectedProviders] = useState<
+    ("google" | "instagram" | "facebook")[]
+  >([]);
 
   useEffect(() => {
     const stored = getStoredSession();
@@ -83,12 +86,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     router.replace("/login");
   };
 
-  const userInitials = session?.user.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) ?? "US";
+  const userInitials =
+    session?.user.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) ?? "US";
 
   if (!session) {
     return (
@@ -111,8 +115,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <Text fontWeight="semibold" fontSize="lg" color="text.primary">
                   Business Reputation Hub
                 </Text>
-                <DrawerCloseTrigger css={{ p: 1, borderRadius: "md", _hover: { bg: "surface.tertiary" } }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <DrawerCloseTrigger
+                  css={{ p: 1, borderRadius: "md", _hover: { bg: "surface.tertiary" } }}
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -175,7 +188,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   _hover: { bg: "surface.tertiary" },
                 }}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <line x1="3" y1="12" x2="21" y2="12" />
                   <line x1="3" y1="6" x2="21" y2="6" />
                   <line x1="3" y1="18" x2="21" y2="18" />
@@ -187,7 +209,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <Box
             css={{
               flex: 1,
-              pt: { base: 5, md: 7 }, px: { base: 4, md: 7, xl: 8 }, pb: { base: 6, md: 8 },
+              pt: { base: 5, md: 7 },
+              px: { base: 4, md: 7, xl: 8 },
+              pb: { base: 6, md: 8 },
               overflowX: "hidden",
               overflowY: "auto",
               scrollbarGutter: "stable",
@@ -222,9 +246,17 @@ function getPageTitle(pathname: string): string {
 function getBreadcrumb(pathname: string): Array<{ label: string; href?: string }> | undefined {
   if (pathname === "/dashboard") return [{ label: "Visão geral" }];
   if (pathname.startsWith("/inbox")) return [{ label: "Inbox" }];
-  if (pathname.startsWith("/instagram/comments")) return [{ label: "Instagram" }, { label: "Comentários" }];
-  if (pathname.startsWith("/reviews")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Avaliações" }];
-  if (pathname.startsWith("/settings/integrations")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações", href: "/settings" }, { label: "Integrações" }];
-  if (pathname.startsWith("/settings")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações" }];
+  if (pathname.startsWith("/instagram/comments"))
+    return [{ label: "Instagram" }, { label: "Comentários" }];
+  if (pathname.startsWith("/reviews"))
+    return [{ label: "Visão geral", href: "/dashboard" }, { label: "Avaliações" }];
+  if (pathname.startsWith("/settings/integrations"))
+    return [
+      { label: "Visão geral", href: "/dashboard" },
+      { label: "Configurações", href: "/settings" },
+      { label: "Integrações" },
+    ];
+  if (pathname.startsWith("/settings"))
+    return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações" }];
   return undefined;
 }

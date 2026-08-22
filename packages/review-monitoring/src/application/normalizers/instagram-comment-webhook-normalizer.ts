@@ -1,24 +1,16 @@
 import type {
-  MetaWebhookEntry,
   MetaWebhookChange,
-  MetaWebhookCommentValue
+  MetaWebhookCommentValue,
+  MetaWebhookEntry,
+  NormalizedInstagramComment,
 } from "@brm/review-monitoring";
-import type { NormalizedInstagramComment } from "@brm/review-monitoring";
 
 export interface InstagramCommentWebhookNormalizer {
-  normalize(
-    entry: MetaWebhookEntry,
-    change: MetaWebhookChange
-  ): NormalizedInstagramComment | null;
+  normalize(entry: MetaWebhookEntry, change: MetaWebhookChange): NormalizedInstagramComment | null;
 }
 
-export class DefaultInstagramCommentWebhookNormalizer
-  implements InstagramCommentWebhookNormalizer
-{
-  normalize(
-    entry: MetaWebhookEntry,
-    change: MetaWebhookChange
-  ): NormalizedInstagramComment | null {
+export class DefaultInstagramCommentWebhookNormalizer implements InstagramCommentWebhookNormalizer {
+  normalize(entry: MetaWebhookEntry, change: MetaWebhookChange): NormalizedInstagramComment | null {
     if (change.field !== "comments") {
       return null;
     }
@@ -45,7 +37,7 @@ export class DefaultInstagramCommentWebhookNormalizer
       authorUsername: from?.username ?? undefined,
       text: text ?? undefined,
       createdAtExternal: createdTime ? new Date(createdTime * 1000) : undefined,
-      rawEventId: entry.id
+      rawEventId: entry.id,
     };
   }
 

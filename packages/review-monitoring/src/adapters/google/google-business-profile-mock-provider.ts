@@ -10,12 +10,12 @@ import type {
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
   RefreshProviderAccessTokenInput,
-  RevokeProviderAuthorizationInput
+  RevokeProviderAuthorizationInput,
 } from "../../application/ports/business-profile-review-provider.js";
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
 import type {
   BusinessProfileAccount,
-  BusinessProfileLocation
+  BusinessProfileLocation,
 } from "../../domain/business-profile.js";
 import type { BusinessReview } from "../../domain/review.js";
 import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
@@ -48,14 +48,14 @@ const defaultAccounts: BusinessProfileAccount[] = [
     id: "accounts/1001",
     name: "accounts/1001",
     username: "Matriz BRM",
-    accountName: "Matriz BRM"
+    accountName: "Matriz BRM",
   },
   {
     id: "accounts/1002",
     name: "accounts/1002",
     username: "Filial BRM",
-    accountName: "Filial BRM"
-  }
+    accountName: "Filial BRM",
+  },
 ];
 
 const defaultLocations: BusinessProfileLocation[] = [
@@ -64,22 +64,22 @@ const defaultLocations: BusinessProfileLocation[] = [
     accountId: "accounts/1001",
     name: "Business Review Monitor Centro",
     storeCode: "CENTRO",
-    isVerified: true
+    isVerified: true,
   },
   {
     id: "locations/2002",
     accountId: "accounts/1001",
     name: "Business Review Monitor Norte",
     storeCode: "NORTE",
-    isVerified: true
+    isVerified: true,
   },
   {
     id: "locations/2003",
     accountId: "accounts/1002",
     name: "Business Review Monitor Sul",
     storeCode: "SUL",
-    isVerified: false
-  }
+    isVerified: false,
+  },
 ];
 
 const defaultReviews: BusinessReview[] = [
@@ -89,7 +89,7 @@ const defaultReviews: BusinessReview[] = [
     starRating: "FIVE",
     comment: "Excelente atendimento.",
     createdAt: new Date("2026-08-01T12:00:00.000Z"),
-    updatedAt: new Date("2026-08-01T12:00:00.000Z")
+    updatedAt: new Date("2026-08-01T12:00:00.000Z"),
   },
   {
     id: "reviews/3002",
@@ -97,7 +97,7 @@ const defaultReviews: BusinessReview[] = [
     starRating: "TWO",
     comment: "Demorou muito.",
     createdAt: new Date("2026-08-02T12:00:00.000Z"),
-    updatedAt: new Date("2026-08-02T12:00:00.000Z")
+    updatedAt: new Date("2026-08-02T12:00:00.000Z"),
   },
   {
     id: "reviews/3003",
@@ -105,13 +105,11 @@ const defaultReviews: BusinessReview[] = [
     starRating: "FOUR",
     comment: "Boa experiencia.",
     createdAt: new Date("2026-08-03T12:00:00.000Z"),
-    updatedAt: new Date("2026-08-03T12:00:00.000Z")
-  }
+    updatedAt: new Date("2026-08-03T12:00:00.000Z"),
+  },
 ];
 
-export class GoogleBusinessProfileMockProvider
-  implements BusinessProfileReviewProvider
-{
+export class GoogleBusinessProfileMockProvider implements BusinessProfileReviewProvider {
   private readonly authorizationBaseUrl: string;
   private readonly redirectUri: string;
   private readonly scenario: GoogleBusinessProfileMockScenario;
@@ -121,14 +119,12 @@ export class GoogleBusinessProfileMockProvider
   private readonly reviews: BusinessReview[];
 
   constructor(options: GoogleBusinessProfileMockProviderOptions = {}) {
-    this.authorizationBaseUrl =
-      options.authorizationBaseUrl ?? "https://mock.google.local/oauth";
-    this.redirectUri =
-      options.redirectUri ?? "http://localhost:3333/integrations/google/callback";
+    this.authorizationBaseUrl = options.authorizationBaseUrl ?? "https://mock.google.local/oauth";
+    this.redirectUri = options.redirectUri ?? "http://localhost:3333/integrations/google/callback";
     this.scenario = options.scenario ?? "connected";
     this.pageSize = options.pageSize ?? defaultPageSize;
     this.accounts =
-      options.scenario === "no-businesses" ? [] : options.accounts ?? defaultAccounts;
+      options.scenario === "no-businesses" ? [] : (options.accounts ?? defaultAccounts);
     this.locations = options.locations ?? defaultLocations;
     this.reviews = options.reviews ?? defaultReviews;
   }
@@ -152,12 +148,12 @@ export class GoogleBusinessProfileMockProvider
   }
 
   async exchangeAuthorizationCode(
-    input: ProviderAuthorizationCodeInput
+    input: ProviderAuthorizationCodeInput,
   ): Promise<ProviderTokenSet> {
     if (input.code.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_INVALID_CALLBACK",
-        "Invalid Google OAuth callback"
+        "Invalid Google OAuth callback",
       );
     }
 
@@ -166,20 +162,18 @@ export class GoogleBusinessProfileMockProvider
     return this.buildTokenSet({ includeRefreshToken: true });
   }
 
-  async refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet> {
+  async refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet> {
     if (input.refreshToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_REFRESH_FAILED",
-        "Google refresh token is required"
+        "Google refresh token is required",
       );
     }
 
     if (this.scenario === "refresh-token-invalid") {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_TOKEN_REVOKED",
-        "Google refresh token was revoked"
+        "Google refresh token was revoked",
       );
     }
 
@@ -188,22 +182,20 @@ export class GoogleBusinessProfileMockProvider
     return this.buildTokenSet({ includeRefreshToken: false });
   }
 
-  async revokeAuthorization(
-    input: RevokeProviderAuthorizationInput
-  ): Promise<void> {
+  async revokeAuthorization(input: RevokeProviderAuthorizationInput): Promise<void> {
     if (input.refreshToken.length === 0) {
       return;
     }
   }
 
   async listAccounts(
-    input: ListBusinessProfileAccountsInput
+    input: ListBusinessProfileAccountsInput,
   ): Promise<ListBusinessProfileAccountsResult> {
     this.assertUsableAccessToken(input.accessToken);
 
     const page = paginate(this.accounts, input.pageToken, this.pageSize);
     const result: ListBusinessProfileAccountsResult = {
-      accounts: page.items
+      accounts: page.items,
     };
 
     if (page.nextPageToken !== undefined) {
@@ -214,21 +206,19 @@ export class GoogleBusinessProfileMockProvider
   }
 
   async listLocations(
-    input: ListBusinessProfileLocationsInput
+    input: ListBusinessProfileLocationsInput,
   ): Promise<ListBusinessProfileLocationsResult> {
     this.assertUsableAccessToken(input.accessToken);
 
     const accountLocations = this.locations
       .filter((location) => location.accountId === input.accountId)
       .map((location) =>
-        this.scenario === "location-not-verified"
-          ? { ...location, isVerified: false }
-          : location
+        this.scenario === "location-not-verified" ? { ...location, isVerified: false } : location,
       );
 
     const page = paginate(accountLocations, input.pageToken, this.pageSize);
     const result: ListBusinessProfileLocationsResult = {
-      locations: page.items
+      locations: page.items,
     };
 
     if (page.nextPageToken !== undefined) {
@@ -238,34 +228,31 @@ export class GoogleBusinessProfileMockProvider
     return result;
   }
 
-  async listReviews(
-    input: ListBusinessReviewsInput
-  ): Promise<ListBusinessReviewsResult> {
+  async listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult> {
     this.assertUsableAccessToken(input.accessToken);
 
     const location = this.locations.find(
-      (candidate) =>
-        candidate.accountId === input.accountId && candidate.id === input.locationId
+      (candidate) => candidate.accountId === input.accountId && candidate.id === input.locationId,
     );
 
     if (!location) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_LOCATION_NOT_FOUND",
-        "Google Business Profile location was not found"
+        "Google Business Profile location was not found",
       );
     }
 
     if (this.scenario === "location-not-verified" || location.isVerified === false) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_LOCATION_NOT_VERIFIED",
-        "Google Business Profile location is not verified"
+        "Google Business Profile location is not verified",
       );
     }
 
     const page = paginate(this.reviews, input.pageToken, this.pageSize);
     const result: ListBusinessReviewsResult = {
       reviews: page.items,
-      totalReviewCount: this.reviews.length
+      totalReviewCount: this.reviews.length,
     };
 
     const averageRating = calculateAverageRating(this.reviews);
@@ -285,7 +272,7 @@ export class GoogleBusinessProfileMockProvider
     const tokenSet: ProviderTokenSet = {
       accessToken: mockAccessToken,
       expiresInSeconds: 3600,
-      scope: GOOGLE_BUSINESS_PROFILE_SCOPE
+      scope: GOOGLE_BUSINESS_PROFILE_SCOPE,
     };
 
     if (input.includeRefreshToken) {
@@ -299,14 +286,14 @@ export class GoogleBusinessProfileMockProvider
     if (accessToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_AUTH_REQUIRED",
-        "Google access token is required"
+        "Google access token is required",
       );
     }
 
     if (this.scenario === "token-expired") {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_AUTH_REQUIRED",
-        "Google access token expired"
+        "Google access token expired",
       );
     }
 
@@ -317,14 +304,14 @@ export class GoogleBusinessProfileMockProvider
     if (this.scenario === "api-unavailable") {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_API_UNAVAILABLE",
-        "Google Business Profile API is unavailable"
+        "Google Business Profile API is unavailable",
       );
     }
 
     if (this.scenario === "rate-limited") {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_RATE_LIMITED",
-        "Google Business Profile API rate limit reached"
+        "Google Business Profile API rate limit reached",
       );
     }
   }
@@ -333,14 +320,14 @@ export class GoogleBusinessProfileMockProvider
 function paginate<T>(
   items: T[],
   pageToken: string | undefined,
-  pageSize: number
+  pageSize: number,
 ): { items: T[]; nextPageToken?: string } {
   const start = pageToken === undefined ? 0 : Number.parseInt(pageToken, 10);
   const safeStart = Number.isNaN(start) || start < 0 ? 0 : start;
   const page = items.slice(safeStart, safeStart + pageSize);
   const nextStart = safeStart + pageSize;
   const result: { items: T[]; nextPageToken?: string } = {
-    items: page
+    items: page,
   };
 
   if (nextStart < items.length) {
@@ -355,10 +342,7 @@ function calculateAverageRating(reviews: BusinessReview[]): number | undefined {
     return undefined;
   }
 
-  const total = reviews.reduce(
-    (sum, review) => sum + starRatingToNumber(review.starRating),
-    0
-  );
+  const total = reviews.reduce((sum, review) => sum + starRatingToNumber(review.starRating), 0);
 
   return Number((total / reviews.length).toFixed(1));
 }
@@ -369,7 +353,7 @@ function starRatingToNumber(starRating: BusinessReview["starRating"]): number {
     TWO: 2,
     THREE: 3,
     FOUR: 4,
-    FIVE: 5
+    FIVE: 5,
   } satisfies Record<BusinessReview["starRating"], number>;
 
   return values[starRating];

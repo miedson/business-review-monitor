@@ -3,82 +3,75 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
+import { Queue } from "bullmq";
+import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import { ZodError } from "zod";
+
 import type { AppConfig } from "@brm/config";
 import { loadConfig } from "@brm/config";
 import { prisma } from "@brm/database";
 import {
-  DisconnectGoogleConnection,
-  PrismaReviewCacheRepository,
-  SelectBusinessLocation
-} from "@brm/review-monitoring";
-import {
   CompleteGoogleOAuthCallback,
+  CompleteInstagramOAuthCallback,
+  DisconnectGoogleConnection,
+  DisconnectInstagramConnection,
   EncryptionTokenCipher,
   GoogleBusinessProfileApiProvider,
   GoogleBusinessProfileMockProvider,
-  ListGoogleAccounts,
-  PrismaGoogleConnectionRepository,
-  StartGoogleOAuthConnection
-} from "@brm/review-monitoring";
-import {
-  CompleteInstagramOAuthCallback,
-  DisconnectInstagramConnection,
   InstagramApiMockProvider,
   InstagramApiProvider,
+  ListGoogleAccounts,
+  ListGoogleLocations,
+  ListGoogleReviews,
   ListInstagramAccounts,
   ListInstagramComments,
-  PrismaInstagramConnectionRepository,
-  PrismaInstagramCommentRepository,
-  StartInstagramOAuthConnection
-} from "@brm/review-monitoring";
-import {
-  ListInstagramConversations,
   ListInstagramConversationMessages,
+  ListInstagramConversations,
   MarkInstagramConversationAsRead,
-  SendInstagramDirectMessage,
+  PrismaBusinessLocationRepository,
+  PrismaGoogleConnectionRepository,
+  PrismaInstagramCommentRepository,
+  PrismaInstagramConnectionRepository,
   PrismaInstagramConversationRepository,
-  PrismaInstagramMessageRepository
+  PrismaInstagramMessageRepository,
+  PrismaReviewCacheRepository,
+  RequestGoogleReviewSync,
+  SelectBusinessLocation,
+  SendInstagramDirectMessage,
+  StartGoogleOAuthConnection,
+  StartInstagramOAuthConnection,
 } from "@brm/review-monitoring";
 import { createEncryptionServiceFromBase64Key } from "@brm/shared";
-import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
-import { ZodError } from "zod";
+
 import { registerAuthRoutes } from "../modules/auth/auth.routes.js";
 import { AuthService } from "../modules/auth/auth.service.js";
 import { UserRepository } from "../modules/auth/user.repository.js";
 import { registerDevSwagger } from "../modules/dev-docs/dev-swagger.js";
+import { registerAttentionSummaryRoute } from "../modules/integrations/attention-summary.routes.js";
 import {
   BullMqReviewSyncJobScheduler,
-  googleReviewSyncQueueName
+  googleReviewSyncQueueName,
 } from "../modules/integrations/bullmq-review-sync-job-scheduler.js";
 import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-integration.routes.js";
-import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
-import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
-import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
-import { registerInboxRoutes } from "../modules/integrations/inbox.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
+import { registerInboxRoutes } from "../modules/integrations/inbox.routes.js";
+import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
+import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
+import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
-import {
-  createBullMqConnection,
-  createRedisClient
-} from "../modules/integrations/redis-connection.js";
-import { RedisManualSyncRateLimiter } from "../modules/integrations/redis-manual-sync-rate-limiter.js";
-import { registerAttentionSummaryRoute } from "../modules/integrations/attention-summary.routes.js";
+import { metaWebhookQueueName } from "../modules/integrations/queue-names.js";
 import { RealtimeGateway } from "../modules/integrations/realtime-gateway.js";
 import { registerRealtimeRoute } from "../modules/integrations/realtime.routes.js";
+import {
+  createBullMqConnection,
+  createRedisClient,
+} from "../modules/integrations/redis-connection.js";
+import { RedisManualSyncRateLimiter } from "../modules/integrations/redis-manual-sync-rate-limiter.js";
 import { registerNotificationRoutes } from "../modules/notifications/notifications.routes.js";
 
 export type BuildApiOptions = {
   config?: AppConfig;
 };
-
-import { ListGoogleLocations } from "@brm/review-monitoring";
-import { ListGoogleReviews } from "@brm/review-monitoring";
-import {
-  PrismaBusinessLocationRepository,
-  RequestGoogleReviewSync
-} from "@brm/review-monitoring";
-import { Queue } from "bullmq";
-import { metaWebhookQueueName } from "../modules/integrations/queue-names.js";
 
 export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
@@ -92,35 +85,35 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
           "req.query.state",
           "req.headers.authorization",
           "req.headers.cookie",
-          "res.headers['set-cookie']"
+          "res.headers['set-cookie']",
         ],
-        censor: "[REDACTED]"
-      }
+        censor: "[REDACTED]",
+      },
     },
-    genReqId: () => crypto.randomUUID()
+    genReqId: () => crypto.randomUUID(),
   });
 
   await app.register(helmet);
   await app.register(cors, {
     origin: config.WEB_URL,
-    credentials: true
+    credentials: true,
   });
   await app.register(rateLimit, {
     max: 100,
-    timeWindow: "1 minute"
+    timeWindow: "1 minute",
   });
   await app.register(cookie, {
-    secret: config.JWT_REFRESH_SECRET
+    secret: config.JWT_REFRESH_SECRET,
   });
   await app.register(jwt, {
-    secret: config.JWT_ACCESS_SECRET
+    secret: config.JWT_ACCESS_SECRET,
   });
 
   app.setErrorHandler((error: FastifyError | ZodError, request, reply) => {
     if (error instanceof ZodError) {
       return reply.status(400).send({
         error: "Invalid request body",
-        requestId: request.id
+        requestId: request.id,
       });
     }
 
@@ -129,8 +122,8 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     const logPayload = {
       err: {
         message: error.message,
-        name: error.name
-      }
+        name: error.name,
+      },
     };
 
     if (statusCode >= 500) {
@@ -141,7 +134,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
 
     return reply.status(statusCode).send({
       error: message,
-      requestId: request.id
+      requestId: request.id,
     });
   });
 
@@ -175,15 +168,15 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
             type: "object",
             required: ["status"],
             properties: {
-              status: { type: "string" }
-            }
-          }
-        }
-      }
+              status: { type: "string" },
+            },
+          },
+        },
+      },
     },
     async () => ({
-      status: "ok"
-    })
+      status: "ok",
+    }),
   );
 
   const userRepository = new UserRepository(prisma);
@@ -192,69 +185,69 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     jwt: app.jwt,
     refreshSecret: config.JWT_REFRESH_SECRET,
     secureCookies: isProduction,
-    refreshCookieSameSite: isProduction ? "none" : "lax"
+    refreshCookieSameSite: isProduction ? "none" : "lax",
   });
   const googleProvider =
     config.GOOGLE_PROVIDER === "mock"
       ? new GoogleBusinessProfileMockProvider({
-          redirectUri: config.GOOGLE_REDIRECT_URI
+          redirectUri: config.GOOGLE_REDIRECT_URI,
         })
       : new GoogleBusinessProfileApiProvider({
           clientId: config.GOOGLE_CLIENT_ID,
           clientSecret: config.GOOGLE_CLIENT_SECRET,
-          redirectUri: config.GOOGLE_REDIRECT_URI
+          redirectUri: config.GOOGLE_REDIRECT_URI,
         });
   const instagramProvider =
     config.META_PROVIDER === "mock"
       ? new InstagramApiMockProvider({
-          redirectUri: config.META_INSTAGRAM_REDIRECT_URI
+          redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
         })
       : new InstagramApiProvider({
           appId: config.META_APP_ID,
           appSecret: config.META_APP_SECRET,
           redirectUri: config.META_INSTAGRAM_REDIRECT_URI,
           graphApiVersion: config.META_GRAPH_API_VERSION,
-          logger: app.log
+          logger: app.log,
         });
   const stateStore = new InMemoryOAuthStateStore({
-    ttlMs: 10 * 60 * 1000
+    ttlMs: 10 * 60 * 1000,
   });
   const googleConnectionRepository = new PrismaGoogleConnectionRepository(prisma);
   const instagramConnectionRepository = new PrismaInstagramConnectionRepository(prisma);
   const businessLocationRepository = new PrismaBusinessLocationRepository(prisma);
   const reviewCacheRepository = new PrismaReviewCacheRepository(prisma);
   const tokenCipher = new EncryptionTokenCipher(
-    createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY)
+    createEncryptionServiceFromBase64Key(config.TOKEN_ENCRYPTION_KEY),
   );
   const startGoogleOAuthConnection = new StartGoogleOAuthConnection({
     provider: googleProvider,
-    stateStore
+    stateStore,
   });
   const completeGoogleOAuthCallback = new CompleteGoogleOAuthCallback({
     provider: googleProvider,
     stateStore,
     tokenCipher,
     googleConnectionRepository,
-    now: () => new Date()
+    now: () => new Date(),
   });
   const listGoogleAccounts = new ListGoogleAccounts({
     googleConnectionRepository,
     provider: googleProvider,
-    tokenCipher
+    tokenCipher,
   });
   const listGoogleLocations = new ListGoogleLocations({
     googleConnectionRepository,
     provider: googleProvider,
-    tokenCipher
+    tokenCipher,
   });
   const listGoogleReviews = new ListGoogleReviews({
     googleConnectionRepository,
     provider: googleProvider,
-    tokenCipher
+    tokenCipher,
   });
   const startInstagramOAuthConnection = new StartInstagramOAuthConnection({
     provider: instagramProvider,
-    stateStore
+    stateStore,
   });
   const completeInstagramOAuthCallback = new CompleteInstagramOAuthCallback({
     provider: instagramProvider,
@@ -262,50 +255,50 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     tokenCipher,
     instagramConnectionRepository,
     now: () => new Date(),
-    logger: app.log
+    logger: app.log,
   });
   const listInstagramAccounts = new ListInstagramAccounts({
     instagramConnectionRepository,
     provider: instagramProvider,
-    tokenCipher
+    tokenCipher,
   });
   const instagramCommentRepository = new PrismaInstagramCommentRepository(prisma);
   const instagramConversationRepository = new PrismaInstagramConversationRepository(prisma);
   const instagramMessageRepository = new PrismaInstagramMessageRepository(prisma);
   const listInstagramComments = new ListInstagramComments({
-    instagramCommentRepository
+    instagramCommentRepository,
   });
   const listInstagramConversations = new ListInstagramConversations({
-    instagramConversationRepository
+    instagramConversationRepository,
   });
   const listInstagramConversationMessages = new ListInstagramConversationMessages({
-    instagramMessageRepository
+    instagramMessageRepository,
   });
   const markInstagramConversationAsRead = new MarkInstagramConversationAsRead({
-    instagramConversationRepository
+    instagramConversationRepository,
   });
   const sendInstagramDirectMessage = new SendInstagramDirectMessage({
     instagramConnectionRepository,
     instagramConversationRepository,
     instagramMessageRepository,
     instagramProvider,
-    tokenCipher
+    tokenCipher,
   });
   const disconnectInstagramConnection = new DisconnectInstagramConnection({
     instagramConnectionRepository,
     instagramCommentRepository,
     provider: instagramProvider,
-    tokenCipher
+    tokenCipher,
   });
   const redis = createRedisClient(config.REDIS_URL);
   const realtimeGateway = new RealtimeGateway(redis);
   const googleReviewSyncQueue = new Queue(googleReviewSyncQueueName, {
     connection: createBullMqConnection(config.REDIS_URL),
-    prefix: config.BRM_QUEUE_PREFIX
+    prefix: config.BRM_QUEUE_PREFIX,
   });
   const metaWebhookQueue = new Queue(metaWebhookQueueName, {
     connection: createBullMqConnection(config.REDIS_URL),
-    prefix: config.BRM_QUEUE_PREFIX
+    prefix: config.BRM_QUEUE_PREFIX,
   });
   app.addHook("onClose", async () => {
     await realtimeGateway.close();
@@ -316,17 +309,17 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   const requestGoogleReviewSync = new RequestGoogleReviewSync({
     businessLocationRepository,
     rateLimiter: new RedisManualSyncRateLimiter(redis),
-    jobScheduler: new BullMqReviewSyncJobScheduler(googleReviewSyncQueue)
+    jobScheduler: new BullMqReviewSyncJobScheduler(googleReviewSyncQueue),
   });
   const selectBusinessLocation = new SelectBusinessLocation({
-    businessLocationRepository
+    businessLocationRepository,
   });
   const disconnectGoogleConnection = new DisconnectGoogleConnection({
     businessLocationRepository,
     googleConnectionRepository,
     provider: googleProvider,
     reviewCacheRepository,
-    tokenCipher
+    tokenCipher,
   });
 
   registerAuthRoutes(app, authService);
@@ -349,7 +342,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     realtimeGateway,
     selectBusinessLocation,
     disconnectGoogleConnection,
-    webUrl: config.WEB_URL
+    webUrl: config.WEB_URL,
   });
   registerInstagramIntegrationRoutes(app, {
     authService,
@@ -358,7 +351,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     listInstagramAccounts,
     disconnectInstagramConnection,
     instagramConnectionRepository,
-    webUrl: config.WEB_URL
+    webUrl: config.WEB_URL,
   });
   registerInstagramCommentsRoutes(app, {
     authService,
@@ -367,7 +360,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     instagramConnectionRepository,
     instagramProvider,
     tokenCipher,
-    realtimeGateway
+    realtimeGateway,
   });
 
   registerInboxRoutes(app, {
@@ -376,21 +369,21 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     listInstagramConversationMessages,
     markInstagramConversationAsRead,
     sendInstagramDirectMessage,
-    realtimeGateway
+    realtimeGateway,
   });
 
   registerMvpManagementRoutes(app, {
     authService,
     disconnectGoogleConnection,
-    selectBusinessLocation
+    selectBusinessLocation,
   });
 
   registerMetaWebhookRoutes(app, {
     config: {
       metaWebhookVerifyToken: config.META_WEBHOOK_VERIFY_TOKEN,
-      metaAppSecret: config.META_APP_SECRET
+      metaAppSecret: config.META_APP_SECRET,
     },
-    metaWebhookQueue
+    metaWebhookQueue,
   });
 
   return app;

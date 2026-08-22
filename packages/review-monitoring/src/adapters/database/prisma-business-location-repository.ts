@@ -5,21 +5,21 @@ import type {
   FindBusinessLocationByGoogleIdsInput,
   MarkBusinessLocationSyncedInput,
   SelectBusinessLocationInput,
-  StoredBusinessLocation
+  StoredBusinessLocation,
 } from "../../application/ports/business-location-repository.js";
 
 export class PrismaBusinessLocationRepository implements BusinessLocationRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByGoogleIds(
-    input: FindBusinessLocationByGoogleIdsInput
+    input: FindBusinessLocationByGoogleIdsInput,
   ): Promise<StoredBusinessLocation | null> {
     const location = await this.prisma.businessLocation.findFirst({
       where: {
         googleAccountId: input.googleAccountId,
         googleLocationId: input.googleLocationId,
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return location ? toStoredBusinessLocation(location) : null;
@@ -28,25 +28,22 @@ export class PrismaBusinessLocationRepository implements BusinessLocationReposit
   async markSynced(input: MarkBusinessLocationSyncedInput): Promise<void> {
     await this.prisma.businessLocation.updateMany({
       data: {
-        lastSyncedAt: input.syncedAt
+        lastSyncedAt: input.syncedAt,
       },
       where: {
-        id: input.businessLocationId
-      }
+        id: input.businessLocationId,
+      },
     });
   }
 
   async selectForTenant(
-    input: SelectBusinessLocationInput
+    input: SelectBusinessLocationInput,
   ): Promise<StoredBusinessLocation | null> {
     const location = await this.prisma.businessLocation.findFirst({
       where: {
-        OR: [
-          { id: input.businessLocationId },
-          { googleLocationId: input.businessLocationId }
-        ],
-        tenantId: input.tenantId
-      }
+        OR: [{ id: input.businessLocationId }, { googleLocationId: input.businessLocationId }],
+        tenantId: input.tenantId,
+      },
     });
 
     if (!location) {
@@ -56,15 +53,15 @@ export class PrismaBusinessLocationRepository implements BusinessLocationReposit
     await this.prisma.$transaction([
       this.prisma.businessLocation.updateMany({
         data: { isSelected: false },
-        where: { tenantId: input.tenantId }
+        where: { tenantId: input.tenantId },
       }),
       this.prisma.businessLocation.update({
         data: {
           isActive: true,
-          isSelected: true
+          isSelected: true,
         },
-        where: { id: location.id }
-      })
+        where: { id: location.id },
+      }),
     ]);
 
     return toStoredBusinessLocation({ ...location, isSelected: true });
@@ -74,9 +71,9 @@ export class PrismaBusinessLocationRepository implements BusinessLocationReposit
     await this.prisma.businessLocation.updateMany({
       data: {
         isActive: false,
-        isSelected: false
+        isSelected: false,
       },
-      where: { tenantId }
+      where: { tenantId },
     });
   }
 
@@ -84,29 +81,26 @@ export class PrismaBusinessLocationRepository implements BusinessLocationReposit
     const locations = await this.prisma.businessLocation.findMany({
       where: {
         isActive: true,
-        isSelected: true
-      }
+        isSelected: true,
+      },
     });
 
     return locations.map(toStoredBusinessLocation);
   }
 }
 
-type PrismaBusinessLocation = Awaited<
-  ReturnType<PrismaClient["businessLocation"]["findFirst"]>
-> extends infer Location
-  ? NonNullable<Location>
-  : never;
+type PrismaBusinessLocation =
+  Awaited<ReturnType<PrismaClient["businessLocation"]["findFirst"]>> extends infer Location
+    ? NonNullable<Location>
+    : never;
 
-function toStoredBusinessLocation(
-  location: PrismaBusinessLocation
-): StoredBusinessLocation {
+function toStoredBusinessLocation(location: PrismaBusinessLocation): StoredBusinessLocation {
   return {
     googleAccountId: location.googleAccountId,
     googleLocationId: location.googleLocationId,
     id: location.id,
     isActive: location.isActive,
     name: location.name,
-    tenantId: location.tenantId
+    tenantId: location.tenantId,
   };
 }

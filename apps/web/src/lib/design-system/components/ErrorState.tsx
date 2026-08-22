@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Text, Button } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
 
@@ -60,7 +60,7 @@ const ErrorState = forwardRef<HTMLDivElement, ErrorStateProps>(
       className,
       ...rest
     },
-    ref
+    ref,
   ) => {
     const { p, gap, iconSize, titleSize, descSize } = sizes[size];
     const toneConfig = tones[tone];
@@ -84,9 +84,26 @@ const ErrorState = forwardRef<HTMLDivElement, ErrorStateProps>(
         className={className}
         {...rest}
       >
-        <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, w: iconSize, h: iconSize, color: toneConfig.iconColor }}>
+        <Box
+          css={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            w: iconSize,
+            h: iconSize,
+            color: toneConfig.iconColor,
+          }}
+        >
           {icon ?? (
-            <svg width={iconSize * 0.6} height={iconSize * 0.6} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width={iconSize * 0.6}
+              height={iconSize * 0.6}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               {tone === "error" ? (
                 <>
                   <circle cx="12" cy="12" r="10" />
@@ -103,20 +120,63 @@ const ErrorState = forwardRef<HTMLDivElement, ErrorStateProps>(
             </svg>
           )}
         </Box>
-        {title && <Text css={{ fontSize: titleSize, fontWeight: "semibold", color: "text.primary", lineHeight: "snug", margin: 0 }}>{title}</Text>}
-        <Text css={{ fontSize: descSize, color: "text.secondary", lineHeight: "normal", margin: 0, maxWidth: "400px" }}>
+        {title && (
+          <Text
+            css={{
+              fontSize: titleSize,
+              fontWeight: "semibold",
+              color: "text.primary",
+              lineHeight: "snug",
+              margin: 0,
+            }}
+          >
+            {title}
+          </Text>
+        )}
+        <Text
+          css={{
+            fontSize: descSize,
+            color: "text.secondary",
+            lineHeight: "normal",
+            margin: 0,
+            maxWidth: "400px",
+          }}
+        >
           {message}
         </Text>
         {(action || secondaryAction) && (
-          <Box css={{ display: "flex", alignItems: "center", gap: 3, mt: 2, flexWrap: "wrap", justifyContent: "center", width: "full" }}>
-            {secondaryAction && <Button variant="ghost" size="sm" onClick={secondaryAction.onClick}>{secondaryAction.label}</Button>}
-            {action && <Button variant={action.variant ?? "solid"} colorScheme={toneConfig.colorScheme} size="md" onClick={action.onClick}>{action.label}</Button>}
+          <Box
+            css={{
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              mt: 2,
+              flexWrap: "wrap",
+              justifyContent: "center",
+              width: "full",
+            }}
+          >
+            {secondaryAction && (
+              <Button variant="ghost" size="sm" onClick={secondaryAction.onClick}>
+                {secondaryAction.label}
+              </Button>
+            )}
+            {action && (
+              <Button
+                variant={action.variant ?? "solid"}
+                colorScheme={toneConfig.colorScheme}
+                size="md"
+                onClick={action.onClick}
+              >
+                {action.label}
+              </Button>
+            )}
           </Box>
         )}
         {children}
       </Box>
     );
-  }
+  },
 );
 
 ErrorState.displayName = "ErrorState";

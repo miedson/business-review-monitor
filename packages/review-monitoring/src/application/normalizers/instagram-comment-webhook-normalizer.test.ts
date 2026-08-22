@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { DefaultInstagramCommentWebhookNormalizer } from "@brm/review-monitoring";
-import type { MetaWebhookEntry, MetaWebhookChange } from "@brm/review-monitoring";
+import type { MetaWebhookChange, MetaWebhookEntry } from "@brm/review-monitoring";
 
 describe("DefaultInstagramCommentWebhookNormalizer", () => {
   const normalizer = new DefaultInstagramCommentWebhookNormalizer();
@@ -9,12 +10,12 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     id: "instagram_account_123",
     time: 1700000000,
     changes: [],
-    ...overrides
+    ...overrides,
   });
 
   const createChange = (value: Record<string, unknown>, field = "comments"): MetaWebhookChange => ({
     field,
-    value
+    value,
   });
 
   it("normalizes a valid comment payload (test format)", () => {
@@ -24,7 +25,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
       comment_id: "comment_789",
       from: { id: "user_111", username: "testuser" },
       created_time: 1700000000,
-      text: "Great post!"
+      text: "Great post!",
     });
 
     const result = normalizer.normalize(entry, change);
@@ -46,7 +47,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
       id: "comment_789",
       media: { id: "media_456" },
       from: { id: "user_111", username: "testuser" },
-      text: "Real comment from Meta"
+      text: "Real comment from Meta",
     });
 
     const result = normalizer.normalize(entry, change);
@@ -68,7 +69,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
       id: "comment_789",
       media: "media_456",
       from: { id: "user_111" },
-      text: "Comment with string media"
+      text: "Comment with string media",
     });
 
     const result = normalizer.normalize(entry, change);
@@ -86,7 +87,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     const entry = createEntry();
     const change = createChange({
       comment_id: "comment_789",
-      from: { id: "user_111" }
+      from: { id: "user_111" },
     });
 
     const result = normalizer.normalize(entry, change);
@@ -101,10 +102,13 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
 
   it("returns null for non-comment field", () => {
     const entry = createEntry();
-    const change = createChange({
-      media_id: "media_456",
-      comment_id: "comment_789"
-    }, "mentions");
+    const change = createChange(
+      {
+        media_id: "media_456",
+        comment_id: "comment_789",
+      },
+      "mentions",
+    );
 
     const result = normalizer.normalize(entry, change);
 
@@ -115,7 +119,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     const entry = createEntry();
     const change = createChange({
       media_id: "media_456",
-      from: { id: "user_111" }
+      from: { id: "user_111" },
     });
 
     const result = normalizer.normalize(entry, change);
@@ -127,7 +131,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     const entry = createEntry();
     const change = createChange({
       media: { id: "media_456" },
-      from: { id: "user_111" }
+      from: { id: "user_111" },
     });
 
     const result = normalizer.normalize(entry, change);
@@ -139,7 +143,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     const entry = createEntry();
     const change = createChange({
       comment_id: "comment_789",
-      text: "Comment without author"
+      text: "Comment without author",
     });
 
     const result = normalizer.normalize(entry, change);
@@ -155,7 +159,7 @@ describe("DefaultInstagramCommentWebhookNormalizer", () => {
     const change = createChange({
       id: "comment_789",
       media: { id: "media_456" },
-      text: "Real comment without author"
+      text: "Real comment without author",
     });
 
     const result = normalizer.normalize(entry, change);

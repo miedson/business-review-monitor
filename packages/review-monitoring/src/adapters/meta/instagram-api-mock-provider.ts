@@ -9,7 +9,7 @@ import type {
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
   RefreshProviderAccessTokenInput,
-  RevokeProviderAuthorizationInput
+  RevokeProviderAuthorizationInput,
 } from "../../application/ports/business-profile-review-provider.js";
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
 import { INSTAGRAM_SCOPE_STRING } from "./instagram.constants.js";
@@ -55,8 +55,20 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     this.throwScenarioError();
     return { id: `mock-message-${Date.now()}` };
   }
-  async getExternalUserProfile(_accessToken: string, userId: string): Promise<InstagramUserProfile> { return { id: userId, username: `user_${userId}`, account_type: "" }; }
-  async getMediaMetadata(_accessToken: string, mediaId: string): Promise<import("../../application/ports/business-profile-review-provider.js").InstagramMediaMetadata> { return { id: mediaId, media_type: "IMAGE", media_product_type: "FEED" }; }
+  async getExternalUserProfile(
+    _accessToken: string,
+    userId: string,
+  ): Promise<InstagramUserProfile> {
+    return { id: userId, username: `user_${userId}`, account_type: "" };
+  }
+  async getMediaMetadata(
+    _accessToken: string,
+    mediaId: string,
+  ): Promise<
+    import("../../application/ports/business-profile-review-provider.js").InstagramMediaMetadata
+  > {
+    return { id: mediaId, media_type: "IMAGE", media_product_type: "FEED" };
+  }
 
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {
     const url = new URL(this.authorizationBaseUrl);
@@ -71,12 +83,12 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
   }
 
   async exchangeAuthorizationCode(
-    input: ProviderAuthorizationCodeInput
+    input: ProviderAuthorizationCodeInput,
   ): Promise<ProviderTokenSet> {
     if (input.code.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_INVALID_CALLBACK",
-        "Instagram OAuth authorization code is required"
+        "Instagram OAuth authorization code is required",
       );
     }
 
@@ -86,24 +98,22 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
       accessToken: mockLongLivedToken,
       expiresInSeconds: 5184000,
       refreshToken: undefined,
-      scope: INSTAGRAM_SCOPE_STRING
+      scope: INSTAGRAM_SCOPE_STRING,
     };
   }
 
-  async refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet> {
+  async refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet> {
     if (input.refreshToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_REFRESH_FAILED",
-        "Instagram refresh token is required"
+        "Instagram refresh token is required",
       );
     }
 
     if (this.scenario === "refresh-token-invalid") {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_TOKEN_REVOKED",
-        "Instagram authorization was revoked"
+        "Instagram authorization was revoked",
       );
     }
 
@@ -113,20 +123,18 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
       accessToken: mockLongLivedToken,
       expiresInSeconds: 5184000,
       refreshToken: input.refreshToken,
-      scope: INSTAGRAM_SCOPE_STRING
+      scope: INSTAGRAM_SCOPE_STRING,
     };
   }
 
-  async revokeAuthorization(
-    input: RevokeProviderAuthorizationInput
-  ): Promise<void> {
+  async revokeAuthorization(input: RevokeProviderAuthorizationInput): Promise<void> {
     if (input.refreshToken.length === 0) {
       return;
     }
   }
 
   async listAccounts(
-    input: ListBusinessProfileAccountsInput
+    input: ListBusinessProfileAccountsInput,
   ): Promise<ListBusinessProfileAccountsResult> {
     this.assertUsableAccessToken(input.accessToken);
 
@@ -136,15 +144,15 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
           id: mockUserId,
           name: mockUsername,
           username: mockUsername,
-          accountName: mockUsername
-        }
-      ]
+          accountName: mockUsername,
+        },
+      ],
     };
   }
 
   async listLocations(): Promise<ListBusinessProfileLocationsResult> {
     return {
-      locations: []
+      locations: [],
     };
   }
 
@@ -152,7 +160,7 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     return {
       reviews: [],
       averageRating: 0,
-      totalReviewCount: 0
+      totalReviewCount: 0,
     };
   }
 
@@ -162,19 +170,20 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     return {
       id: mockUserId,
       username: mockUsername,
-      account_type: mockAccountType
+      account_type: mockAccountType,
     };
   }
 
-  async resolveWebhookAccountId(
-    input: { webhookAccountId: string; accessToken: string }
-  ): Promise<{ id: string; username?: string; accountType?: string }> {
+  async resolveWebhookAccountId(input: {
+    webhookAccountId: string;
+    accessToken: string;
+  }): Promise<{ id: string; username?: string; accountType?: string }> {
     this.assertUsableAccessToken(input.accessToken);
 
     return {
       id: mockUserId,
       username: mockUsername,
-      accountType: mockAccountType
+      accountType: mockAccountType,
     };
   }
 
@@ -182,14 +191,14 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     if (accessToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_AUTH_REQUIRED",
-        "Instagram access token is required"
+        "Instagram access token is required",
       );
     }
 
     if (this.scenario === "token-expired") {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_AUTH_REQUIRED",
-        "Instagram access token expired"
+        "Instagram access token expired",
       );
     }
 
@@ -200,21 +209,21 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     if (this.scenario === "api-unavailable") {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_API_UNAVAILABLE",
-        "Instagram Graph API is unavailable"
+        "Instagram Graph API is unavailable",
       );
     }
 
     if (this.scenario === "rate-limited") {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_RATE_LIMITED",
-        "Instagram Graph API rate limit reached"
+        "Instagram Graph API rate limit reached",
       );
     }
 
     if (this.scenario === "permission-denied") {
       throw new GoogleBusinessProfileProviderError(
         "INSTAGRAM_PERMISSION_DENIED",
-        "Instagram permission denied"
+        "Instagram permission denied",
       );
     }
   }

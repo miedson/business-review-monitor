@@ -1,23 +1,22 @@
 "use client";
 
+import { login } from "@/lib/api-client";
+import { getStoredSession, storeSession } from "@/lib/auth-session";
 import {
-  Box,
-  Button,
-  Input,
   Alert,
   AppBrand,
-  Text,
-  Flex,
+  Box,
+  Button,
   Link as ChakraLink,
+  Flex,
   Heading,
+  Input,
+  Text,
 } from "@/lib/design-system";
+import { unstable_noStore } from "next/cache";
 import NextLink from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type FormEvent, useState, useEffect } from "react";
-import { unstable_noStore } from "next/cache";
-
-import { login } from "@/lib/api-client";
-import { storeSession, getStoredSession } from "@/lib/auth-session";
+import { useEffect, useState, type FormEvent } from "react";
 
 const pageBackgroundCss = {
   minH: "100vh",
@@ -70,9 +69,7 @@ export default function LoginPage() {
       const redirectTo = searchParams.get("next") || "/dashboard";
       router.replace(redirectTo);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Não foi possível entrar."
-      );
+      setErrorMessage(error instanceof Error ? error.message : "Não foi possível entrar.");
     } finally {
       setIsSubmitting(false);
     }
@@ -81,9 +78,7 @@ export default function LoginPage() {
   if (isCheckingAuth) {
     return (
       <Box css={pageBackgroundCss}>
-        <Box
-          css={{ display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
+        <Box css={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Text color="text.secondary">Carregando...</Text>
         </Box>
       </Box>
@@ -93,7 +88,9 @@ export default function LoginPage() {
   return (
     <Box css={pageBackgroundCss}>
       <Box css={cardCss}>
-        <Box css={{ display: "flex", justifyContent: "center", mb: 8 }}><AppBrand size="auth" /></Box>
+        <Box css={{ display: "flex", justifyContent: "center", mb: 8 }}>
+          <AppBrand size="auth" />
+        </Box>
 
         <Heading as="h1" fontSize="xl" fontWeight="semibold" color="text.primary" mb={1}>
           Entrar na sua conta
@@ -104,12 +101,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (
-            <Alert
-              tone="error"
-              onClose={() => setErrorMessage(null)}
-              dismissible
-              mb={5}
-            >
+            <Alert tone="error" onClose={() => setErrorMessage(null)} dismissible mb={5}>
               {errorMessage}
             </Alert>
           )}
@@ -118,7 +110,8 @@ export default function LoginPage() {
             css={{
               display: "flex",
               flexDirection: "column",
-            gap: 4, mb: 5,
+              gap: 4,
+              mb: 5,
             }}
           >
             <Input
@@ -143,13 +136,7 @@ export default function LoginPage() {
             />
           </Box>
 
-          <Button
-            type="submit"
-            w="full"
-            size="lg"
-            loading={isSubmitting}
-            mb={6}
-          >
+          <Button type="submit" w="full" size="lg" loading={isSubmitting} mb={6}>
             Entrar
           </Button>
 

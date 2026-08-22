@@ -10,6 +10,6 @@ export type ScheduleGoogleReviewSyncResult = {
 
 export interface ReviewSyncJobScheduler {
   scheduleGoogleReviewSync(
-    input: ScheduleGoogleReviewSyncInput
+    input: ScheduleGoogleReviewSyncInput,
   ): Promise<ScheduleGoogleReviewSyncResult>;
 }

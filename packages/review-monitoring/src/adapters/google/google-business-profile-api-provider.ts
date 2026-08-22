@@ -1,21 +1,22 @@
 import type {
-  ListBusinessProfileAccountsInput,
   BusinessProfileReviewProvider,
+  ListBusinessProfileAccountsInput,
   ListBusinessProfileAccountsResult,
+  ListBusinessProfileLocationsInput,
   ListBusinessProfileLocationsResult,
+  ListBusinessReviewsInput,
   ListBusinessReviewsResult,
-  ReplyToGoogleReviewInput,
   ProviderAuthorizationCodeInput,
   ProviderAuthorizationUrlInput,
   ProviderTokenSet,
   RefreshProviderAccessTokenInput,
-  RevokeProviderAuthorizationInput
+  ReplyToGoogleReviewInput,
+  RevokeProviderAuthorizationInput,
 } from "../../application/ports/business-profile-review-provider.js";
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
 import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
 
-const googleAuthorizationEndpoint =
-  "https://accounts.google.com/o/oauth2/v2/auth";
+const googleAuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
 const googleTokenEndpoint = "https://oauth2.googleapis.com/token";
 const googleRevokeEndpoint = "https://oauth2.googleapis.com/revoke";
 
@@ -62,15 +63,7 @@ type GoogleLocationsListResponse = {
   nextPageToken?: string;
 };
 
-import type { ListBusinessProfileLocationsInput } from "../../application/ports/business-profile-review-provider.js";
-
-type GoogleReviewStarRating =
-  | "ONE"
-  | "TWO"
-  | "THREE"
-  | "FOUR"
-  | "FIVE"
-  | "STAR_RATING_UNSPECIFIED";
+type GoogleReviewStarRating = "ONE" | "TWO" | "THREE" | "FOUR" | "FIVE" | "STAR_RATING_UNSPECIFIED";
 
 type GoogleReviewResource = {
   reviewId?: string;
@@ -91,11 +84,7 @@ type GoogleReviewsListResponse = {
   nextPageToken?: string;
 };
 
-import type { ListBusinessReviewsInput } from "../../application/ports/business-profile-review-provider.js";
-
-export class GoogleBusinessProfileApiProvider
-  implements BusinessProfileReviewProvider
-{
+export class GoogleBusinessProfileApiProvider implements BusinessProfileReviewProvider {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly redirectUri: string;
@@ -109,8 +98,7 @@ export class GoogleBusinessProfileApiProvider
     this.clientSecret = options.clientSecret;
     this.redirectUri = options.redirectUri;
     this.fetchFn = options.fetchFn ?? fetch;
-    this.authorizationEndpoint =
-      options.authorizationEndpoint ?? googleAuthorizationEndpoint;
+    this.authorizationEndpoint = options.authorizationEndpoint ?? googleAuthorizationEndpoint;
     this.tokenEndpoint = options.tokenEndpoint ?? googleTokenEndpoint;
     this.revokeEndpoint = options.revokeEndpoint ?? googleRevokeEndpoint;
   }
@@ -131,41 +119,37 @@ export class GoogleBusinessProfileApiProvider
   }
 
   async exchangeAuthorizationCode(
-    input: ProviderAuthorizationCodeInput
+    input: ProviderAuthorizationCodeInput,
   ): Promise<ProviderTokenSet> {
     if (input.code.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_INVALID_CALLBACK",
-        "Google OAuth authorization code is required"
+        "Google OAuth authorization code is required",
       );
     }
 
     return this.requestToken({
       grant_type: "authorization_code",
       code: input.code,
-      redirect_uri: this.redirectUri
+      redirect_uri: this.redirectUri,
     });
   }
 
-  async refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet> {
+  async refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet> {
     if (input.refreshToken.length === 0) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_REFRESH_FAILED",
-        "Google refresh token is required"
+        "Google refresh token is required",
       );
     }
 
     return this.requestToken({
       grant_type: "refresh_token",
-      refresh_token: input.refreshToken
+      refresh_token: input.refreshToken,
     });
   }
 
-  async revokeAuthorization(
-    input: RevokeProviderAuthorizationInput
-  ): Promise<void> {
+  async revokeAuthorization(input: RevokeProviderAuthorizationInput): Promise<void> {
     if (input.refreshToken.length === 0) {
       return;
     }
@@ -173,28 +157,25 @@ export class GoogleBusinessProfileApiProvider
     const response = await this.fetchFn(this.revokeEndpoint, {
       method: "POST",
       headers: {
-        "content-type": "application/x-www-form-urlencoded"
+        "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        token: input.refreshToken
-      })
+        token: input.refreshToken,
+      }),
     });
 
     if (!response.ok) {
       throw new GoogleBusinessProfileProviderError(
         "GOOGLE_REFRESH_FAILED",
-        "Google authorization revocation failed"
+        "Google authorization revocation failed",
       );
     }
   }
 
   async listAccounts(
-    input: ListBusinessProfileAccountsInput
+    input: ListBusinessProfileAccountsInput,
   ): Promise<ListBusinessProfileAccountsResult> {
-    const url = new URL(
-      "/v1/accounts",
-      "https://mybusinessaccountmanagement.googleapis.com"
-    );
+    const url = new URL("/v1/accounts", "https://mybusinessaccountmanagement.googleapis.com");
 
     if (input.pageToken) {
       url.searchParams.set("pageToken", input.pageToken);
@@ -203,14 +184,14 @@ export class GoogleBusinessProfileApiProvider
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${input.accessToken}`,
-        Accept: "application/json"
-      }
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
       throw new GoogleBusinessProfileProviderError(
         mapGoogleApiErrorStatus(response.status),
-        "Google Business Profile Account Management API request failed"
+        "Google Business Profile Account Management API request failed",
       );
     }
 
@@ -221,18 +202,18 @@ export class GoogleBusinessProfileApiProvider
         id: account.name,
         name: account.name,
         username: account.accountName ?? account.name,
-        ...(account.accountName ? { accountName: account.accountName } : {})
+        ...(account.accountName ? { accountName: account.accountName } : {}),
       })),
-      ...(payload.nextPageToken ? { nextPageToken: payload.nextPageToken } : {})
+      ...(payload.nextPageToken ? { nextPageToken: payload.nextPageToken } : {}),
     };
   }
 
   async listLocations(
-    input: ListBusinessProfileLocationsInput
+    input: ListBusinessProfileLocationsInput,
   ): Promise<ListBusinessProfileLocationsResult> {
     const parent = input.accountId;
     const url = new URL(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${parent}/locations`
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${parent}/locations`,
     );
     url.searchParams.set("readMask", "name,title,storeCode,metadata");
 
@@ -243,14 +224,14 @@ export class GoogleBusinessProfileApiProvider
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${input.accessToken}`,
-        Accept: "application/json"
-      }
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
       throw new GoogleBusinessProfileProviderError(
         mapGoogleApiErrorStatus(response.status),
-        "Google Business Profile API request failed."
+        "Google Business Profile API request failed.",
       );
     }
 
@@ -264,8 +245,8 @@ export class GoogleBusinessProfileApiProvider
         ...(location.storeCode ? { storeCode: location.storeCode } : {}),
         ...(location.metadata?.hasVoiceOfMerchant === undefined
           ? {}
-          : { isVerified: location.metadata.hasVoiceOfMerchant })
-      }))
+          : { isVerified: location.metadata.hasVoiceOfMerchant }),
+      })),
     };
 
     if (payload.nextPageToken) {
@@ -275,9 +256,7 @@ export class GoogleBusinessProfileApiProvider
     return result;
   }
 
-  async listReviews(
-    input: ListBusinessReviewsInput
-  ): Promise<ListBusinessReviewsResult> {
+  async listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult> {
     const parent = `${input.accountId.replace(/\/$/, "")}/${input.locationId.replace(/^\//, "")}`;
     const url = new URL(`https://mybusiness.googleapis.com/v4/${parent}/reviews`);
     url.searchParams.set("pageSize", "50");
@@ -289,14 +268,14 @@ export class GoogleBusinessProfileApiProvider
     const response = await this.fetchFn(url, {
       headers: {
         Authorization: `Bearer ${input.accessToken}`,
-        Accept: "application/json"
-      }
+        Accept: "application/json",
+      },
     });
 
     if (!response.ok) {
       throw new GoogleBusinessProfileProviderError(
         mapGoogleApiErrorStatus(response.status),
-        "Google Business Profile reviews request failed."
+        "Google Business Profile reviews request failed.",
       );
     }
 
@@ -305,16 +284,23 @@ export class GoogleBusinessProfileApiProvider
       reviews: (payload.reviews ?? []).map((review) => ({
         id: review.reviewId ?? "",
         starRating: mapGoogleReviewStarRating(review.starRating),
-        ...(review.reviewer?.displayName
-          ? { reviewerName: review.reviewer.displayName }
-          : {}),
+        ...(review.reviewer?.displayName ? { reviewerName: review.reviewer.displayName } : {}),
         ...(review.comment ? { comment: review.comment } : {}),
-        ...(review.reviewReply?.comment ? { reviewReply: { comment: review.reviewReply.comment, ...(review.reviewReply.updateTime ? { updatedAt: new Date(review.reviewReply.updateTime) } : {}) } } : {}),
+        ...(review.reviewReply?.comment
+          ? {
+              reviewReply: {
+                comment: review.reviewReply.comment,
+                ...(review.reviewReply.updateTime
+                  ? { updatedAt: new Date(review.reviewReply.updateTime) }
+                  : {}),
+              },
+            }
+          : {}),
         createdAt: review.createTime ? new Date(review.createTime) : new Date(0),
-        updatedAt: review.updateTime ? new Date(review.updateTime) : new Date(0)
+        updatedAt: review.updateTime ? new Date(review.updateTime) : new Date(0),
       })),
       averageRating: payload.averageRating ?? 0,
-      totalReviewCount: payload.totalReviewCount ?? 0
+      totalReviewCount: payload.totalReviewCount ?? 0,
     };
 
     if (payload.nextPageToken) {
@@ -330,24 +316,26 @@ export class GoogleBusinessProfileApiProvider
     const response = await this.fetchFn(url, {
       method: "PUT",
       headers: { Authorization: `Bearer ${input.accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify({ comment: input.message })
+      body: JSON.stringify({ comment: input.message }),
     });
-    if (!response.ok) throw new GoogleBusinessProfileProviderError(mapGoogleApiErrorStatus(response.status), "Google review reply request failed.");
+    if (!response.ok)
+      throw new GoogleBusinessProfileProviderError(
+        mapGoogleApiErrorStatus(response.status),
+        "Google review reply request failed.",
+      );
   }
 
-  private async requestToken(
-    input: Record<string, string>
-  ): Promise<ProviderTokenSet> {
+  private async requestToken(input: Record<string, string>): Promise<ProviderTokenSet> {
     const response = await this.fetchFn(this.tokenEndpoint, {
       method: "POST",
       headers: {
-        "content-type": "application/x-www-form-urlencoded"
+        "content-type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        ...input
-      })
+        ...input,
+      }),
     });
 
     const payload = await readJson(response);
@@ -361,7 +349,7 @@ export class GoogleBusinessProfileApiProvider
 }
 
 function mapGoogleReviewStarRating(
-  starRating: GoogleReviewStarRating | undefined
+  starRating: GoogleReviewStarRating | undefined,
 ): "ONE" | "TWO" | "THREE" | "FOUR" | "FIVE" {
   if (
     starRating === "ONE" ||
@@ -388,14 +376,14 @@ function normalizeTokenResponse(payload: unknown): ProviderTokenSet {
   if (!isGoogleTokenResponse(payload)) {
     throw new GoogleBusinessProfileProviderError(
       "GOOGLE_REFRESH_FAILED",
-      "Google OAuth token response is invalid"
+      "Google OAuth token response is invalid",
     );
   }
 
   const tokenSet: ProviderTokenSet = {
     accessToken: payload.access_token,
     expiresInSeconds: payload.expires_in,
-    scope: payload.scope ?? GOOGLE_BUSINESS_PROFILE_SCOPE
+    scope: payload.scope ?? GOOGLE_BUSINESS_PROFILE_SCOPE,
   };
 
   if (payload.refresh_token !== undefined) {
@@ -417,8 +405,7 @@ function isGoogleTokenResponse(payload: unknown): payload is GoogleTokenResponse
     candidate.access_token.length > 0 &&
     typeof candidate.expires_in === "number" &&
     Number.isFinite(candidate.expires_in) &&
-    (candidate.refresh_token === undefined ||
-      typeof candidate.refresh_token === "string") &&
+    (candidate.refresh_token === undefined || typeof candidate.refresh_token === "string") &&
     (candidate.scope === undefined || typeof candidate.scope === "string")
   );
 }
@@ -429,20 +416,20 @@ function mapTokenError(payload: unknown): GoogleBusinessProfileProviderError {
   if (errorCode === "invalid_grant") {
     return new GoogleBusinessProfileProviderError(
       "GOOGLE_TOKEN_REVOKED",
-      "Google authorization expired or was revoked"
+      "Google authorization expired or was revoked",
     );
   }
 
   if (errorCode === "access_denied") {
     return new GoogleBusinessProfileProviderError(
       "GOOGLE_PERMISSION_DENIED",
-      "Google authorization was denied"
+      "Google authorization was denied",
     );
   }
 
   return new GoogleBusinessProfileProviderError(
     "GOOGLE_REFRESH_FAILED",
-    "Google OAuth token request failed"
+    "Google OAuth token request failed",
   );
 }
 
@@ -457,7 +444,7 @@ function readGoogleErrorCode(payload: unknown): string | undefined {
 }
 
 function mapGoogleApiErrorStatus(
-  status: number
+  status: number,
 ): "GOOGLE_PERMISSION_DENIED" | "GOOGLE_RATE_LIMITED" | "GOOGLE_API_UNAVAILABLE" {
   if (status === 401 || status === 403) {
     return "GOOGLE_PERMISSION_DENIED";

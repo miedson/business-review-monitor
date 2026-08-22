@@ -20,7 +20,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type = "button",
       ...rest
     },
-    ref
+    ref,
   ) => {
     const isDisabled = disabled || loading;
 
@@ -38,7 +38,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </ChakraButton>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

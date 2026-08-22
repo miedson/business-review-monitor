@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
+
 import { MetaWebhookSignatureVerifier } from "./meta-webhook-signature-verifier.js";
 
 describe("MetaWebhookSignatureVerifier", () => {

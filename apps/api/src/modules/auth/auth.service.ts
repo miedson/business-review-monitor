@@ -2,19 +2,20 @@ import { createRequire } from "node:module";
 import argon2 from "argon2";
 import type { FastifyInstance } from "fastify";
 import type { JwtPayload } from "jsonwebtoken";
+
 import {
   emailAlreadyRegisteredError,
   invalidCredentialsError,
   tenantAccessRequiredError,
-  unauthorizedError
+  unauthorizedError,
 } from "./auth.errors.js";
 import type { LoginBody, RegisterBody } from "./auth.schemas.js";
 import {
-  type PublicTenant,
-  type PublicUser,
   toPublicTenant,
   toPublicUser,
-  type UserRepository
+  type PublicTenant,
+  type PublicUser,
+  type UserRepository,
 } from "./user.repository.js";
 
 const accessTokenExpiresIn = "15m";
@@ -69,7 +70,7 @@ export class AuthService {
       secure: this.options.secureCookies,
       sameSite: this.options.refreshCookieSameSite,
       path: "/auth",
-      maxAge: 7 * 24 * 60 * 60
+      maxAge: 7 * 24 * 60 * 60,
     };
   }
 
@@ -78,7 +79,7 @@ export class AuthService {
       httpOnly: true,
       secure: this.options.secureCookies,
       sameSite: this.options.refreshCookieSameSite,
-      path: "/auth"
+      path: "/auth",
     };
   }
 
@@ -90,19 +91,19 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(input.password, {
-      type: argon2.argon2id
+      type: argon2.argon2id,
     });
 
     const { user, tenant } = await this.options.userRepository.createWithInitialTenant({
       name: input.name,
       email: input.email,
-      passwordHash
+      passwordHash,
     });
 
     return {
       user: toPublicUser(user),
       tenant: toPublicTenant(tenant),
-      tokens: this.createTokens(user.id)
+      tokens: this.createTokens(user.id),
     };
   }
 
@@ -122,7 +123,7 @@ export class AuthService {
     return {
       user: toPublicUser(user),
       tenant: await this.getPublicTenantForUser(user.id),
-      tokens: this.createTokens(user.id)
+      tokens: this.createTokens(user.id),
     };
   }
 
@@ -141,7 +142,7 @@ export class AuthService {
     return {
       user: toPublicUser(user),
       tenant: await this.getPublicTenantForUser(user.id),
-      tokens: this.createTokens(user.id)
+      tokens: this.createTokens(user.id),
     };
   }
 
@@ -154,7 +155,7 @@ export class AuthService {
 
     return {
       user: toPublicUser(user),
-      tenant: await this.getPublicTenantForUser(user.id)
+      tenant: await this.getPublicTenantForUser(user.id),
     };
   }
 
@@ -163,17 +164,13 @@ export class AuthService {
       accessToken: this.options.jwt.sign(
         { type: "access", sub: userId },
         {
-          expiresIn: accessTokenExpiresIn
-        }
+          expiresIn: accessTokenExpiresIn,
+        },
       ),
-      refreshToken: jwt.sign(
-        { type: "refresh" },
-        this.options.refreshSecret,
-        {
-          subject: userId,
-          expiresIn: refreshTokenExpiresIn
-        }
-      )
+      refreshToken: jwt.sign({ type: "refresh" }, this.options.refreshSecret, {
+        subject: userId,
+        expiresIn: refreshTokenExpiresIn,
+      }),
     };
   }
 
@@ -191,7 +188,7 @@ export class AuthService {
 
       return {
         sub: payload.sub,
-        type: "refresh"
+        type: "refresh",
       };
     } catch {
       throw unauthorizedError();

@@ -27,10 +27,10 @@ The verify token is configured via the `META_WEBHOOK_VERIFY_TOKEN` environment v
 
 **Do not** use the Meta App Secret as the verify token. These are different secrets:
 
-| Secret | Purpose |
-|--------|---------|
-| `META_WEBHOOK_VERIFY_TOKEN` | Used only for the initial GET challenge verification |
-| `META_APP_SECRET` | Used to validate HMAC signatures on POST webhook events |
+| Secret                      | Purpose                                                 |
+| --------------------------- | ------------------------------------------------------- |
+| `META_WEBHOOK_VERIFY_TOKEN` | Used only for the initial GET challenge verification    |
+| `META_APP_SECRET`           | Used to validate HMAC signatures on POST webhook events |
 
 ### GET /webhooks/meta - Challenge Verification
 
@@ -121,13 +121,13 @@ In Meta Developers portal:
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `META_WEBHOOK_VERIFY_TOKEN` | Token for GET challenge verification | Yes |
-| `META_APP_SECRET` | App Secret for POST signature validation | Yes |
-| `META_APP_ID` | Meta App ID | Yes |
-| `META_INSTAGRAM_REDIRECT_URI` | OAuth redirect URI | Yes |
-| `META_GRAPH_API_VERSION` | Graph API version (default: v21.0) | No |
+| Variable                      | Description                              | Required |
+| ----------------------------- | ---------------------------------------- | -------- |
+| `META_WEBHOOK_VERIFY_TOKEN`   | Token for GET challenge verification     | Yes      |
+| `META_APP_SECRET`             | App Secret for POST signature validation | Yes      |
+| `META_APP_ID`                 | Meta App ID                              | Yes      |
+| `META_INSTAGRAM_REDIRECT_URI` | OAuth redirect URI                       | Yes      |
+| `META_GRAPH_API_VERSION`      | Graph API version (default: v21.0)       | No       |
 
 ### Testing Locally
 

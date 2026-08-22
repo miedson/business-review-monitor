@@ -31,7 +31,13 @@ export type DeleteInstagramCommentsByConnectionIdInput = {
   connectionId: string;
 };
 export type MarkInstagramCommentRepliedInput = { id: string; tenantId: string; repliedAt: Date };
-export type SaveInstagramCommentReplyInput = { tenantId: string; instagramCommentId: string; externalReplyId: string; text: string; createdAt: Date };
+export type SaveInstagramCommentReplyInput = {
+  tenantId: string;
+  instagramCommentId: string;
+  externalReplyId: string;
+  text: string;
+  createdAt: Date;
+};
 
 export interface InstagramCommentRepository {
   upsert(input: UpsertInstagramCommentInput): Promise<InstagramComment>;

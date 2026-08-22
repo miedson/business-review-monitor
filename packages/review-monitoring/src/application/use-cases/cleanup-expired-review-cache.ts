@@ -13,7 +13,7 @@ export class CleanupExpiredReviewCache {
 
   async execute(now = new Date()): Promise<CleanupExpiredReviewCacheResult> {
     const deletedCount = await this.dependencies.reviewCacheRepository.deleteExpired({
-      now
+      now,
     });
 
     return { deletedCount };

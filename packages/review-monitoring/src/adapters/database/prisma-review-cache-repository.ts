@@ -1,10 +1,11 @@
 import type { PrismaClient } from "@brm/database";
+
 import type {
   CacheBusinessReviewInput,
   CachedBusinessReview,
   DeleteExpiredReviewCacheInput,
   ListValidReviewCacheInput,
-  ReviewCacheRepository
+  ReviewCacheRepository,
 } from "../../application/ports/review-cache-repository.js";
 import type { ReviewStarRating } from "../../domain/review.js";
 
@@ -22,8 +23,8 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
           where: {
             businessLocationId_googleReviewId: {
               businessLocationId: review.businessLocationId,
-              googleReviewId: review.googleReviewId
-            }
+              googleReviewId: review.googleReviewId,
+            },
           },
           create: {
             tenantId: review.tenantId,
@@ -37,7 +38,7 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
             reviewCreatedAt: review.reviewCreatedAt,
             reviewUpdatedAt: review.reviewUpdatedAt,
             cachedAt: review.cachedAt,
-            expiresAt: review.expiresAt
+            expiresAt: review.expiresAt,
           },
           update: {
             reviewerName: review.reviewerName ?? null,
@@ -48,28 +49,26 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
             reviewCreatedAt: review.reviewCreatedAt,
             reviewUpdatedAt: review.reviewUpdatedAt,
             cachedAt: review.cachedAt,
-            expiresAt: review.expiresAt
-          }
-        })
-      )
+            expiresAt: review.expiresAt,
+          },
+        }),
+      ),
     );
   }
 
-  async listValidByLocation(
-    input: ListValidReviewCacheInput
-  ): Promise<CachedBusinessReview[]> {
+  async listValidByLocation(input: ListValidReviewCacheInput): Promise<CachedBusinessReview[]> {
     const rows = await this.prisma.reviewCache.findMany({
       where: {
         tenantId: input.tenantId,
         businessLocationId: input.businessLocationId,
         expiresAt: {
-          gt: input.now
-        }
+          gt: input.now,
+        },
       },
       orderBy: {
-        reviewUpdatedAt: "desc"
+        reviewUpdatedAt: "desc",
       },
-      ...(input.limit ? { take: input.limit } : {})
+      ...(input.limit ? { take: input.limit } : {}),
     });
 
     return rows.map((row) => ({
@@ -77,11 +76,18 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
       ...(row.reviewerName ? { reviewerName: row.reviewerName } : {}),
       starRating: numberToStarRating(row.starRating),
       ...(row.comment ? { comment: row.comment } : {}),
-      ...(row.replyText ? { reviewReply: { comment: row.replyText, ...(row.replyUpdatedAt ? { updatedAt: row.replyUpdatedAt } : {}) } } : {}),
+      ...(row.replyText
+        ? {
+            reviewReply: {
+              comment: row.replyText,
+              ...(row.replyUpdatedAt ? { updatedAt: row.replyUpdatedAt } : {}),
+            },
+          }
+        : {}),
       createdAt: row.reviewCreatedAt,
       updatedAt: row.reviewUpdatedAt,
       cachedAt: row.cachedAt,
-      expiresAt: row.expiresAt
+      expiresAt: row.expiresAt,
     }));
   }
 
@@ -89,21 +95,34 @@ export class PrismaReviewCacheRepository implements ReviewCacheRepository {
     const result = await this.prisma.reviewCache.deleteMany({
       where: {
         expiresAt: {
-          lte: input.now
-        }
-      }
+          lte: input.now,
+        },
+      },
     });
 
     return result.count;
   }
 
-  async saveReply(input: { tenantId: string; businessLocationId: string; googleReviewId: string; comment: string; updatedAt: Date }): Promise<void> {
-    await this.prisma.reviewCache.updateMany({ where: { tenantId: input.tenantId, businessLocationId: input.businessLocationId, googleReviewId: input.googleReviewId }, data: { replyText: input.comment, replyUpdatedAt: input.updatedAt } });
+  async saveReply(input: {
+    tenantId: string;
+    businessLocationId: string;
+    googleReviewId: string;
+    comment: string;
+    updatedAt: Date;
+  }): Promise<void> {
+    await this.prisma.reviewCache.updateMany({
+      where: {
+        tenantId: input.tenantId,
+        businessLocationId: input.businessLocationId,
+        googleReviewId: input.googleReviewId,
+      },
+      data: { replyText: input.comment, replyUpdatedAt: input.updatedAt },
+    });
   }
 
   async deleteByTenantId(tenantId: string): Promise<void> {
     await this.prisma.reviewCache.deleteMany({
-      where: { tenantId }
+      where: { tenantId },
     });
   }
 }
@@ -114,7 +133,7 @@ function starRatingToNumber(starRating: ReviewStarRating): number {
     TWO: 2,
     THREE: 3,
     FOUR: 4,
-    FIVE: 5
+    FIVE: 5,
   };
 
   return ratings[starRating];

@@ -1,10 +1,10 @@
 "use client";
 
-import { Box, Button, Text, Flex, Badge, Alert } from "@/lib/design-system";
+import { buildInstagramConnectUrl } from "@/lib/api-client";
+import { getStoredSession } from "@/lib/auth-session";
+import { Alert, Badge, Box, Button, Flex, Text } from "@/lib/design-system";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getStoredSession } from "@/lib/auth-session";
-import { buildInstagramConnectUrl } from "@/lib/api-client";
 
 export function InstagramOnboardingContent() {
   const router = useRouter();
@@ -36,9 +36,12 @@ export function InstagramOnboardingContent() {
     if (!session?.accessToken) return;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/accounts`, {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/accounts`,
+        {
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+        },
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.accounts?.[0]) {
@@ -90,24 +93,66 @@ export function InstagramOnboardingContent() {
           Passo 3 de 4 — Instagram
         </Text>
 
-        <Text color="text.tertiary" textAlign="center" mb={8} maxW="500px" mx="auto" lineHeight="relaxed">
+        <Text
+          color="text.tertiary"
+          textAlign="center"
+          mb={8}
+          maxW="500px"
+          mx="auto"
+          lineHeight="relaxed"
+        >
           Conecte sua conta profissional para centralizar comentários e mensagens diretas.
           <br />
-          <Text fontWeight="medium" color="text.secondary">É necessário utilizar uma conta profissional Business ou Creator.</Text>
+          <Text fontWeight="medium" color="text.secondary">
+            É necessário utilizar uma conta profissional Business ou Creator.
+          </Text>
         </Text>
 
-        <Box css={{ bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "2xl", boxShadow: "sm", p: { base: 5, md: 6 } }}>
+        <Box
+          css={{
+            bg: "surface.primary",
+            border: "1px solid",
+            borderColor: "surface.border",
+            borderRadius: "2xl",
+            boxShadow: "sm",
+            p: { base: 5, md: 6 },
+          }}
+        >
           <Box css={{ display: "flex", alignItems: "flex-start", gap: 4, mb: 6 }}>
-            <Box css={{ display: "flex", alignItems: "center", justifyContent: "center", w: 12, h: 12, borderRadius: "lg", bg: "pink.50", color: "pink.600", flexShrink: 0 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2">
+            <Box
+              css={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                w: 12,
+                h: 12,
+                borderRadius: "lg",
+                bg: "pink.50",
+                color: "pink.600",
+                flexShrink: 0,
+              }}
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
               </svg>
             </Box>
             <Box css={{ flex: 1 }}>
-              <Text fontSize="lg" fontWeight="semibold" color="text.primary">Instagram</Text>
-              <Text fontSize="sm" color="text.tertiary">Comentários, mensagens diretas, menções</Text>
+              <Text fontSize="lg" fontWeight="semibold" color="text.primary">
+                Instagram
+              </Text>
+              <Text fontSize="sm" color="text.tertiary">
+                Comentários, mensagens diretas, menções
+              </Text>
             </Box>
           </Box>
 
@@ -118,18 +163,29 @@ export function InstagramOnboardingContent() {
           )}
 
           {connected ? (
-            <Box css={{ display: "flex", alignItems: "center", gap: 3, p: 4, bg: "status.success.bg", border: "1px solid", borderColor: "status.success.border", borderRadius: "lg" }}>
-              <Badge variant="success" size="md" dot>Conectado</Badge>
-              {username && <Text fontSize="sm" color="text.secondary">@{username}</Text>}
+            <Box
+              css={{
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+                p: 4,
+                bg: "status.success.bg",
+                border: "1px solid",
+                borderColor: "status.success.border",
+                borderRadius: "lg",
+              }}
+            >
+              <Badge variant="success" size="md" dot>
+                Conectado
+              </Badge>
+              {username && (
+                <Text fontSize="sm" color="text.secondary">
+                  @{username}
+                </Text>
+              )}
             </Box>
           ) : (
-            <Button
-              variant="solid"
-              size="lg"
-              w="full"
-              onClick={handleConnect}
-              loading={loading}
-            >
+            <Button variant="solid" size="lg" w="full" onClick={handleConnect} loading={loading}>
               {loading ? "Conectando..." : "Conectar Instagram"}
             </Button>
           )}
@@ -139,7 +195,11 @@ export function InstagramOnboardingContent() {
           <Button variant="ghost" size="md" onClick={handleSkip}>
             Pular por enquanto
           </Button>
-          {connected && <Button size="md" onClick={handleContinue}>Continuar</Button>}
+          {connected && (
+            <Button size="md" onClick={handleContinue}>
+              Continuar
+            </Button>
+          )}
         </Flex>
       </Box>
     </Box>

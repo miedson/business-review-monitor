@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Box, Container, Flex, Heading, Text } from "@chakra-ui/react";
+import type { ReactNode } from "react";
 
 type AuthShellProps = {
   title: string;
@@ -47,34 +47,31 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
               lineHeight="1.05"
               maxW="620px"
             >
-              Acompanhe as avaliacoes da sua empresa sem navegar pela
-              complexidade do Google Business Profile.
+              Acompanhe as avaliacoes da sua empresa sem navegar pela complexidade do Google
+              Business Profile.
             </Heading>
             <Text mt={5} color="text.secondary" fontSize="lg" maxW="560px">
-              Um painel objetivo para conectar sua conta Google, escolher a
-              empresa certa e visualizar as avaliacoes importantes em poucos
-              passos.
+              Um painel objetivo para conectar sua conta Google, escolher a empresa certa e
+              visualizar as avaliacoes importantes em poucos passos.
             </Text>
 
             <Flex mt={8} gap={3} wrap="wrap">
-              {["Conexao segura", "Empresas organizadas", "Reviews em cache"].map(
-                (item) => (
-                  <Box
-                    key={item}
-                    px={3}
-                    py={2}
-                    border="1px solid"
-                    borderColor="surface.border"
-                    borderRadius="8px"
-                    color="text.primary"
-                    bg="surface.primary"
-                    fontWeight="600"
-                    fontSize="sm"
-                  >
-                    {item}
-                  </Box>
-                )
-              )}
+              {["Conexao segura", "Empresas organizadas", "Reviews em cache"].map((item) => (
+                <Box
+                  key={item}
+                  px={3}
+                  py={2}
+                  border="1px solid"
+                  borderColor="surface.border"
+                  borderRadius="8px"
+                  color="text.primary"
+                  bg="surface.primary"
+                  fontWeight="600"
+                  fontSize="sm"
+                >
+                  {item}
+                </Box>
+              ))}
             </Flex>
           </Box>
 

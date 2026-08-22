@@ -1,32 +1,26 @@
 import type { Job } from "bullmq";
 import { z } from "zod";
-import { logInfo } from "../worker-logger.js";
+
 import type {
-  MetaWebhookEntry,
+  InstagramCommentRepository,
+  InstagramConversationRepository,
+  InstagramMessageRepository,
   MetaWebhookChange,
-  MetaWebhookMessaging
+  MetaWebhookEntry,
+  MetaWebhookMessaging,
+  StoredInstagramConnection,
+  UpsertInstagramCommentInput,
 } from "@brm/review-monitoring";
 import {
   DefaultInstagramCommentWebhookNormalizer,
-  type InstagramCommentWebhookNormalizer
-} from "@brm/review-monitoring";
-import {
   DefaultInstagramMessageWebhookNormalizer,
-  type InstagramMessageWebhookNormalizer
-} from "@brm/review-monitoring";
-import type {
-  InstagramCommentRepository,
-  UpsertInstagramCommentInput
-} from "@brm/review-monitoring";
-import type {
-  InstagramConversationRepository,
-  InstagramMessageRepository
-} from "@brm/review-monitoring";
-import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import {
   ProcessInstagramDirectMessage,
-  type ProcessInstagramDirectMessageInput
+  type InstagramCommentWebhookNormalizer,
+  type InstagramMessageWebhookNormalizer,
+  type ProcessInstagramDirectMessageInput,
 } from "@brm/review-monitoring";
+
+import { logInfo } from "../worker-logger.js";
 
 const processMetaWebhookEventJobDataSchema = z
   .object({
@@ -40,8 +34,8 @@ const processMetaWebhookEventJobDataSchema = z
             .array(
               z.object({
                 field: z.string(),
-                value: z.record(z.string(), z.unknown())
-              })
+                value: z.record(z.string(), z.unknown()),
+              }),
             )
             .optional(),
           messaging: z
@@ -49,11 +43,11 @@ const processMetaWebhookEventJobDataSchema = z
               z.object({
                 sender: z.object({
                   id: z.string(),
-                  username: z.string().optional()
+                  username: z.string().optional(),
                 }),
                 recipient: z.object({
                   id: z.string(),
-                  username: z.string().optional()
+                  username: z.string().optional(),
                 }),
                 timestamp: z.number(),
                 message: z
@@ -61,29 +55,27 @@ const processMetaWebhookEventJobDataSchema = z
                     id: z.string().optional(),
                     mid: z.string().optional(),
                     text: z.string().optional(),
-                    created_time: z.number().optional()
+                    created_time: z.number().optional(),
                   })
                   .optional(),
                 postback: z
                   .object({
                     payload: z.string().optional(),
-                    title: z.string().optional()
+                    title: z.string().optional(),
                   })
-                  .optional()
-              })
+                  .optional(),
+              }),
             )
-            .optional()
-        })
-      )
+            .optional(),
+        }),
+      ),
     }),
     receivedAt: z.string().datetime(),
-    requestId: z.string().uuid()
+    requestId: z.string().uuid(),
   })
   .strict();
 
-export type ProcessMetaWebhookEventJobData = z.infer<
-  typeof processMetaWebhookEventJobDataSchema
->;
+export type ProcessMetaWebhookEventJobData = z.infer<typeof processMetaWebhookEventJobDataSchema>;
 
 type JobEntry = ProcessMetaWebhookEventJobData["payload"]["entry"][0];
 type JobMessage = NonNullable<JobEntry["messaging"]>[0];
@@ -91,14 +83,32 @@ type JobMessage = NonNullable<JobEntry["messaging"]>[0];
 export type ProcessMetaWebhookEventUseCase = {
   execute(input: ProcessMetaWebhookEventJobData): Promise<void>;
 };
-export type RealtimeEventPublisher = { publish(event: { tenantId: string; type: string; payload: Record<string, string> }): Promise<void> };
-export type NotificationStore = { create(input: { tenantId: string; type: "INSTAGRAM_COMMENT" | "INSTAGRAM_DIRECT" | "GOOGLE_REVIEW" | "SYSTEM"; title: string; body: string; resourceType: string; resourceId: string; dedupeKey: string }): Promise<void> };
+export type RealtimeEventPublisher = {
+  publish(event: {
+    tenantId: string;
+    type: string;
+    payload: Record<string, string>;
+  }): Promise<void>;
+};
+export type NotificationStore = {
+  create(input: {
+    tenantId: string;
+    type: "INSTAGRAM_COMMENT" | "INSTAGRAM_DIRECT" | "GOOGLE_REVIEW" | "SYSTEM";
+    title: string;
+    body: string;
+    resourceType: string;
+    resourceId: string;
+    dedupeKey: string;
+  }): Promise<void>;
+};
 
 export class ProcessMetaWebhookEventJob {
   constructor(
     private readonly instagramConnectionRepository: {
       findByInstagramUserId: (instagramUserId: string) => Promise<StoredInstagramConnection | null>;
-      findByProfessionalAccountId: (professionalAccountId: string) => Promise<StoredInstagramConnection | null>;
+      findByProfessionalAccountId: (
+        professionalAccountId: string,
+      ) => Promise<StoredInstagramConnection | null>;
     },
     private readonly instagramCommentRepository: InstagramCommentRepository,
     private readonly resolveInstagramWebhookIdentity: {
@@ -113,7 +123,7 @@ export class ProcessMetaWebhookEventJob {
     private readonly commentNormalizer: InstagramCommentWebhookNormalizer = new DefaultInstagramCommentWebhookNormalizer(),
     private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer(),
     private readonly realtimeEventPublisher?: RealtimeEventPublisher,
-    private readonly notificationStore?: NotificationStore
+    private readonly notificationStore?: NotificationStore,
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -123,7 +133,7 @@ export class ProcessMetaWebhookEventJob {
       logInfo("process_meta_webhook_event_job_invalid_data", {
         jobId: job.id ? String(job.id) : "unknown",
         jobName: job.name,
-        errors: JSON.stringify(parsedData.error.flatten().fieldErrors)
+        errors: JSON.stringify(parsedData.error.flatten().fieldErrors),
       });
       throw new Error("Invalid process-meta-webhook-event job data");
     }
@@ -135,7 +145,7 @@ export class ProcessMetaWebhookEventJob {
       jobName: job.name,
       requestId: data.requestId,
       object: data.payload.object,
-      entryCount: data.payload.entry.length
+      entryCount: data.payload.entry.length,
     });
 
     for (const entry of data.payload.entry) {
@@ -146,7 +156,7 @@ export class ProcessMetaWebhookEventJob {
       jobId: job.id ? String(job.id) : "unknown",
       jobName: job.name,
       requestId: data.requestId,
-      status: "completed"
+      status: "completed",
     });
   }
 
@@ -167,20 +177,20 @@ export class ProcessMetaWebhookEventJob {
   private async processChange(
     change: MetaWebhookChange,
     entry: MetaWebhookEntry,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     logInfo("process_meta_webhook_event_change", {
       requestId,
       entryId: entry.id,
       field: change.field,
-      valueKeys: Object.keys(change.value).join(",")
+      valueKeys: Object.keys(change.value).join(","),
     });
 
     // Diagnostic logging for webhook identity investigation
     logInfo("meta_webhook_identity_observed", {
       requestId,
       entryId: entry.id,
-      field: change.field
+      field: change.field,
     });
 
     if (change.field === "comments") {
@@ -191,7 +201,7 @@ export class ProcessMetaWebhookEventJob {
       logInfo("meta_webhook_mention_received", {
         requestId,
         entryId: entry.id,
-        valueKeys: Object.keys(change.value).join(",")
+        valueKeys: Object.keys(change.value).join(","),
       });
     }
 
@@ -200,7 +210,7 @@ export class ProcessMetaWebhookEventJob {
         requestId,
         entryId: entry.id,
         field: change.field,
-        valueKeys: Object.keys(change.value).join(",")
+        valueKeys: Object.keys(change.value).join(","),
       });
     }
   }
@@ -208,7 +218,7 @@ export class ProcessMetaWebhookEventJob {
   private async processComment(
     change: MetaWebhookChange,
     entry: MetaWebhookEntry,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     const normalizedComment = this.commentNormalizer.normalize(entry, change);
 
@@ -217,7 +227,7 @@ export class ProcessMetaWebhookEventJob {
         requestId,
         entryId: entry.id,
         field: change.field,
-        valueKeys: Object.keys(change.value).join(",")
+        valueKeys: Object.keys(change.value).join(","),
       });
       return;
     }
@@ -230,12 +240,12 @@ export class ProcessMetaWebhookEventJob {
       authorExternalId: normalizedComment.authorExternalId ?? "unknown",
       authorUsername: normalizedComment.authorUsername ?? "unknown",
       hasText: !!normalizedComment.text,
-      textLength: normalizedComment.text?.length ?? 0
+      textLength: normalizedComment.text?.length ?? 0,
     });
 
     // Try to find connection by professional account ID first (webhook entry.id)
     let connection = await this.instagramConnectionRepository.findByProfessionalAccountId(
-      normalizedComment.instagramAccountId
+      normalizedComment.instagramAccountId,
     );
 
     // If not found, run identity discovery against Meta API
@@ -243,13 +253,12 @@ export class ProcessMetaWebhookEventJob {
       logInfo("meta_webhook_comment_try_discovery", {
         requestId,
         entryId: entry.id,
-        instagramAccountId: normalizedComment.instagramAccountId
+        instagramAccountId: normalizedComment.instagramAccountId,
       });
 
-      const resolved =
-        await this.resolveInstagramWebhookIdentity.execute({
-          webhookAccountId: normalizedComment.instagramAccountId
-        });
+      const resolved = await this.resolveInstagramWebhookIdentity.execute({
+        webhookAccountId: normalizedComment.instagramAccountId,
+      });
 
       if (resolved) {
         connection = resolved.connection;
@@ -261,7 +270,7 @@ export class ProcessMetaWebhookEventJob {
         requestId,
         entryId: entry.id,
         instagramAccountId: normalizedComment.instagramAccountId,
-        externalCommentId: normalizedComment.externalCommentId
+        externalCommentId: normalizedComment.externalCommentId,
       });
       return;
     }
@@ -272,20 +281,24 @@ export class ProcessMetaWebhookEventJob {
       instagramConnectionId: connection.id,
       instagramUserId: connection.instagramUserId,
       instagramProfessionalAccountId: connection.instagramProfessionalAccountId ?? "unknown",
-      username: connection.username ?? "unknown"
+      username: connection.username ?? "unknown",
     });
 
     const upsertInput: UpsertInstagramCommentInput = {
       tenantId: connection.tenantId,
       instagramConnectionId: connection.id,
       externalCommentId: normalizedComment.externalCommentId,
-      status: "NEW"
+      status: "NEW",
     };
-    if (normalizedComment.externalMediaId !== undefined) upsertInput.externalMediaId = normalizedComment.externalMediaId;
-    if (normalizedComment.authorExternalId !== undefined) upsertInput.authorExternalId = normalizedComment.authorExternalId;
-    if (normalizedComment.authorUsername !== undefined) upsertInput.authorUsername = normalizedComment.authorUsername;
+    if (normalizedComment.externalMediaId !== undefined)
+      upsertInput.externalMediaId = normalizedComment.externalMediaId;
+    if (normalizedComment.authorExternalId !== undefined)
+      upsertInput.authorExternalId = normalizedComment.authorExternalId;
+    if (normalizedComment.authorUsername !== undefined)
+      upsertInput.authorUsername = normalizedComment.authorUsername;
     if (normalizedComment.text !== undefined) upsertInput.text = normalizedComment.text;
-    if (normalizedComment.createdAtExternal !== undefined) upsertInput.createdAtExternal = normalizedComment.createdAtExternal;
+    if (normalizedComment.createdAtExternal !== undefined)
+      upsertInput.createdAtExternal = normalizedComment.createdAtExternal;
 
     const comment = await this.instagramCommentRepository.upsert(upsertInput);
     await this.notificationStore?.create({
@@ -295,9 +308,13 @@ export class ProcessMetaWebhookEventJob {
       body: comment.text ?? "Um novo comentário precisa da sua atenção.",
       resourceType: "instagram-comment",
       resourceId: comment.id,
-      dedupeKey: `instagram-comment:${comment.id}`
+      dedupeKey: `instagram-comment:${comment.id}`,
     });
-    await this.realtimeEventPublisher?.publish({ tenantId: comment.tenantId, type: "instagram.comment.created", payload: { commentId: comment.id, instagramConnectionId: comment.instagramConnectionId } });
+    await this.realtimeEventPublisher?.publish({
+      tenantId: comment.tenantId,
+      type: "instagram.comment.created",
+      payload: { commentId: comment.id, instagramConnectionId: comment.instagramConnectionId },
+    });
 
     logInfo("instagram_comment_persisted", {
       requestId,
@@ -305,14 +322,14 @@ export class ProcessMetaWebhookEventJob {
       externalCommentId: comment.externalCommentId,
       tenantId: comment.tenantId,
       instagramConnectionId: comment.instagramConnectionId,
-      status: comment.status
+      status: comment.status,
     });
   }
 
   private async processMessage(
     entry: JobEntry,
     message: JobMessage,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     const senderId = message.sender.id;
     const recipientId = message.recipient.id;
@@ -329,7 +346,7 @@ export class ProcessMetaWebhookEventJob {
 
     if (!connection) {
       const resolved = await this.resolveInstagramWebhookIdentity.execute({
-        webhookAccountId: entry.id
+        webhookAccountId: entry.id,
       });
       connection = resolved?.connection ?? null;
     }
@@ -338,7 +355,7 @@ export class ProcessMetaWebhookEventJob {
       logInfo("meta_webhook_message_unknown_sender", {
         requestId,
         senderId,
-        recipientId
+        recipientId,
       });
       return;
     }
@@ -352,19 +369,19 @@ export class ProcessMetaWebhookEventJob {
       recipientId: message.recipient.id,
       hasMessage: message.message ? "true" : "false",
       hasMid: message.message?.id ? "true" : "false",
-      hasText: message.message?.text ? "true" : "false"
+      hasText: message.message?.text ? "true" : "false",
     });
 
     const normalizedMessage = this.messageNormalizer.normalize(
       entry as MetaWebhookEntry,
-      message as MetaWebhookMessaging
+      message as MetaWebhookMessaging,
     );
 
     if (!normalizedMessage) {
       logInfo("meta_webhook_message_normalization_failed", {
         requestId,
         senderId,
-        recipientId
+        recipientId,
       });
       return;
     }
@@ -377,12 +394,12 @@ export class ProcessMetaWebhookEventJob {
       recipientExternalId: normalizedMessage.recipientExternalId,
       direction: normalizedMessage.direction,
       hasText: !!normalizedMessage.text,
-      textLength: normalizedMessage.text?.length ?? 0
+      textLength: normalizedMessage.text?.length ?? 0,
     });
 
     const result = await this.processInstagramDirectMessage.execute({
       connection,
-      normalizedMessage
+      normalizedMessage,
     } as ProcessInstagramDirectMessageInput);
 
     if (result.isNew && normalizedMessage.direction === "INBOUND") {
@@ -393,9 +410,13 @@ export class ProcessMetaWebhookEventJob {
         body: normalizedMessage.text ?? "Você recebeu uma nova mensagem.",
         resourceType: "instagram-conversation",
         resourceId: result.conversationId,
-        dedupeKey: `instagram-message:${normalizedMessage.externalMessageId}`
+        dedupeKey: `instagram-message:${normalizedMessage.externalMessageId}`,
       });
-      await this.realtimeEventPublisher?.publish({ tenantId: connection.tenantId, type: "instagram.message.created", payload: { conversationId: result.conversationId, messageId: result.messageId } });
+      await this.realtimeEventPublisher?.publish({
+        tenantId: connection.tenantId,
+        type: "instagram.message.created",
+        payload: { conversationId: result.conversationId, messageId: result.messageId },
+      });
     }
 
     logInfo("instagram_direct_message_processed", {
@@ -403,7 +424,7 @@ export class ProcessMetaWebhookEventJob {
       tenantId: connection.tenantId,
       conversationId: result.conversationId,
       messageId: result.messageId,
-      isNew: result.isNew
+      isNew: result.isNew,
     });
   }
 }

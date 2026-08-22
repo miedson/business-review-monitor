@@ -1,19 +1,19 @@
 "use client";
 
 import {
-  Dialog,
-  DialogTrigger,
-  DialogBackdrop,
-  DialogPositioner,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogBody,
-  DialogFooter,
-  DialogCloseTrigger,
-  Button,
   Box,
+  Button,
+  Dialog,
+  DialogBackdrop,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogPositioner,
+  DialogTitle,
+  DialogTrigger,
 } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
@@ -37,18 +37,7 @@ const sizeMap = {
 } as const;
 
 const Modal = forwardRef<HTMLDivElement, ModalProps>(
-  (
-    {
-      title,
-      description,
-      children,
-      actionButtons,
-      isOpen,
-      onClose,
-      size = "md",
-    },
-    ref
-  ) => {
+  ({ title, description, children, actionButtons, isOpen, onClose, size = "md" }, ref) => {
     if (!isOpen) return null;
 
     return (
@@ -67,7 +56,9 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
             ref={ref as React.Ref<HTMLDivElement>}
             css={{
               maxW: sizeMap[size],
-              borderRadius: "xl", border: "1px solid", borderColor: "surface.border",
+              borderRadius: "xl",
+              border: "1px solid",
+              borderColor: "surface.border",
               boxShadow: "lg",
               bg: "surface.primary",
             }}
@@ -81,7 +72,14 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
               }}
               aria-label="Fechar modal"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -114,7 +112,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
         </DialogPositioner>
       </Dialog.Root>
     );
-  }
+  },
 );
 
 Modal.displayName = "Modal";

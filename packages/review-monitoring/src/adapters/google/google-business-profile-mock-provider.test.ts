@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { BusinessProfileReviewProvider } from "../../application/ports/business-profile-review-provider.js";
 import { GoogleBusinessProfileProviderError } from "../../application/ports/review-provider-error.js";
-import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
 import { GoogleBusinessProfileMockProvider } from "./google-business-profile-mock-provider.js";
+import { GOOGLE_BUSINESS_PROFILE_SCOPE } from "./google-business-profile.constants.js";
 
 describe("GoogleBusinessProfileMockProvider", () => {
   it("implements the review provider port", () => {
-    const provider: BusinessProfileReviewProvider =
-      new GoogleBusinessProfileMockProvider();
+    const provider: BusinessProfileReviewProvider = new GoogleBusinessProfileMockProvider();
 
     expect(provider).toBeDefined();
   });
@@ -16,18 +15,14 @@ describe("GoogleBusinessProfileMockProvider", () => {
   it("builds an OAuth authorization URL with offline access and state", () => {
     const provider = new GoogleBusinessProfileMockProvider({
       authorizationBaseUrl: "https://mock.example/oauth",
-      redirectUri: "https://api.example/integrations/google/callback"
+      redirectUri: "https://api.example/integrations/google/callback",
     });
 
-    const authorizationUrl = new URL(
-      provider.buildAuthorizationUrl({ state: "secure-state" })
-    );
+    const authorizationUrl = new URL(provider.buildAuthorizationUrl({ state: "secure-state" }));
 
     expect(authorizationUrl.origin).toBe("https://mock.example");
     expect(authorizationUrl.searchParams.get("response_type")).toBe("code");
-    expect(authorizationUrl.searchParams.get("scope")).toBe(
-      GOOGLE_BUSINESS_PROFILE_SCOPE
-    );
+    expect(authorizationUrl.searchParams.get("scope")).toBe(GOOGLE_BUSINESS_PROFILE_SCOPE);
     expect(authorizationUrl.searchParams.get("access_type")).toBe("offline");
     expect(authorizationUrl.searchParams.get("prompt")).toBe("consent");
     expect(authorizationUrl.searchParams.get("state")).toBe("secure-state");
@@ -37,7 +32,7 @@ describe("GoogleBusinessProfileMockProvider", () => {
     const provider = new GoogleBusinessProfileMockProvider();
 
     const tokenSet = await provider.exchangeAuthorizationCode({
-      code: "mock-code"
+      code: "mock-code",
     });
 
     expect(tokenSet.accessToken).toBe("mock-access-token");
@@ -49,7 +44,7 @@ describe("GoogleBusinessProfileMockProvider", () => {
     const provider = new GoogleBusinessProfileMockProvider();
 
     const tokenSet = await provider.refreshAccessToken({
-      refreshToken: "mock-refresh-token"
+      refreshToken: "mock-refresh-token",
     });
 
     expect(tokenSet.accessToken).toBe("mock-access-token");
@@ -60,17 +55,17 @@ describe("GoogleBusinessProfileMockProvider", () => {
     const provider = new GoogleBusinessProfileMockProvider({ pageSize: 1 });
 
     const firstAccountsPage = await provider.listAccounts({
-      accessToken: "mock-access-token"
+      accessToken: "mock-access-token",
     });
     expect(firstAccountsPage.nextPageToken).toBeDefined();
 
     const secondAccountsPage = await provider.listAccounts({
       accessToken: "mock-access-token",
-      pageToken: firstAccountsPage.nextPageToken ?? ""
+      pageToken: firstAccountsPage.nextPageToken ?? "",
     });
     const firstLocationsPage = await provider.listLocations({
       accessToken: "mock-access-token",
-      accountId: "accounts/1001"
+      accountId: "accounts/1001",
     });
 
     expect(firstAccountsPage.accounts).toHaveLength(1);
@@ -86,7 +81,7 @@ describe("GoogleBusinessProfileMockProvider", () => {
     const firstPage = await provider.listReviews({
       accessToken: "mock-access-token",
       accountId: "accounts/1001",
-      locationId: "locations/2001"
+      locationId: "locations/2001",
     });
     expect(firstPage.nextPageToken).toBeDefined();
 
@@ -94,7 +89,7 @@ describe("GoogleBusinessProfileMockProvider", () => {
       accessToken: "mock-access-token",
       accountId: "accounts/1001",
       locationId: "locations/2001",
-      pageToken: firstPage.nextPageToken ?? ""
+      pageToken: firstPage.nextPageToken ?? "",
     });
 
     expect(firstPage.reviews).toHaveLength(2);
@@ -106,11 +101,11 @@ describe("GoogleBusinessProfileMockProvider", () => {
 
   it("can simulate no businesses found", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "no-businesses"
+      scenario: "no-businesses",
     });
 
     const result = await provider.listAccounts({
-      accessToken: "mock-access-token"
+      accessToken: "mock-access-token",
     });
 
     expect(result.accounts).toEqual([]);
@@ -118,65 +113,65 @@ describe("GoogleBusinessProfileMockProvider", () => {
 
   it("can simulate a revoked refresh token", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "refresh-token-invalid"
+      scenario: "refresh-token-invalid",
     });
 
     await expect(
-      provider.refreshAccessToken({ refreshToken: "mock-refresh-token" })
+      provider.refreshAccessToken({ refreshToken: "mock-refresh-token" }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_TOKEN_REVOKED"
+      code: "GOOGLE_TOKEN_REVOKED",
     });
   });
 
   it("can simulate rate limiting", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "rate-limited"
+      scenario: "rate-limited",
     });
 
-    await expect(
-      provider.listAccounts({ accessToken: "mock-access-token" })
-    ).rejects.toMatchObject({
-      code: "GOOGLE_RATE_LIMITED"
-    });
+    await expect(provider.listAccounts({ accessToken: "mock-access-token" })).rejects.toMatchObject(
+      {
+        code: "GOOGLE_RATE_LIMITED",
+      },
+    );
   });
 
   it("can simulate an unavailable API", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "api-unavailable"
+      scenario: "api-unavailable",
     });
 
-    await expect(
-      provider.listAccounts({ accessToken: "mock-access-token" })
-    ).rejects.toMatchObject({
-      code: "GOOGLE_API_UNAVAILABLE"
-    });
+    await expect(provider.listAccounts({ accessToken: "mock-access-token" })).rejects.toMatchObject(
+      {
+        code: "GOOGLE_API_UNAVAILABLE",
+      },
+    );
   });
 
   it("can simulate an expired access token", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "token-expired"
+      scenario: "token-expired",
     });
 
-    await expect(
-      provider.listAccounts({ accessToken: "mock-access-token" })
-    ).rejects.toMatchObject({
-      code: "GOOGLE_AUTH_REQUIRED"
-    });
+    await expect(provider.listAccounts({ accessToken: "mock-access-token" })).rejects.toMatchObject(
+      {
+        code: "GOOGLE_AUTH_REQUIRED",
+      },
+    );
   });
 
   it("can simulate an unverified location", async () => {
     const provider = new GoogleBusinessProfileMockProvider({
-      scenario: "location-not-verified"
+      scenario: "location-not-verified",
     });
 
     await expect(
       provider.listReviews({
         accessToken: "mock-access-token",
         accountId: "accounts/1001",
-        locationId: "locations/2001"
-      })
+        locationId: "locations/2001",
+      }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_LOCATION_NOT_VERIFIED"
+      code: "GOOGLE_LOCATION_NOT_VERIFIED",
     });
   });
 
@@ -184,7 +179,7 @@ describe("GoogleBusinessProfileMockProvider", () => {
     const provider = new GoogleBusinessProfileMockProvider();
 
     await expect(provider.exchangeAuthorizationCode({ code: "" })).rejects.toBeInstanceOf(
-      GoogleBusinessProfileProviderError
+      GoogleBusinessProfileProviderError,
     );
   });
 });

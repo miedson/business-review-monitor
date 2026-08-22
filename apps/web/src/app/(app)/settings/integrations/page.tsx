@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getStoredSession } from "@/lib/auth-session";
 import {
   buildGoogleConnectUrl,
-  disconnectGoogle,
   buildInstagramConnectUrl,
+  disconnectGoogle,
   disconnectInstagram,
   listGoogleAccounts,
   listGoogleLocations,
   listInstagramAccounts,
 } from "@/lib/api-client";
-import { Box, Text, Toast, ChannelCard, Modal, Button, Card, CardBody, PageHeader } from "@/lib/design-system";
+import { getStoredSession } from "@/lib/auth-session";
+import {
+  Box,
+  Button,
+  Card,
+  CardBody,
+  ChannelCard,
+  Modal,
+  PageHeader,
+  Text,
+  Toast,
+} from "@/lib/design-system";
+import { useEffect, useState } from "react";
 
 type InstagramDisconnectChoice = "keep" | "delete" | null;
 
@@ -32,7 +42,10 @@ export default function IntegrationsPage() {
       setMessage({ type: "success", text: "Google Business Profile conectado com sucesso!" });
       window.history.replaceState({}, "", "/settings/integrations");
     } else if (googleStatus === "error") {
-      setMessage({ type: "error", text: "Erro ao conectar Google Business Profile. Tente novamente." });
+      setMessage({
+        type: "error",
+        text: "Erro ao conectar Google Business Profile. Tente novamente.",
+      });
       window.history.replaceState({}, "", "/settings/integrations");
     }
 
@@ -45,14 +58,20 @@ export default function IntegrationsPage() {
     }
   }, []);
 
-  const [googleAccount, setGoogleAccount] = useState<{ name?: string | undefined; accountName?: string | undefined } | null>(null);
-  const [instagramAccount, setInstagramAccount] = useState<{ username?: string | undefined } | null>(null);
+  const [googleAccount, setGoogleAccount] = useState<{
+    name?: string | undefined;
+    accountName?: string | undefined;
+  } | null>(null);
+  const [instagramAccount, setInstagramAccount] = useState<{
+    username?: string | undefined;
+  } | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleLocationCount, setGoogleLocationCount] = useState(0);
   const [instagramLoading, setInstagramLoading] = useState(false);
 
   const [showInstagramDisconnectModal, setShowInstagramDisconnectModal] = useState(false);
-  const [instagramDisconnectChoice, setInstagramDisconnectChoice] = useState<InstagramDisconnectChoice>(null);
+  const [instagramDisconnectChoice, setInstagramDisconnectChoice] =
+    useState<InstagramDisconnectChoice>(null);
   const [instagramDisconnectLoading, setInstagramDisconnectLoading] = useState(false);
   const [showInstagramDeleteConfirm, setShowInstagramDeleteConfirm] = useState(false);
   const [showGoogleDisconnectModal, setShowGoogleDisconnectModal] = useState(false);
@@ -72,8 +91,15 @@ export default function IntegrationsPage() {
       const googleResult = await listGoogleAccounts(session.accessToken);
       const firstGoogleAccount = googleResult.accounts[0];
       if (firstGoogleAccount) {
-        setGoogleAccount({ name: firstGoogleAccount.name, accountName: firstGoogleAccount.accountName ?? undefined });
-        const locations = await Promise.all(googleResult.accounts.map((account) => listGoogleLocations({ accessToken: session.accessToken, accountId: account.id })));
+        setGoogleAccount({
+          name: firstGoogleAccount.name,
+          accountName: firstGoogleAccount.accountName ?? undefined,
+        });
+        const locations = await Promise.all(
+          googleResult.accounts.map((account) =>
+            listGoogleLocations({ accessToken: session.accessToken, accountId: account.id }),
+          ),
+        );
         setGoogleLocationCount(locations.reduce((total, page) => total + page.locations.length, 0));
       } else {
         setGoogleLocationCount(0);
@@ -109,7 +135,7 @@ export default function IntegrationsPage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao iniciar conexão com Google"
+        text: error instanceof Error ? error.message : "Erro ao iniciar conexão com Google",
       });
       setGoogleLoading(false);
     }
@@ -132,7 +158,7 @@ export default function IntegrationsPage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao desconectar Google"
+        text: error instanceof Error ? error.message : "Erro ao desconectar Google",
       });
     } finally {
       setGoogleDisconnectLoading(false);
@@ -149,7 +175,7 @@ export default function IntegrationsPage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao iniciar conexão com Instagram"
+        text: error instanceof Error ? error.message : "Erro ao iniciar conexão com Instagram",
       });
       setInstagramLoading(false);
     }
@@ -169,7 +195,7 @@ export default function IntegrationsPage() {
       const deleteData = instagramDisconnectChoice === "delete";
       await disconnectInstagram({
         accessToken: session.accessToken,
-        deleteData
+        deleteData,
       });
       setInstagramAccount(null);
       setShowInstagramDisconnectModal(false);
@@ -179,12 +205,12 @@ export default function IntegrationsPage() {
         type: "success",
         text: deleteData
           ? "Instagram desconectado e dados excluídos com sucesso!"
-          : "Instagram desconectado com sucesso!"
+          : "Instagram desconectado com sucesso!",
       });
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Erro ao desconectar Instagram"
+        text: error instanceof Error ? error.message : "Erro ao desconectar Instagram",
       });
     } finally {
       setInstagramDisconnectLoading(false);
@@ -192,11 +218,17 @@ export default function IntegrationsPage() {
   };
 
   const googleAccountLabel = googleAccount?.accountName ?? googleAccount?.name;
-  const instagramAccountLabel = instagramAccount?.username ? `@${instagramAccount.username}` : undefined;
+  const instagramAccountLabel = instagramAccount?.username
+    ? `@${instagramAccount.username}`
+    : undefined;
 
   return (
     <Box>
-      <PageHeader eyebrow="Configurações" title="Integrações" description="Conecte os canais que fazem parte da reputação digital da sua empresa." />
+      <PageHeader
+        eyebrow="Configurações"
+        title="Integrações"
+        description="Conecte os canais que fazem parte da reputação digital da sua empresa."
+      />
 
       {message && (
         <Toast tone={message.type} onClose={() => setMessage(null)}>
@@ -204,42 +236,59 @@ export default function IntegrationsPage() {
         </Toast>
       )}
 
-      <Card variant="default" padding="none"><CardBody css={{ p: 0 }}>
-        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><Text css={{ fontSize: "sm", fontWeight: "semibold" }}>Canais</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>Conexões ativas e disponíveis para este workspace.</Text></Box>
-        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><ChannelCard
-          provider="google"
-          title="Google Business Profile"
-          description="Conecte sua conta para monitorar avaliações, responder clientes e acompanhar a reputação da sua empresa no Google Maps e Busca."
-          status={googleAccount ? "connected" : "disconnected"}
-          accountLabel={googleAccountLabel}
-          subtitle={googleAccount ? `${googleLocationCount} ${googleLocationCount === 1 ? "empresa disponível" : "empresas disponíveis"}` : undefined}
-          onConnect={handleGoogleConnect}
-          onDisconnectClick={handleGoogleDisconnectClick}
-          isLoading={googleLoading}
-          disabled={googleLoading}
-        /></Box>
+      <Card variant="default" padding="none">
+        <CardBody css={{ p: 0 }}>
+          <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}>
+            <Text css={{ fontSize: "sm", fontWeight: "semibold" }}>Canais</Text>
+            <Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>
+              Conexões ativas e disponíveis para este workspace.
+            </Text>
+          </Box>
+          <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}>
+            <ChannelCard
+              provider="google"
+              title="Google Business Profile"
+              description="Conecte sua conta para monitorar avaliações, responder clientes e acompanhar a reputação da sua empresa no Google Maps e Busca."
+              status={googleAccount ? "connected" : "disconnected"}
+              accountLabel={googleAccountLabel}
+              subtitle={
+                googleAccount
+                  ? `${googleLocationCount} ${googleLocationCount === 1 ? "empresa disponível" : "empresas disponíveis"}`
+                  : undefined
+              }
+              onConnect={handleGoogleConnect}
+              onDisconnectClick={handleGoogleDisconnectClick}
+              isLoading={googleLoading}
+              disabled={googleLoading}
+            />
+          </Box>
 
-        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><ChannelCard
-          provider="instagram"
-          title="Instagram"
-          description="Conecte sua conta profissional (Business ou Creator) para centralizar comentários e mensagens diretas do Instagram."
-          status={instagramAccount ? "connected" : "disconnected"}
-          accountLabel={instagramAccountLabel}
-          subtitle={instagramAccount ? "Conta conectada" : undefined}
-          onConnect={handleInstagramConnect}
-          onDisconnectClick={handleInstagramDisconnectClick}
-          isLoading={instagramLoading}
-          disabled={instagramLoading}
-        /></Box>
+          <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}>
+            <ChannelCard
+              provider="instagram"
+              title="Instagram"
+              description="Conecte sua conta profissional (Business ou Creator) para centralizar comentários e mensagens diretas do Instagram."
+              status={instagramAccount ? "connected" : "disconnected"}
+              accountLabel={instagramAccountLabel}
+              subtitle={instagramAccount ? "Conta conectada" : undefined}
+              onConnect={handleInstagramConnect}
+              onDisconnectClick={handleInstagramDisconnectClick}
+              isLoading={instagramLoading}
+              disabled={instagramLoading}
+            />
+          </Box>
 
-        <Box css={{ p: 5, opacity: .72 }}><ChannelCard
-          provider="facebook"
-          title="Facebook"
-          description="Em breve: conecte sua página do Facebook para gerenciar comentários e mensagens do Messenger."
-          status="disconnected"
-          comingSoon
-        /></Box>
-      </CardBody></Card>
+          <Box css={{ p: 5, opacity: 0.72 }}>
+            <ChannelCard
+              provider="facebook"
+              title="Facebook"
+              description="Em breve: conecte sua página do Facebook para gerenciar comentários e mensagens do Messenger."
+              status="disconnected"
+              comingSoon
+            />
+          </Box>
+        </CardBody>
+      </Card>
 
       <Modal
         isOpen={showGoogleDisconnectModal}
@@ -280,7 +329,11 @@ export default function IntegrationsPage() {
           setInstagramDisconnectChoice(null);
         }}
         title="Desconectar Instagram"
-        {...(instagramAccountLabel ? { description: `A conexão com ${instagramAccountLabel} será removida e o BRH deixará de receber novos comentários e mensagens desta conta.` } : {})}
+        {...(instagramAccountLabel
+          ? {
+              description: `A conexão com ${instagramAccountLabel} será removida e o BRH deixará de receber novos comentários e mensagens desta conta.`,
+            }
+          : {})}
         size="md"
         actionButtons={
           <>
@@ -409,11 +462,19 @@ export default function IntegrationsPage() {
               )}
             </Box>
             <Box>
-              <Text css={{ fontWeight: "medium", fontSize: "sm", color: instagramDisconnectChoice === "delete" ? "status.error.text" : "text.primary" }}>
+              <Text
+                css={{
+                  fontWeight: "medium",
+                  fontSize: "sm",
+                  color:
+                    instagramDisconnectChoice === "delete" ? "status.error.text" : "text.primary",
+                }}
+              >
                 Excluir dados da integração
               </Text>
               <Text css={{ fontSize: "xs", color: "text.tertiary", mt: 1, lineHeight: "normal" }}>
-                Comentários, mensagens e demais dados associados a esta conta serão excluídos permanentemente.
+                Comentários, mensagens e demais dados associados a esta conta serão excluídos
+                permanentemente.
               </Text>
             </Box>
           </Box>
@@ -428,7 +489,8 @@ export default function IntegrationsPage() {
               }}
             >
               <Text css={{ fontSize: "xs", color: "status.error.text", fontWeight: "medium" }}>
-                Esta ação excluirá permanentemente os dados coletados desta conta Instagram no Business Reputation Hub.
+                Esta ação excluirá permanentemente os dados coletados desta conta Instagram no
+                Business Reputation Hub.
               </Text>
             </Box>
           )}

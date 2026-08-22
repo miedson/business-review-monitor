@@ -1,23 +1,36 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ProcessMetaWebhookEventJob } from "./process-meta-webhook-event-job.js";
-import { ProcessInstagramDirectMessage } from "@brm/review-monitoring";
-import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import type { InstagramCommentRepository, UpsertInstagramCommentInput, DeleteInstagramCommentsByConnectionIdInput } from "@brm/review-monitoring";
-import type { InstagramCommentWebhookNormalizer } from "@brm/review-monitoring";
-import type { NormalizedInstagramComment } from "@brm/review-monitoring";
-import type { InstagramConversationRepository, InstagramMessageRepository } from "@brm/review-monitoring";
 import type { Job } from "bullmq";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { ProcessInstagramDirectMessage } from "@brm/review-monitoring";
+import type {
+  DeleteInstagramCommentsByConnectionIdInput,
+  InstagramCommentRepository,
+  InstagramCommentWebhookNormalizer,
+  InstagramConversationRepository,
+  InstagramMessageRepository,
+  NormalizedInstagramComment,
+  StoredInstagramConnection,
+  UpsertInstagramCommentInput,
+} from "@brm/review-monitoring";
+
+import { ProcessMetaWebhookEventJob } from "./process-meta-webhook-event-job.js";
 import type { ProcessMetaWebhookEventJobData } from "./process-meta-webhook-event-job.js";
 
 class FakeInstagramConnectionRepository {
   private connectionsByUserId: Map<string, StoredInstagramConnection> = new Map();
   private connectionsByProfessionalAccountId: Map<string, StoredInstagramConnection> = new Map();
-  private professionalAccountIdUpdates: Array<{ connectionId: string; professionalAccountId: string }> = [];
+  private professionalAccountIdUpdates: Array<{
+    connectionId: string;
+    professionalAccountId: string;
+  }> = [];
 
   setConnection(connection: StoredInstagramConnection): void {
     this.connectionsByUserId.set(connection.instagramUserId, connection);
     if (connection.instagramProfessionalAccountId) {
-      this.connectionsByProfessionalAccountId.set(connection.instagramProfessionalAccountId, connection);
+      this.connectionsByProfessionalAccountId.set(
+        connection.instagramProfessionalAccountId,
+        connection,
+      );
     }
   }
 
@@ -25,7 +38,9 @@ class FakeInstagramConnectionRepository {
     return this.connectionsByUserId.get(instagramUserId) ?? null;
   }
 
-  async findByProfessionalAccountId(professionalAccountId: string): Promise<StoredInstagramConnection | null> {
+  async findByProfessionalAccountId(
+    professionalAccountId: string,
+  ): Promise<StoredInstagramConnection | null> {
     return this.connectionsByProfessionalAccountId.get(professionalAccountId) ?? null;
   }
 
@@ -64,7 +79,7 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
       createdAtExternal: input.createdAtExternal ?? null,
       status: input.status ?? "NEW",
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
   }
 
@@ -82,29 +97,55 @@ class FakeInstagramCommentRepository implements InstagramCommentRepository {
 }
 
 class FakeInstagramConversationRepository {
-  async save() { return {} as never; }
-  async update() { return {} as never; }
-  async findByTenant() { return { conversations: [], nextCursor: null }; }
-  async findByIdForTenant() { return null; }
-  async findByConnectionAndParticipant() { return null; }
-  async incrementUnreadCount() { return null; }
-  async markAsRead() { return null; }
-  async deleteByConnectionId() { void 0; }
+  async save() {
+    return {} as never;
+  }
+  async update() {
+    return {} as never;
+  }
+  async findByTenant() {
+    return { conversations: [], nextCursor: null };
+  }
+  async findByIdForTenant() {
+    return null;
+  }
+  async findByConnectionAndParticipant() {
+    return null;
+  }
+  async incrementUnreadCount() {
+    return null;
+  }
+  async markAsRead() {
+    return null;
+  }
+  async deleteByConnectionId() {
+    void 0;
+  }
 }
 
 class FakeInstagramMessageRepository {
-  async save() { return {} as never; }
-  async findByConversation() { return { messages: [], nextCursor: null }; }
-  async findByIdForTenant() { return null; }
-  async findByExternalId() { return null; }
-  async deleteByConnectionId() { void 0; }
+  async save() {
+    return {} as never;
+  }
+  async findByConversation() {
+    return { messages: [], nextCursor: null };
+  }
+  async findByIdForTenant() {
+    return null;
+  }
+  async findByExternalId() {
+    return null;
+  }
+  async deleteByConnectionId() {
+    void 0;
+  }
 }
 
 class FakeProcessInstagramDirectMessage extends ProcessInstagramDirectMessage {
   constructor() {
     super({
       instagramConversationRepository: {} as InstagramConversationRepository,
-      instagramMessageRepository: {} as InstagramMessageRepository
+      instagramMessageRepository: {} as InstagramMessageRepository,
     });
   }
 
@@ -122,19 +163,35 @@ class FakeNormalizer implements InstagramCommentWebhookNormalizer {
 }
 
 class FakeResolveInstagramWebhookIdentity {
-  private readonly scenarios: Map<string, { connection?: StoredInstagramConnection; throwError?: Error }> = new Map();
-  execute = vi.fn(async (input: { webhookAccountId: string }): Promise<{ connection: StoredInstagramConnection; resolvedInstagramUserId: string } | null> => {
-    const scenario = this.scenarios.get(input.webhookAccountId);
-    if (scenario?.throwError) {
-      throw scenario.throwError;
-    }
-    if (scenario?.connection) {
-      return { connection: scenario.connection, resolvedInstagramUserId: scenario.connection.instagramUserId };
-    }
-    return null;
-  });
+  private readonly scenarios: Map<
+    string,
+    { connection?: StoredInstagramConnection; throwError?: Error }
+  > = new Map();
+  execute = vi.fn(
+    async (input: {
+      webhookAccountId: string;
+    }): Promise<{
+      connection: StoredInstagramConnection;
+      resolvedInstagramUserId: string;
+    } | null> => {
+      const scenario = this.scenarios.get(input.webhookAccountId);
+      if (scenario?.throwError) {
+        throw scenario.throwError;
+      }
+      if (scenario?.connection) {
+        return {
+          connection: scenario.connection,
+          resolvedInstagramUserId: scenario.connection.instagramUserId,
+        };
+      }
+      return null;
+    },
+  );
 
-  setScenario(webhookAccountId: string, scenario: { connection?: StoredInstagramConnection; throwError?: Error }): void {
+  setScenario(
+    webhookAccountId: string,
+    scenario: { connection?: StoredInstagramConnection; throwError?: Error },
+  ): void {
     this.scenarios.set(webhookAccountId, scenario);
   }
 }
@@ -158,11 +215,13 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       new FakeInstagramConversationRepository(),
       new FakeInstagramMessageRepository(),
       new FakeProcessInstagramDirectMessage(),
-      normalizer
+      normalizer,
     );
   });
 
-  const createJobData = (overrides: Partial<ProcessMetaWebhookEventJobData> = {}): ProcessMetaWebhookEventJobData => ({
+  const createJobData = (
+    overrides: Partial<ProcessMetaWebhookEventJobData> = {},
+  ): ProcessMetaWebhookEventJobData => ({
     payload: {
       object: "instagram",
       entry: [
@@ -177,16 +236,16 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
                 media_id: "media_456",
                 from: { id: "user_111", username: "testuser" },
                 created_time: 1700000000,
-                text: "Great post!"
-              }
-            }
-          ]
-        }
-      ]
+                text: "Great post!",
+              },
+            },
+          ],
+        },
+      ],
     },
     receivedAt: new Date().toISOString(),
     requestId: "123e4567-e89b-12d3-a456-426614174000",
-    ...overrides
+    ...overrides,
   });
 
   it("processes comment and persists it", async () => {
@@ -202,7 +261,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     connectionRepo.setConnection(connection);
 
@@ -214,10 +273,14 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "testuser",
       text: "Great post!",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "instagram_user_123"
+      rawEventId: "instagram_user_123",
     };
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -230,7 +293,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorExternalId: "user_111",
       authorUsername: "testuser",
       text: "Great post!",
-      status: "NEW"
+      status: "NEW",
     });
   });
 
@@ -243,10 +306,14 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "testuser",
       text: "Great post!",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "unknown_account"
+      rawEventId: "unknown_account",
     };
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -266,7 +333,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     connectionRepo.setConnection(connection);
 
@@ -278,10 +345,14 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "testuser",
       text: "Great post!",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "instagram_user_123"
+      rawEventId: "instagram_user_123",
     };
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
     await job.handle(mockJob);
@@ -294,24 +365,28 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
   it("ignores unsupported event types", async () => {
     normalizer.result = null;
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: {
-      ...createJobData(),
-      payload: {
-        object: "instagram",
-        entry: [
-          {
-            id: "instagram_account_123",
-            time: 1700000000,
-            changes: [
-              {
-                field: "mentions",
-                value: { media_id: "media_456" }
-              }
-            ]
-          }
-        ]
-      }
-    }} as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: {
+        ...createJobData(),
+        payload: {
+          object: "instagram",
+          entry: [
+            {
+              id: "instagram_account_123",
+              time: 1700000000,
+              changes: [
+                {
+                  field: "mentions",
+                  value: { media_id: "media_456" },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -321,7 +396,11 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
   it("handles normalization failure gracefully", async () => {
     normalizer.result = null;
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -341,7 +420,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     connectionRepo.setConnection(connection);
 
@@ -353,14 +432,18 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "miedsonfernandes",
       text: "Real comment from webhook",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "17841480590934524"
+      rawEventId: "17841480590934524",
     };
 
     resolveWebhookIdentity.setScenario("17841480590934524", {
-      connection
+      connection,
     });
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -372,7 +455,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorExternalId: "1107520471692069",
       authorUsername: "miedsonfernandes",
       text: "Real comment from webhook",
-      status: "NEW"
+      status: "NEW",
     });
   });
 
@@ -389,7 +472,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     connectionRepo.setConnection(connection);
 
@@ -401,10 +484,14 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "miedsonfernandes",
       text: "Real comment from webhook",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "17841480590934524"
+      rawEventId: "17841480590934524",
     };
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -425,7 +512,7 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     connectionRepo.setConnection(connection);
 
@@ -437,12 +524,16 @@ describe("ProcessMetaWebhookEventJob - comments", () => {
       authorUsername: "miedsonfernandes",
       text: "Real comment from webhook",
       createdAtExternal: new Date(1700000000 * 1000),
-      rawEventId: "17841480590934524"
+      rawEventId: "17841480590934524",
     };
 
     resolveWebhookIdentity.setScenario("17841480590934524", {});
 
-    const mockJob = { id: "job_1", name: "process-meta-webhook-event", data: createJobData() } as unknown as Job<ProcessMetaWebhookEventJobData>;
+    const mockJob = {
+      id: "job_1",
+      name: "process-meta-webhook-event",
+      data: createJobData(),
+    } as unknown as Job<ProcessMetaWebhookEventJobData>;
 
     await job.handle(mockJob);
 
@@ -464,7 +555,7 @@ describe("ProcessMetaWebhookEventJob - Instagram Direct", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date(Date.now() + 86400000)
+      tokenExpiresAt: new Date(Date.now() + 86400000),
     };
     const connectionRepo = new FakeInstagramConnectionRepository();
     connectionRepo.setConnection(connection);
@@ -475,27 +566,35 @@ describe("ProcessMetaWebhookEventJob - Instagram Direct", () => {
       new FakeResolveInstagramWebhookIdentity(),
       new FakeInstagramConversationRepository(),
       new FakeInstagramMessageRepository(),
-      processDirectMessage
+      processDirectMessage,
     );
 
     const data = {
       payload: {
         object: "instagram",
-        entry: [{
-          id: "professional_account",
-          time: 1700000000,
-          messaging: [{
-            sender: { id: "customer" },
-            recipient: { id: "professional_account" },
-            timestamp: 1700000000000,
-            message: { mid: "mid_1", text: "Olá" }
-          }]
-        }]
+        entry: [
+          {
+            id: "professional_account",
+            time: 1700000000,
+            messaging: [
+              {
+                sender: { id: "customer" },
+                recipient: { id: "professional_account" },
+                timestamp: 1700000000000,
+                message: { mid: "mid_1", text: "Olá" },
+              },
+            ],
+          },
+        ],
       },
       receivedAt: new Date().toISOString(),
-      requestId: "123e4567-e89b-12d3-a456-426614174000"
+      requestId: "123e4567-e89b-12d3-a456-426614174000",
     };
 
-    await job.handle({ id: "job_direct", name: "process-meta-webhook-event", data } as unknown as Job<ProcessMetaWebhookEventJobData>);
+    await job.handle({
+      id: "job_direct",
+      name: "process-meta-webhook-event",
+      data,
+    } as unknown as Job<ProcessMetaWebhookEventJobData>);
   });
 });

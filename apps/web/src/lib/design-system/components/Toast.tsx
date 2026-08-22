@@ -18,14 +18,14 @@ const toneStyles = {
     icon: Check,
     iconBackground: "#063d2a",
     iconColor: "#34d399",
-    title: "Sucesso"
+    title: "Sucesso",
   },
   error: {
     icon: CircleAlert,
     iconBackground: "#4a1717",
     iconColor: "#f87171",
-    title: "Erro"
-  }
+    title: "Erro",
+  },
 } as const;
 
 export function Toast({ tone, children, onClose, duration = 5000 }: ToastProps) {
@@ -55,7 +55,7 @@ export function Toast({ tone, children, onClose, duration = 5000 }: ToastProps) 
         borderColor: "surface.border",
         borderRadius: "xl",
         bg: "surface.primary",
-        boxShadow: "lg"
+        boxShadow: "lg",
       }}
     >
       <Box
@@ -67,7 +67,7 @@ export function Toast({ tone, children, onClose, duration = 5000 }: ToastProps) 
           flexShrink: 0,
           borderRadius: "md",
           bg: style.iconBackground,
-          color: style.iconColor
+          color: style.iconColor,
         }}
       >
         <Icon size={16} aria-hidden="true" />
@@ -92,7 +92,7 @@ export function Toast({ tone, children, onClose, duration = 5000 }: ToastProps) 
           color: "text.tertiary",
           cursor: "pointer",
           _hover: { bg: "surface.secondary", color: "text.primary" },
-          _focusVisible: { boxShadow: "focus", outline: "none" }
+          _focusVisible: { boxShadow: "focus", outline: "none" },
         }}
       >
         <X size={17} aria-hidden="true" />

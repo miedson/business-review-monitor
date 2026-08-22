@@ -1,9 +1,10 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getStoredSession } from "./auth-session";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
 import { listGoogleAccounts, listGoogleLocations, type GoogleLocation } from "./api-client";
+import { getStoredSession } from "./auth-session";
 
 const storageKey = "brh.active-google-location-id";
 
@@ -40,11 +41,12 @@ export function GoogleLocationProvider({ children }: { children: React.ReactNode
           accounts.map(async (account) => {
             const accountLocations = await listAllGoogleLocations(session.accessToken, account.id);
             return accountLocations.map((location) => ({ ...location, accountId: account.id }));
-          })
+          }),
         );
         const available = locationPages.flat();
         const savedId = window.localStorage.getItem(storageKey);
-        const selected = available.find((location) => location.id === savedId) ?? available[0] ?? null;
+        const selected =
+          available.find((location) => location.id === savedId) ?? available[0] ?? null;
 
         if (!active) return;
         setLocations(available);
@@ -58,19 +60,24 @@ export function GoogleLocationProvider({ children }: { children: React.ReactNode
     }
 
     void loadLocations();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
-  const value = useMemo<GoogleLocationContextValue>(() => ({
-    activeLocation: locations.find((location) => location.id === activeLocationId) ?? null,
-    locations,
-    status,
-    selectLocation(locationId) {
-      if (!locations.some((location) => location.id === locationId)) return;
-      setActiveLocationId(locationId);
-      window.localStorage.setItem(storageKey, locationId);
-    }
-  }), [activeLocationId, locations, status]);
+  const value = useMemo<GoogleLocationContextValue>(
+    () => ({
+      activeLocation: locations.find((location) => location.id === activeLocationId) ?? null,
+      locations,
+      status,
+      selectLocation(locationId) {
+        if (!locations.some((location) => location.id === locationId)) return;
+        setActiveLocationId(locationId);
+        window.localStorage.setItem(storageKey, locationId);
+      },
+    }),
+    [activeLocationId, locations, status],
+  );
 
   return <GoogleLocationContext.Provider value={value}>{children}</GoogleLocationContext.Provider>;
 }
@@ -99,7 +106,7 @@ async function listAllGoogleLocations(accessToken: string, accountId: string) {
     const page = await listGoogleLocations({
       accessToken,
       accountId,
-      ...(pageToken ? { pageToken } : {})
+      ...(pageToken ? { pageToken } : {}),
     });
     locations.push(...page.locations);
     pageToken = page.nextPageToken ?? undefined;

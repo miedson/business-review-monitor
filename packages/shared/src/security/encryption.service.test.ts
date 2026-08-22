@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createEncryptionServiceFromBase64Key,
   EncryptionError,
   EncryptionService,
-  createEncryptionServiceFromBase64Key
 } from "./encryption.service.js";
 
 const key = Buffer.alloc(32, "a");
@@ -79,9 +79,7 @@ describe("EncryptionService", () => {
     const encrypted = service.encrypt("refresh-token-value");
     const otherKey = Buffer.alloc(32, "b");
 
-    expect(() => new EncryptionService(otherKey).decrypt(encrypted)).toThrow(
-      EncryptionError
-    );
+    expect(() => new EncryptionService(otherKey).decrypt(encrypted)).toThrow(EncryptionError);
   });
 
   it("creates a service from a base64 encoded key", () => {

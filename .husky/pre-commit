@@ -3,6 +3,8 @@ set -euo pipefail
 
 echo "🔍 Running pre-commit validation checks..."
 
+pnpm format:check
+
 pnpm lint
 
 pnpm check:deploy

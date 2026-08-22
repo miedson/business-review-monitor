@@ -44,15 +44,39 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         ref={ref}
         variant={mappedVariant as "solid" | "subtle" | "outline" | "surface" | "plain"}
         size={size}
-        colorScheme={mappedColorScheme as "slate" | "green" | "amber" | "red" | "teal" | "blue" | "pink" | "orange" | "purple" | "cyan" | "gray"}
+        colorScheme={
+          mappedColorScheme as
+            | "slate"
+            | "green"
+            | "amber"
+            | "red"
+            | "teal"
+            | "blue"
+            | "pink"
+            | "orange"
+            | "purple"
+            | "cyan"
+            | "gray"
+        }
         className={className}
         {...rest}
       >
-        {dot && <span style={{ display: "inline-flex", width: "6px", height: "6px", borderRadius: "9999px", backgroundColor: "currentColor", marginRight: "6px" }} />}
+        {dot && (
+          <span
+            style={{
+              display: "inline-flex",
+              width: "6px",
+              height: "6px",
+              borderRadius: "9999px",
+              backgroundColor: "currentColor",
+              marginRight: "6px",
+            }}
+          />
+        )}
         {children}
       </ChakraBadge>
     );
-  }
+  },
 );
 
 Badge.displayName = "Badge";

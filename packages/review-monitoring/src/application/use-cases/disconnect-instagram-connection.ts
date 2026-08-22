@@ -1,5 +1,5 @@
-import type { StoredInstagramConnection } from "../ports/instagram-connection-repository.js";
 import type { BusinessProfileReviewProvider } from "../ports/business-profile-review-provider.js";
+import type { StoredInstagramConnection } from "../ports/instagram-connection-repository.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 
 export type DisconnectInstagramConnectionInput = {
@@ -27,16 +27,14 @@ export type DisconnectInstagramConnectionDependencies = {
 };
 
 export class DisconnectInstagramConnection {
-  constructor(
-    private readonly dependencies: DisconnectInstagramConnectionDependencies
-  ) {}
+  constructor(private readonly dependencies: DisconnectInstagramConnectionDependencies) {}
 
   async execute(
-    input: DisconnectInstagramConnectionInput
+    input: DisconnectInstagramConnectionInput,
   ): Promise<DisconnectInstagramConnectionResult> {
     const connection = await this.dependencies.instagramConnectionRepository.disconnectByTenantId({
       disconnectedAt: new Date(),
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     });
 
     if (!connection) {
@@ -44,7 +42,9 @@ export class DisconnectInstagramConnection {
     }
 
     if (input.deleteData) {
-      await this.dependencies.instagramCommentRepository.deleteByConnectionId({ connectionId: connection.id });
+      await this.dependencies.instagramCommentRepository.deleteByConnectionId({
+        connectionId: connection.id,
+      });
       await this.dependencies.instagramConnectionRepository.deleteByTenantId(input.tenantId);
     }
 
@@ -54,7 +54,7 @@ export class DisconnectInstagramConnection {
 
     try {
       await this.dependencies.provider.revokeAuthorization({
-        refreshToken: this.dependencies.tokenCipher.decrypt(connection.encryptedAccessToken)
+        refreshToken: this.dependencies.tokenCipher.decrypt(connection.encryptedAccessToken),
       });
     } catch {
       return { disconnected: true };

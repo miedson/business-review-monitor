@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type {
   BusinessProfileReviewProvider,
-  ProviderTokenSet
+  ProviderTokenSet,
 } from "../ports/business-profile-review-provider.js";
 import type {
   GoogleConnectionRepository,
   SaveConnectedGoogleConnectionInput,
-  StoredGoogleConnection
+  StoredGoogleConnection,
 } from "../ports/google-connection-repository.js";
 import type { OAuthStateData, OAuthStateStore } from "../ports/oauth-state-store.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
@@ -23,31 +23,31 @@ describe("CompleteGoogleOAuthCallback", () => {
         accessToken: "access-token",
         expiresInSeconds: 3600,
         refreshToken: "refresh-token",
-        scope: "scope"
+        scope: "scope",
       }),
       stateStore: new FakeOAuthStateStore({
         userId: "user-1",
-        tenantId: "tenant-1"
+        tenantId: "tenant-1",
       }),
       tokenCipher: new FakeTokenCipher(),
       googleConnectionRepository: repository,
-      now: () => connectedAt
+      now: () => connectedAt,
     });
 
     const result = await useCase.execute({
       code: "authorization-code",
-      state: "state"
+      state: "state",
     });
 
     expect(result).toEqual({
       tenantId: "tenant-1",
-      googleConnectionId: "connection-1"
+      googleConnectionId: "connection-1",
     });
     expect(repository.savedConnection).toMatchObject({
       tenantId: "tenant-1",
       encryptedRefreshToken: "encrypted:refresh-token",
       scope: "scope",
-      connectedAt
+      connectedAt,
     });
   });
 
@@ -57,30 +57,30 @@ describe("CompleteGoogleOAuthCallback", () => {
       tenantId: "tenant-1",
       encryptedRefreshToken: "encrypted:previous-refresh-token",
       scope: "scope",
-      status: "CONNECTED"
+      status: "CONNECTED",
     });
     const useCase = new CompleteGoogleOAuthCallback({
       provider: new FakeProvider({
         accessToken: "access-token",
         expiresInSeconds: 3600,
-        scope: "scope"
+        scope: "scope",
       }),
       stateStore: new FakeOAuthStateStore({
         userId: "user-1",
-        tenantId: "tenant-1"
+        tenantId: "tenant-1",
       }),
       tokenCipher: new FakeTokenCipher(),
       googleConnectionRepository: repository,
-      now: () => connectedAt
+      now: () => connectedAt,
     });
 
     await useCase.execute({
       code: "authorization-code",
-      state: "state"
+      state: "state",
     });
 
     expect(repository.savedConnection?.encryptedRefreshToken).toBe(
-      "encrypted:previous-refresh-token"
+      "encrypted:previous-refresh-token",
     );
   });
 
@@ -90,21 +90,21 @@ describe("CompleteGoogleOAuthCallback", () => {
         accessToken: "access-token",
         expiresInSeconds: 3600,
         refreshToken: "refresh-token",
-        scope: "scope"
+        scope: "scope",
       }),
       stateStore: new FakeOAuthStateStore(null),
       tokenCipher: new FakeTokenCipher(),
       googleConnectionRepository: new FakeGoogleConnectionRepository(),
-      now: () => connectedAt
+      now: () => connectedAt,
     });
 
     await expect(
       useCase.execute({
         code: "authorization-code",
-        state: "state"
-      })
+        state: "state",
+      }),
     ).rejects.toMatchObject({
-      code: "GOOGLE_INVALID_STATE"
+      code: "GOOGLE_INVALID_STATE",
     });
   });
 });
@@ -170,9 +170,7 @@ class FakeGoogleConnectionRepository implements GoogleConnectionRepository {
     return this.existingConnection;
   }
 
-  async saveConnected(
-    input: SaveConnectedGoogleConnectionInput
-  ): Promise<StoredGoogleConnection> {
+  async saveConnected(input: SaveConnectedGoogleConnectionInput): Promise<StoredGoogleConnection> {
     this.savedConnection = input;
 
     return {
@@ -180,7 +178,7 @@ class FakeGoogleConnectionRepository implements GoogleConnectionRepository {
       tenantId: input.tenantId,
       encryptedRefreshToken: input.encryptedRefreshToken,
       scope: input.scope,
-      status: "CONNECTED"
+      status: "CONNECTED",
     };
   }
 }

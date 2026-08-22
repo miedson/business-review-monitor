@@ -1,12 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
+import { afterEach, describe, expect, it } from "vitest";
+
 import { prisma } from "@brm/database";
+
 import { buildApi } from "../../server/app.js";
 
 const testConfig = {
   NODE_ENV: "test",
-  DATABASE_URL:
-    "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
+  DATABASE_URL: "postgresql://brm:brm_dev_password@127.0.0.1:5432/business_review_monitor",
   REDIS_URL: "redis://localhost:6379",
   BRM_QUEUE_PREFIX: "brm",
   JWT_ACCESS_SECRET: "access-secret-with-at-least-32-chars",
@@ -23,7 +24,7 @@ const testConfig = {
   META_APP_SECRET: "meta-app-secret",
   META_INSTAGRAM_REDIRECT_URI: "http://localhost:3333/integrations/instagram/callback",
   META_WEBHOOK_VERIFY_TOKEN: "webhook-verify-token",
-  META_GRAPH_API_VERSION: "v21.0"
+  META_GRAPH_API_VERSION: "v21.0",
 } as const;
 
 describe("Google manual review sync route", () => {
@@ -47,29 +48,29 @@ describe("Google manual review sync route", () => {
         method: "POST",
         url: "/integrations/google/reviews/cache",
         headers: {
-          authorization: `Bearer ${accessToken}`
+          authorization: `Bearer ${accessToken}`,
         },
         payload: {
           accountId: location.googleAccountId,
-          locationId: location.googleLocationId
-        }
+          locationId: location.googleLocationId,
+        },
       });
 
-    expect(firstResponse.statusCode, firstResponse.body).toBe(202);
+      expect(firstResponse.statusCode, firstResponse.body).toBe(202);
       expect(firstResponse.json()).toEqual({
-        jobId: expect.any(String)
+        jobId: expect.any(String),
       });
 
       const secondResponse = await app.inject({
         method: "POST",
         url: "/integrations/google/reviews/cache",
         headers: {
-          authorization: `Bearer ${accessToken}`
+          authorization: `Bearer ${accessToken}`,
         },
         payload: {
           accountId: location.googleAccountId,
-          locationId: location.googleLocationId
-        }
+          locationId: location.googleLocationId,
+        },
       });
 
       expect(secondResponse.statusCode).toBe(429);
@@ -80,7 +81,7 @@ describe("Google manual review sync route", () => {
 });
 
 async function registerAndGetAccessToken(
-  app: Awaited<ReturnType<typeof buildApi>>
+  app: Awaited<ReturnType<typeof buildApi>>,
 ): Promise<string> {
   const response = await app.inject({
     method: "POST",
@@ -88,8 +89,8 @@ async function registerAndGetAccessToken(
     payload: {
       name: "Manual Sync User",
       email: `manual-sync-${randomUUID()}@example.com`,
-      password: "password123"
-    }
+      password: "password123",
+    },
   });
 
   expect(response.statusCode).toBe(201);
@@ -99,14 +100,14 @@ async function registerAndGetAccessToken(
 
 async function connectGoogleMock(
   app: Awaited<ReturnType<typeof buildApi>>,
-  accessToken: string
+  accessToken: string,
 ): Promise<{ googleAccountId: string; googleLocationId: string }> {
   const connectResponse = await app.inject({
     method: "GET",
     url: "/integrations/google/connect",
     headers: {
-      authorization: `Bearer ${accessToken}`
-    }
+      authorization: `Bearer ${accessToken}`,
+    },
   });
   expect(connectResponse.statusCode).toBe(302);
 
@@ -116,7 +117,7 @@ async function connectGoogleMock(
 
   const callbackResponse = await app.inject({
     method: "GET",
-    url: `/integrations/google/callback?code=mock-code&state=${state}`
+    url: `/integrations/google/callback?code=mock-code&state=${state}`,
   });
 
   expect(callbackResponse.statusCode).toBe(302);
@@ -125,8 +126,8 @@ async function connectGoogleMock(
     method: "GET",
     url: "/integrations/google/accounts",
     headers: {
-      authorization: `Bearer ${accessToken}`
-    }
+      authorization: `Bearer ${accessToken}`,
+    },
   });
   expect(accountsResponse.statusCode).toBe(200);
   const accountId = accountsResponse.json<{
@@ -138,12 +139,10 @@ async function connectGoogleMock(
 
   const locationsResponse = await app.inject({
     method: "GET",
-    url: `/integrations/google/locations?accountId=${encodeURIComponent(
-      accountId
-    )}`,
+    url: `/integrations/google/locations?accountId=${encodeURIComponent(accountId)}`,
     headers: {
-      authorization: `Bearer ${accessToken}`
-    }
+      authorization: `Bearer ${accessToken}`,
+    },
   });
   expect(locationsResponse.statusCode).toBe(200);
   const locationId = locationsResponse.json<{
@@ -162,19 +161,19 @@ async function connectGoogleMock(
       googleLocationId: locationId,
       name: "Manual Sync Location",
       isSelected: true,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   const location = await prisma.businessLocation.findFirstOrThrow({
     select: {
       googleAccountId: true,
-      googleLocationId: true
-    }
+      googleLocationId: true,
+    },
   });
 
   return {
     googleAccountId: location.googleAccountId,
-    googleLocationId: location.googleLocationId
+    googleLocationId: location.googleLocationId,
   };
 }

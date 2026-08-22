@@ -1,6 +1,6 @@
 import type {
   BusinessProfileAccount,
-  BusinessProfileLocation
+  BusinessProfileLocation,
 } from "../../domain/business-profile.js";
 import type { BusinessReview, ReviewSummary } from "../../domain/review.js";
 
@@ -82,7 +82,16 @@ export type InstagramUserProfile = {
   name?: string;
   profile_pic?: string;
 };
-export type InstagramMediaMetadata = { id: string; media_type?: string; media_product_type?: string; media_url?: string; thumbnail_url?: string; permalink?: string; caption?: string; timestamp?: Date };
+export type InstagramMediaMetadata = {
+  id: string;
+  media_type?: string;
+  media_product_type?: string;
+  media_url?: string;
+  thumbnail_url?: string;
+  permalink?: string;
+  caption?: string;
+  timestamp?: Date;
+};
 
 export type ResolveWebhookAccountIdInput = {
   webhookAccountId: string;
@@ -97,31 +106,29 @@ export type ResolveWebhookAccountIdResult = {
 
 export interface BusinessProfileReviewProvider {
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string;
-  exchangeAuthorizationCode(
-    input: ProviderAuthorizationCodeInput
-  ): Promise<ProviderTokenSet>;
-  refreshAccessToken(
-    input: RefreshProviderAccessTokenInput
-  ): Promise<ProviderTokenSet>;
+  exchangeAuthorizationCode(input: ProviderAuthorizationCodeInput): Promise<ProviderTokenSet>;
+  refreshAccessToken(input: RefreshProviderAccessTokenInput): Promise<ProviderTokenSet>;
   revokeAuthorization(input: RevokeProviderAuthorizationInput): Promise<void>;
-  listAccounts(
-    input: ListBusinessProfileAccountsInput
-  ): Promise<ListBusinessProfileAccountsResult>;
+  listAccounts(input: ListBusinessProfileAccountsInput): Promise<ListBusinessProfileAccountsResult>;
   listLocations(
-    input: ListBusinessProfileLocationsInput
+    input: ListBusinessProfileLocationsInput,
   ): Promise<ListBusinessProfileLocationsResult>;
   listReviews(input: ListBusinessReviewsInput): Promise<ListBusinessReviewsResult>;
   replyToReview?(input: ReplyToGoogleReviewInput): Promise<void>;
 }
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
-  replyToComment?(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
+  replyToComment?(input: {
+    accessToken: string;
+    commentId: string;
+    message: string;
+  }): Promise<{ id: string }>;
   sendDirectMessage?(input: SendInstagramDirectMessageInput): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
   getExternalUserProfile?(accessToken: string, userId: string): Promise<InstagramUserProfile>;
   getMediaMetadata?(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
   resolveWebhookAccountId(
-    input: ResolveWebhookAccountIdInput
+    input: ResolveWebhookAccountIdInput,
   ): Promise<ResolveWebhookAccountIdResult>;
 }
 

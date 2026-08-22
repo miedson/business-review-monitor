@@ -22,7 +22,7 @@ export class CleanupExpiredReviewCacheJob {
     logInfo("cleanup_expired_review_cache_job_completed", {
       deletedCount: result.deletedCount,
       jobId: String(job.id),
-      jobName: job.name
+      jobName: job.name,
     });
   }
 }

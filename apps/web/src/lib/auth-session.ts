@@ -21,7 +21,7 @@ export function getStoredSession(): AuthSession | null {
   try {
     return {
       accessToken,
-      user: JSON.parse(userPayload) as AuthUser
+      user: JSON.parse(userPayload) as AuthUser,
     };
   } catch {
     clearStoredSession();

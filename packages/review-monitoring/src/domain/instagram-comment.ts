@@ -21,7 +21,7 @@ export type NormalizedInstagramCommentInput = {
 };
 
 export function createNormalizedInstagramComment(
-  input: NormalizedInstagramCommentInput
+  input: NormalizedInstagramCommentInput,
 ): NormalizedInstagramComment {
   return {
     externalCommentId: input.externalCommentId,
@@ -31,7 +31,7 @@ export function createNormalizedInstagramComment(
     authorUsername: input.authorUsername ?? undefined,
     text: input.text ?? undefined,
     createdAtExternal: input.createdAtExternal ?? undefined,
-    rawEventId: input.rawEventId ?? undefined
+    rawEventId: input.rawEventId ?? undefined,
   };
 }
 

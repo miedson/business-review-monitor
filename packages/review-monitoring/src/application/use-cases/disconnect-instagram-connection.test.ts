@@ -1,19 +1,31 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import type {
+  BusinessProfileReviewProvider,
+  StoredInstagramConnection,
+  TokenCipher,
+} from "@brm/review-monitoring";
+
 import { DisconnectInstagramConnection } from "./disconnect-instagram-connection.js";
-import type { StoredInstagramConnection } from "@brm/review-monitoring";
-import type { BusinessProfileReviewProvider } from "@brm/review-monitoring";
-import type { TokenCipher } from "@brm/review-monitoring";
 
 class FakeProvider implements BusinessProfileReviewProvider {
   buildAuthorizationUrl(): string {
     return "";
   }
 
-  async exchangeAuthorizationCode(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+  async exchangeAuthorizationCode(): Promise<{
+    accessToken: string;
+    expiresInSeconds: number;
+    scope: string;
+  }> {
     return { accessToken: "token", expiresInSeconds: 3600, scope: "instagram_business_basic" };
   }
 
-  async refreshAccessToken(): Promise<{ accessToken: string; expiresInSeconds: number; scope: string }> {
+  async refreshAccessToken(): Promise<{
+    accessToken: string;
+    expiresInSeconds: number;
+    scope: string;
+  }> {
     return { accessToken: "token", expiresInSeconds: 3600, scope: "instagram_business_basic" };
   }
 
@@ -52,7 +64,10 @@ class FakeTokenCipher implements TokenCipher {
 
 describe("DisconnectInstagramConnection", () => {
   let connectionRepo: {
-    disconnectByTenantId: (input: { disconnectedAt: Date; tenantId: string }) => Promise<StoredInstagramConnection | null>;
+    disconnectByTenantId: (input: {
+      disconnectedAt: Date;
+      tenantId: string;
+    }) => Promise<StoredInstagramConnection | null>;
     deleteByTenantId: (tenantId: string) => Promise<void>;
   };
   let commentRepo: {
@@ -65,10 +80,10 @@ describe("DisconnectInstagramConnection", () => {
   beforeEach(() => {
     connectionRepo = {
       disconnectByTenantId: async () => null,
-      deleteByTenantId: async () => {}
+      deleteByTenantId: async () => {},
     };
     commentRepo = {
-      deleteByConnectionId: async () => {}
+      deleteByConnectionId: async () => {},
     };
     provider = new FakeProvider();
     tokenCipher = new FakeTokenCipher();
@@ -76,7 +91,7 @@ describe("DisconnectInstagramConnection", () => {
       instagramConnectionRepository: connectionRepo,
       instagramCommentRepository: commentRepo,
       provider,
-      tokenCipher
+      tokenCipher,
     });
   });
 
@@ -93,7 +108,7 @@ describe("DisconnectInstagramConnection", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
 
     connectionRepo.disconnectByTenantId = async () => connection;
@@ -116,7 +131,7 @@ describe("DisconnectInstagramConnection", () => {
       status: "CONNECTED",
       connectedAt: new Date(),
       disconnectedAt: null,
-      tokenExpiresAt: new Date()
+      tokenExpiresAt: new Date(),
     };
 
     connectionRepo.disconnectByTenantId = async () => connection;

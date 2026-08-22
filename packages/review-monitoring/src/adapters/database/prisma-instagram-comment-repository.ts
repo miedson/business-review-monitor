@@ -1,12 +1,12 @@
 import type { PrismaClient } from "@brm/database";
 
 import type {
-  InstagramCommentRepository,
-  UpsertInstagramCommentInput,
-  FindInstagramCommentsInput,
+  DeleteInstagramCommentsByConnectionIdInput,
   FindInstagramCommentByIdInput,
-  DeleteInstagramCommentsByConnectionIdInput
-  ,MarkInstagramCommentRepliedInput
+  FindInstagramCommentsInput,
+  InstagramCommentRepository,
+  MarkInstagramCommentRepliedInput,
+  UpsertInstagramCommentInput,
 } from "../../application/ports/instagram-comment-repository.js";
 import type { InstagramComment, InstagramCommentStatus } from "../../domain/instagram-comment.js";
 
@@ -18,8 +18,8 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
       where: {
         instagramConnectionId_externalCommentId: {
           instagramConnectionId: input.instagramConnectionId,
-          externalCommentId: input.externalCommentId
-        }
+          externalCommentId: input.externalCommentId,
+        },
       },
       create: {
         tenantId: input.tenantId,
@@ -30,7 +30,7 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
         authorUsername: input.authorUsername ?? null,
         text: input.text ?? null,
         createdAtExternal: input.createdAtExternal ?? null,
-        status: input.status ?? "NEW"
+        status: input.status ?? "NEW",
       },
       update: {
         externalMediaId: input.externalMediaId ?? null,
@@ -39,8 +39,8 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
         text: input.text ?? null,
         createdAtExternal: input.createdAtExternal ?? null,
         status: input.status ?? "NEW",
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return this.mapToDomain(comment);
@@ -48,7 +48,7 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
 
   async findByTenant(input: FindInstagramCommentsInput): Promise<InstagramComment[]> {
     const where: Record<string, unknown> = {
-      tenantId: input.tenantId
+      tenantId: input.tenantId,
     };
 
     if (input.instagramConnectionId) {
@@ -67,7 +67,7 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     } = {
       where,
       orderBy: { createdAtExternal: "desc" },
-      take: input.limit ?? 50
+      take: input.limit ?? 50,
     };
 
     if (input.cursor) {
@@ -83,8 +83,8 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
     const comment = await this.prisma.instagramComment.findFirst({
       where: {
         id: input.id,
-        tenantId: input.tenantId
-      }
+        tenantId: input.tenantId,
+      },
     });
 
     return comment ? this.mapToDomain(comment) : null;
@@ -93,18 +93,36 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
   async deleteByConnectionId(input: DeleteInstagramCommentsByConnectionIdInput): Promise<void> {
     await this.prisma.instagramComment.deleteMany({
       where: {
-        instagramConnectionId: input.connectionId
-      }
+        instagramConnectionId: input.connectionId,
+      },
     });
   }
 
   async markReplied(input: MarkInstagramCommentRepliedInput): Promise<InstagramComment> {
-    const comment = await this.prisma.instagramComment.update({ where: { id: input.id }, data: { repliedAt: input.repliedAt } });
+    const comment = await this.prisma.instagramComment.update({
+      where: { id: input.id },
+      data: { repliedAt: input.repliedAt },
+    });
     return this.mapToDomain(comment);
   }
 
-  async saveReply(input: { tenantId: string; instagramCommentId: string; externalReplyId: string; text: string; createdAt: Date }): Promise<void> {
-    await this.prisma.instagramCommentReply.create({ data: { tenantId: input.tenantId, instagramCommentId: input.instagramCommentId, externalReplyId: input.externalReplyId, authorType: "BUSINESS", text: input.text, createdAtExternal: input.createdAt } });
+  async saveReply(input: {
+    tenantId: string;
+    instagramCommentId: string;
+    externalReplyId: string;
+    text: string;
+    createdAt: Date;
+  }): Promise<void> {
+    await this.prisma.instagramCommentReply.create({
+      data: {
+        tenantId: input.tenantId,
+        instagramCommentId: input.instagramCommentId,
+        externalReplyId: input.externalReplyId,
+        authorType: "BUSINESS",
+        text: input.text,
+        createdAtExternal: input.createdAt,
+      },
+    });
   }
 
   private mapToDomain(comment: {
@@ -137,7 +155,7 @@ export class PrismaInstagramCommentRepository implements InstagramCommentReposit
       readAt: comment.readAt,
       repliedAt: comment.repliedAt,
       createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt
+      updatedAt: comment.updatedAt,
     };
   }
 }
