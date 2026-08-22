@@ -28,6 +28,7 @@ const instagramCommentResponseSchema = {
         id: { type: ["string", "null"] },
         username: { type: ["string", "null"] }
         ,profilePictureUrl: { type: ["string", "null"] }
+        ,authorType: { type: "string", enum: ["CUSTOMER", "BUSINESS"] }
       }
     },
     text: { type: ["string", "null"] },
@@ -137,7 +138,8 @@ export function registerInstagramCommentsRoutes(
         author: {
           id: comment.authorExternalId ?? undefined,
           username: comment.authorUsername ?? undefined
-          ,profilePictureUrl: comment.authorExternalId ? userById.get(comment.authorExternalId)?.profile_pic ?? null : null
+        ,profilePictureUrl: comment.authorExternalId ? userById.get(comment.authorExternalId)?.profile_pic ?? null : null
+          ,authorType: comment.authorUsername === connection?.username || comment.authorExternalId === connection?.instagramProfessionalAccountId ? "BUSINESS" : "CUSTOMER"
         },
         text: comment.text ?? undefined,
         createdAt: comment.createdAtExternal?.toISOString() ?? comment.createdAt.toISOString(),

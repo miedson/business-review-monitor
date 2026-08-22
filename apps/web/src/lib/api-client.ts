@@ -92,6 +92,7 @@ const instagramCommentAuthorSchema = z.object({
   id: z.string().nullable().optional(),
   username: z.string().nullable().optional(),
   profilePictureUrl: z.string().nullable().optional(),
+  authorType: z.enum(["CUSTOMER", "BUSINESS"]),
 });
 
 const instagramCommentSchema = z.object({
