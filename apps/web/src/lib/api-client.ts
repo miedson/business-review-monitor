@@ -105,6 +105,7 @@ const instagramCommentSchema = z.object({
   text: z.string().nullable().optional(),
   createdAt: z.string(),
   status: z.enum(["NEW", "READ"]),
+  authorType: z.enum(["CUSTOMER", "BUSINESS"]),
   repliedAt: z.string().nullable().optional(),
 });
 

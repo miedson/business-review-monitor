@@ -47,6 +47,7 @@ const instagramCommentResponseSchema = {
     },
     createdAt: { type: "string", format: "date-time" },
     status: { type: "string", enum: ["NEW", "READ"] },
+    authorType: { type: "string", enum: ["CUSTOMER", "BUSINESS"] },
     repliedAt: { type: ["string", "null"], format: "date-time" }
   }
 };
@@ -144,6 +145,7 @@ export function registerInstagramCommentsRoutes(
         text: comment.text ?? undefined,
         createdAt: comment.createdAtExternal?.toISOString() ?? comment.createdAt.toISOString(),
         status: comment.status
+        ,authorType: comment.authorUsername === connection?.username || comment.authorExternalId === connection?.instagramProfessionalAccountId ? "BUSINESS" : "CUSTOMER"
         ,repliedAt: comment.repliedAt?.toISOString() ?? null
         ,media: comment.externalMediaId ? mediaById.get(comment.externalMediaId) ?? null : null
       }));
