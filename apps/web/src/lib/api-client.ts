@@ -127,6 +127,12 @@ export type InstagramCommentAuthor = z.infer<typeof instagramCommentAuthorSchema
 export type InstagramComment = z.infer<typeof instagramCommentSchema>;
 export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponseSchema>;
 
+const attentionSummarySchema = z.object({ googleReviewsPendingReply: z.number().int(), instagramCommentsPendingReply: z.number().int(), total: z.number().int() });
+export type AttentionSummary = z.infer<typeof attentionSummarySchema>;
+export async function getAttentionSummary(accessToken: string): Promise<AttentionSummary> {
+  return attentionSummarySchema.parse(await requestJson("/attention-summary", { accessToken }));
+}
+
 export async function register(input: {
   name: string;
   email: string;

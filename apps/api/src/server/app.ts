@@ -61,6 +61,7 @@ import {
   createRedisClient
 } from "../modules/integrations/redis-connection.js";
 import { RedisManualSyncRateLimiter } from "../modules/integrations/redis-manual-sync-rate-limiter.js";
+import { registerAttentionSummaryRoute } from "../modules/integrations/attention-summary.routes.js";
 
 export type BuildApiOptions = {
   config?: AppConfig;
@@ -316,6 +317,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   });
 
   registerAuthRoutes(app, authService);
+  registerAttentionSummaryRoute(app, { prisma, authService });
   registerGoogleIntegrationRoutes(app, {
     authService,
     startGoogleOAuthConnection,
