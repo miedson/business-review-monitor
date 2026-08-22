@@ -111,8 +111,8 @@ export function registerInstagramCommentsRoutes(
       const mediaIds = [...new Set(result.comments.map((comment) => comment.externalMediaId).filter((id): id is string => Boolean(id)))];
       const authorIds = [...new Set(result.comments.map((comment) => comment.authorExternalId).filter((id): id is string => Boolean(id)))];
       const [mediaEntries, userEntries] = accessToken ? await Promise.all([
-        Promise.all(mediaIds.map(async (id) => [id, await options.instagramProvider.getMediaMetadata(accessToken, id).catch(() => null)] as const)),
-        Promise.all(authorIds.map(async (id) => [id, await options.instagramProvider.getExternalUserProfile(accessToken, id).catch(() => null)] as const))
+        options.instagramProvider.getMediaMetadata ? Promise.all(mediaIds.map(async (id) => [id, await options.instagramProvider.getMediaMetadata?.(accessToken, id).catch(() => null)] as const)) : Promise.resolve([]),
+        options.instagramProvider.getExternalUserProfile ? Promise.all(authorIds.map(async (id) => [id, await options.instagramProvider.getExternalUserProfile?.(accessToken, id).catch(() => null)] as const)) : Promise.resolve([])
       ]) : [[], []];
       const mediaById = new Map(mediaEntries); const userById = new Map(userEntries);
 
@@ -158,6 +158,7 @@ export function registerInstagramCommentsRoutes(
     const connection = await options.instagramConnectionRepository.findByTenantId(session.tenant.id);
     if (!connection?.encryptedAccessToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Instagram connection is required", requestId: request.id });
     const accessToken = options.tokenCipher.decrypt(connection.encryptedAccessToken);
+    if (!options.instagramProvider.replyToComment) return reply.status(501).send({ error: "Instagram reply is not supported by this provider", requestId: request.id });
     const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
     await options.instagramCommentRepository.saveReply?.({ tenantId: session.tenant.id, instagramCommentId: comment.id, externalReplyId: result.id, text: body.message, createdAt: new Date() });
     await options.instagramCommentRepository.markReplied?.({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });

@@ -108,10 +108,10 @@ export interface BusinessProfileReviewProvider {
 }
 
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
-  replyToComment(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
+  replyToComment?(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
-  getExternalUserProfile(accessToken: string, userId: string): Promise<InstagramUserProfile>;
-  getMediaMetadata(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
+  getExternalUserProfile?(accessToken: string, userId: string): Promise<InstagramUserProfile>;
+  getMediaMetadata?(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
   resolveWebhookAccountId(
     input: ResolveWebhookAccountIdInput
   ): Promise<ResolveWebhookAccountIdResult>;
