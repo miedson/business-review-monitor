@@ -214,9 +214,22 @@ export class InstagramApiProvider implements InstagramReviewProvider {
   async replyToComment(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }> {
     const url = new URL(`${this.graphApiBase}/${input.commentId}/replies`);
     url.searchParams.set("access_token", input.accessToken);
-    const response = await this.fetchFn(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ message: input.message }) });
+    const response = await this.fetchFn(url, {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=UTF-8" },
+      body: JSON.stringify({ message: input.message })
+    });
     const payload = await readJson(response);
-    if (!response.ok || !isObject(payload) || typeof payload.id !== "string") throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram comment reply request failed");
+    if (!response.ok || !isObject(payload) || typeof payload.id !== "string") {
+      this.logger.error({
+        provider: "instagram",
+        operation: "comment_reply_failed",
+        httpStatus: response.status,
+        responseKeys: isObject(payload) ? Object.keys(payload) : [],
+        metaError: sanitizeGraphError(payload)
+      });
+      throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram comment reply request failed");
+    }
     return { id: payload.id };
   }
 
@@ -496,6 +509,15 @@ function sanitizeMetaError(error: unknown): Record<string, unknown> | undefined 
     error_subcode: error.error_subcode,
     message: error.message
   };
+}
+
+function sanitizeGraphError(payload: unknown): Record<string, unknown> | undefined {
+  if (!isObject(payload)) return undefined;
+  if ("error" in payload) return sanitizeMetaError(payload.error);
+  if (typeof payload.error_type === "string" || typeof payload.error_code === "number" || typeof payload.error_message === "string") {
+    return { type: payload.error_type, code: payload.error_code, message: payload.error_message };
+  }
+  return undefined;
 }
 
 async function readJson(response: Response): Promise<unknown> {

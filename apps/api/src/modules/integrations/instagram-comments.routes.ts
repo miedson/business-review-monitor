@@ -4,6 +4,7 @@ import type {
   ListInstagramComments,
   ListInstagramCommentsInput
 } from "@brm/review-monitoring";
+import { GoogleBusinessProfileProviderError } from "@brm/review-monitoring";
 import type { InstagramReviewProvider, InstagramConnectionRepository, TokenCipher } from "@brm/review-monitoring";
 import type { RealtimeGateway } from "./realtime-gateway.js";
 
@@ -176,11 +177,19 @@ export function registerInstagramCommentsRoutes(
     if (!connection?.encryptedAccessToken || connection.status !== "CONNECTED") return reply.status(401).send({ error: "Instagram connection is required", requestId: request.id });
     const accessToken = options.tokenCipher.decrypt(connection.encryptedAccessToken);
     if (!options.instagramProvider.replyToComment) return reply.status(501).send({ error: "Instagram reply is not supported by this provider", requestId: request.id });
-    const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
-    await options.instagramCommentRepository.saveReply?.({ tenantId: session.tenant.id, instagramCommentId: comment.id, externalReplyId: result.id, text: body.message, createdAt: new Date() });
-    await options.instagramCommentRepository.markReplied?.({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
-    await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "instagram.comment.replied", payload: { commentId: comment.id } });
-    return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });
+    try {
+      const result = await options.instagramProvider.replyToComment({ accessToken, commentId: comment.externalCommentId, message: body.message });
+      await options.instagramCommentRepository.saveReply?.({ tenantId: session.tenant.id, instagramCommentId: comment.id, externalReplyId: result.id, text: body.message, createdAt: new Date() });
+      await options.instagramCommentRepository.markReplied?.({ id: comment.id, tenantId: session.tenant.id, repliedAt: new Date() });
+      await options.realtimeGateway.publish({ tenantId: session.tenant.id, type: "instagram.comment.replied", payload: { commentId: comment.id } });
+      return reply.send({ id: comment.id, externalReplyId: result.id, replied: true });
+    } catch (error) {
+      if (error instanceof GoogleBusinessProfileProviderError) {
+        const status = error.code === "INSTAGRAM_AUTH_REQUIRED" || error.code === "INSTAGRAM_TOKEN_REVOKED" ? 401 : error.code === "INSTAGRAM_PERMISSION_DENIED" ? 403 : error.code === "INSTAGRAM_RATE_LIMITED" ? 429 : 502;
+        return reply.status(status).send({ error: error.message, code: error.code, requestId: request.id });
+      }
+      throw error;
+    }
   });
 }
 
