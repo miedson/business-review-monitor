@@ -6,7 +6,7 @@ import { Send } from "lucide-react";
 import { Box, Button, Flex, Text } from "@/lib/design-system";
 
 export function ConversationShell({ header, context, children, composer, onBackdropClick }: { header: ReactNode; context?: ReactNode; children: ReactNode; composer: ReactNode; onBackdropClick?: () => void }) {
-  return <Box css={{ position: "fixed", inset: 0, bg: "rgba(15,23,42,.35)", zIndex: 10 }} onClick={onBackdropClick}><Box css={{ position: "absolute", right: 0, top: 0, bottom: 0, w: { base: "100%", md: "520px" }, bg: "surface.primary", boxShadow: "xl", display: "flex", flexDirection: "column", minH: 0 }} onClick={(event) => event.stopPropagation()}>{header}{context && <Box css={{ flexShrink: 0, px: 6 }}>{context}</Box>}<Box css={{ flex: 1, minH: 0, overflowY: "auto", px: 6, py: 5 }}>{children}</Box><Box css={{ flexShrink: 0, borderTop: "1px solid", borderColor: "surface.border", bg: "surface.primary", px: 6, py: 4 }}>{composer}</Box></Box></Box>;
+  return <Box css={{ position: "fixed", inset: 0, bg: "rgba(15,23,42,.35)", zIndex: "modal" }} onClick={onBackdropClick}><Box css={{ position: "absolute", right: 0, top: 0, bottom: 0, w: { base: "100%", md: "520px" }, bg: "surface.primary", boxShadow: "xl", display: "flex", flexDirection: "column", minH: 0 }} onClick={(event) => event.stopPropagation()}>{header}{context && <Box css={{ flexShrink: 0, px: 6 }}>{context}</Box>}<Box css={{ flex: 1, minH: 0, overflowY: "auto", px: 6, py: 5 }}>{children}</Box><Box css={{ flexShrink: 0, borderTop: "1px solid", borderColor: "surface.border", bg: "surface.primary", px: 6, py: 4 }}>{composer}</Box></Box></Box>;
 }
 
 export function ConversationHeader({ children, onClose }: { children: ReactNode; onClose: () => void }) {
