@@ -67,10 +67,9 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
             ref={ref as React.Ref<HTMLDivElement>}
             css={{
               maxW: sizeMap[size],
-              borderRadius: "xl",
-              boxShadow: "2xl",
+              borderRadius: "xl", border: "1px solid", borderColor: "surface.border",
+              boxShadow: "lg",
               bg: "surface.primary",
-              animation: "scaleIn 0.2s ease",
             }}
           >
             <DialogCloseTrigger

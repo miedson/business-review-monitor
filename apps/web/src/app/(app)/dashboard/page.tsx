@@ -1,362 +1,177 @@
 "use client";
 
-import { Box, Text, Card, CardHeader, CardTitle, CardDescription, CardBody, CardFooter, Badge, Button, Flex, Alert, EmptyState, Link } from "@/lib/design-system";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Camera,
+  CheckCircle2,
+  CircleAlert,
+  Clock3,
+  MessageCircle,
+  Plug,
+  RefreshCw,
+  Star,
+} from "lucide-react";
+import {
+  Box, Button, Card, CardBody, EmptyState, Flex, Link, Skeleton, StatusBadge, Text,
+} from "@/lib/design-system";
 import { getStoredSession } from "@/lib/auth-session";
 import {
-  listGoogleAccounts,
-  listGoogleLocations,
-  listGoogleReviews,
-  disconnectGoogle,
-  buildGoogleConnectUrl,
+  listGoogleAccounts, listGoogleLocations, listGoogleReviews, listInstagramAccounts,
+  listInstagramComments, type GoogleReview, type InstagramComment,
 } from "@/lib/api-client";
-import { Skeleton } from "@/lib/design-system";
 
-interface GoogleAccount {
-  id: string;
-  name: string;
-  accountName?: string | null | undefined;
-}
-
-interface GoogleLocation {
-  id: string;
-  name: string;
-  accountId?: string | null | undefined;
-  storeCode?: string | null | undefined;
-  isVerified?: boolean | null | undefined;
-  lastSyncedAt?: string | null | undefined;
-}
-
-interface GoogleReview {
-  id: string;
-  starRating: "ONE" | "TWO" | "THREE" | "FOUR" | "FIVE" | "STAR_RATING_UNSPECIFIED";
-  createdAt: string;
-  updatedAt: string;
-  reviewerName?: string | null | undefined;
-  comment?: string | null | undefined;
-}
+const score = (rating: GoogleReview["starRating"]) =>
+  ({ ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5, STAR_RATING_UNSPECIFIED: 0 })[rating];
+const relativeDate = (date: string) =>
+  new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" }).format(
+    Math.round((new Date(date).getTime() - Date.now()) / 86_400_000),
+    "day",
+  );
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [session, setSession] = useState<ReturnType<typeof getStoredSession>>(null);
-  const [providers, setProviders] = useState<("google" | "instagram" | "facebook")[]>([]);
-  const [googleAccounts, setGoogleAccounts] = useState<GoogleAccount[]>([]);
-  const [googleLocations, setGoogleLocations] = useState<GoogleLocation[]>([]);
-  const [googleReviews, setGoogleReviews] = useState<GoogleReview[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-  const [selectedLocationId, setSelectedLocationId] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [reviews, setReviews] = useState<GoogleReview[]>([]);
+  const [comments, setComments] = useState<InstagramComment[]>([]);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [instagramConnected, setInstagramConnected] = useState(false);
+  const [average, setAverage] = useState<number | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
-  useEffect(() => {
-    const stored = getStoredSession();
-    if (!stored) {
-      router.replace("/login");
-    } else {
-      setSession(stored);
-    }
-  }, [router]);
+  useEffect(() => { void loadDashboard(); }, []);
 
-  useEffect(() => {
-    if (session?.accessToken) {
-      checkProviders();
-    }
-  }, [session]);
-
-  const checkProviders = async () => {
+  async function loadDashboard() {
+    const session = getStoredSession();
     if (!session?.accessToken) return;
-
-    const provs: ("google" | "instagram" | "facebook")[] = [];
-
+    setUserName(session.user.name);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integrations/google/accounts`, {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accounts?.length > 0) provs.push("google");
+      const [google, instagram] = await Promise.allSettled([
+        listGoogleAccounts(session.accessToken),
+        listInstagramAccounts(session.accessToken),
+      ]);
+      if (instagram.status === "fulfilled") {
+        const active = instagram.value.accounts.length > 0;
+        setInstagramConnected(active);
+        if (active) {
+          const result = await listInstagramComments({ accessToken: session.accessToken, limit: 12 });
+          setComments(result.comments);
+        }
       }
-    } catch {
-      // ignore
-    }
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integrations/instagram/accounts`, {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accounts?.length > 0) provs.push("instagram");
+      if (google.status === "fulfilled" && google.value.accounts[0]) {
+        setGoogleConnected(true);
+        const accountId = google.value.accounts[0].id;
+        const locations = await listGoogleLocations({ accessToken: session.accessToken, accountId });
+        if (locations.locations[0]) {
+          const result = await listGoogleReviews({
+            accessToken: session.accessToken, accountId, locationId: locations.locations[0].id,
+          });
+          setReviews(result.reviews);
+          setAverage(result.averageRating ?? null);
+          setTotal(result.totalReviewCount ?? null);
+        }
       }
-    } catch {
-      // ignore
-    }
-
-    setProviders(provs);
-  };
-
-  const loadGoogleAccounts = async () => {
-    if (!session?.accessToken) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await listGoogleAccounts(session.accessToken);
-      setGoogleAccounts(res.accounts);
-      if (res.accounts.length > 0 && !selectedAccountId) {
-        const firstAccount = res.accounts[0];
-        if (firstAccount) setSelectedAccountId(firstAccount.id);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar contas Google");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }
 
-  const loadGoogleLocations = async () => {
-    if (!session?.accessToken || !selectedAccountId) return;
-    setLoading(true);
-    try {
-      const res = await listGoogleLocations({ accessToken: session.accessToken, accountId: selectedAccountId });
-      setGoogleLocations(res.locations);
-      if (res.locations.length > 0 && !selectedLocationId) {
-        const firstLocation = res.locations[0];
-        if (firstLocation) setSelectedLocationId(firstLocation.id);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar empresas");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const newComments = comments.filter((comment) => comment.status === "NEW").length;
+  const ratingDistribution = useMemo(
+    () => [5, 4, 3, 2, 1].map((value) => ({
+      value, count: reviews.filter((review) => score(review.starRating) === value).length,
+    })),
+    [reviews],
+  );
+  const maxDistribution = Math.max(...ratingDistribution.map((item) => item.count), 1);
+  const activity = useMemo(
+    () => [
+      ...reviews.map((review) => ({ id: `review-${review.id}`, type: "google" as const, date: review.updatedAt, title: `Nova avaliação de ${score(review.starRating)} estrelas`, detail: review.reviewerName ?? "Cliente Google" })),
+      ...comments.map((comment) => ({ id: `comment-${comment.id}`, type: "instagram" as const, date: comment.createdAt, title: "Novo comentário no Instagram", detail: `@${comment.author.username ?? "cliente"}` })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5),
+    [comments, reviews],
+  );
+  const connected = googleConnected || instagramConnected;
 
-  const loadGoogleReviews = async () => {
-    if (!session?.accessToken || !selectedAccountId || !selectedLocationId) return;
-    setLoading(true);
-    try {
-      const res = await listGoogleReviews({ accessToken: session.accessToken, accountId: selectedAccountId, locationId: selectedLocationId });
-      setGoogleReviews(res.reviews);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar avaliações");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedAccountId) {
-      loadGoogleLocations();
-    } else {
-      setGoogleLocations([]);
-      setSelectedLocationId("");
-    }
-  }, [selectedAccountId]);
-
-  useEffect(() => {
-    if (selectedLocationId) {
-      loadGoogleReviews();
-    } else {
-      setGoogleReviews([]);
-    }
-  }, [selectedLocationId]);
-
-  useEffect(() => {
-    loadGoogleAccounts();
-  }, []);
-
-  const handleGoogleConnect = async () => {
-    if (!session?.accessToken) return;
-    try {
-      const url = await buildGoogleConnectUrl(session.accessToken);
-      window.location.href = url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao conectar Google");
-    }
-  };
-
-  const handleGoogleDisconnect = async () => {
-    if (!session?.accessToken) return;
-    try {
-      await disconnectGoogle({ accessToken: session.accessToken });
-      setGoogleAccounts([]);
-      setGoogleLocations([]);
-      setGoogleReviews([]);
-      setProviders((p) => p.filter((x) => x !== "google"));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao desconectar Google");
-    }
-  };
-
-  const starRatingLabel = (starRating: string) => {
-    const values: Record<string, number> = { FIVE: 5, FOUR: 4, THREE: 3, TWO: 2, ONE: 1, STAR_RATING_UNSPECIFIED: 0 };
-    const val = values[starRating] ?? 0;
-    return "★".repeat(val) + "☆".repeat(5 - val);
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(dateStr));
-  };
-
-  if (!session) return null;
-
-  const anyConnected = providers.length > 0;
-
-  return (
-    <Box css={{ maxW: "1200px", mx: "auto", px: 4 }}>
-      <Box css={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 6, flexWrap: "wrap", gap: 4 }}>
-        <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-          Visão geral
-        </Text>
-        <Link href="/settings/integrations">
-          <Button variant="ghost" size="sm">
-            Gerenciar integrações
-          </Button>
-        </Link>
+  return <Box css={{ maxW: "1580px", mx: "auto", pb: 8 }}>
+    <DashboardHeader userName={userName} refreshing={refreshing} onRefresh={() => { setRefreshing(true); void loadDashboard(); }} />
+    {loading ? <DashboardSkeleton /> : !connected ? <DisconnectedDashboard /> : <>
+      <Box css={{ display: "grid", gridTemplateColumns: { base: "repeat(2, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" }, gap: 0, mb: 6, bg: "surface.primary", border: "1px solid", borderColor: "surface.border", borderRadius: "lg", overflow: "hidden" }}>
+        <Kpi icon={<Star size={17} />} label="Reputação Google" value={average?.toFixed(1) ?? "—"} detail={average ? "Nota média atual" : "Aguardando avaliações"} emphasis />
+        <Kpi icon={<MessageCircle size={17} />} label="Avaliações" value={total?.toLocaleString("pt-BR") ?? "—"} detail={total !== null ? "Total no Google Business Profile" : "Sem dados disponíveis"} />
+        <Kpi icon={<CircleAlert size={17} />} label="Precisa de atenção" value={newComments.toString()} detail={newComments ? "Comentários novos para revisar" : "Nenhuma pendência identificada"} tone={newComments ? "warning" : "neutral"} />
+        <Kpi icon={<Camera size={17} />} label="Comentários Instagram" value={comments.length.toString()} detail={instagramConnected ? `${newComments} novo(s) na lista atual` : "Canal não conectado"} tone="instagram" />
       </Box>
 
-      {error && <Alert tone="error" mb={6} onClose={() => setError(null)} dismissible>{error}</Alert>}
-
-      {!anyConnected ? (
-        <EmptyState
-          title="Conecte seu primeiro canal"
-          description="Você poderá acompanhar sua reputação em um único lugar conectando suas contas."
-          action={{ label: "Configurar integrações", onClick: () => window.location.href = "/settings/integrations" }}
-        />
-      ) : (
-        <>
-          <Box css={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 6 }}>
-            {["google", "instagram", "facebook"].map((provider) => {
-              const isConnected = providers.includes(provider as "google" | "instagram" | "facebook");
-              if (!isConnected) return null;
-              const configs: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-                google: { label: "Google", color: "blue", icon: (
-                  <svg width="20" height="20" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </svg>
-                )},
-                instagram: { label: "Instagram", color: "pink", icon: (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                  </svg>
-                )},
-                facebook: { label: "Facebook", color: "blue", icon: (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                )},
-              };
-              const config = configs[provider];
-              if (!config) return null;
-              return (
-                <Badge key={provider} variant="subtle" colorScheme={config.color as "blue" | "pink"} size="md" dot>
-                  {config.icon}
-                  {config.label}
-                </Badge>
-              );
-            })}
+      <Box css={{ display: "grid", gridTemplateColumns: { base: "1fr", xl: "minmax(0, 1.55fr) minmax(340px, .8fr)" }, gap: 5 }}>
+        <Box css={{ display: "grid", gap: 5, alignContent: "start" }}>
+          <ReputationCard average={average} total={total} distribution={ratingDistribution} maximum={maxDistribution} googleConnected={googleConnected} />
+          <Box css={{ display: "grid", gridTemplateColumns: { base: "1fr", lg: "repeat(2, minmax(0, 1fr))" }, gap: 5 }}>
+            <ActivityCard activity={activity} />
+            <ReviewsCard reviews={reviews} />
           </Box>
-
-          {providers.includes("google") && (
-            <Card variant="default" padding="md">
-              <CardHeader>
-                <CardTitle>Google Business Profile</CardTitle>
-                <CardDescription>Gerencie suas contas e empresas conectadas</CardDescription>
-              </CardHeader>
-              <CardBody>
-                {loading && <Skeleton variant="text" count={3} />}
-
-                 {!loading && googleAccounts.length === 0 ? (
-                   <Box css={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, py: 8 }}>
-                     <Text color="text.tertiary">Nenhuma conta Google conectada</Text>
-                     <Button onClick={handleGoogleConnect} variant="solid" size="sm">Conectar Google</Button>
-                   </Box>
-                 ) : (
-                   <>
-                     <Box css={{ mb: 6 }}>
-                       <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={3}>Conta Google</Text>
-                      <Flex css={{ gap: 3, flexWrap: "wrap", alignItems: "center" }}>
-                        {googleAccounts.map((account) => (
-                          <Button
-                            key={account.id}
-                            variant={selectedAccountId === account.id ? "solid" : "outline"}
-                            size="sm"
-                            onClick={() => { setSelectedAccountId(account.id); setSelectedLocationId(""); }}
-                          >
-                            {account.accountName ?? account.name}
-                          </Button>
-                        ))}
-                      </Flex>
-                    </Box>
-
-                    {selectedAccountId && googleLocations.length === 0 && !loading && (
-                      <Box css={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, py: 8, textAlign: "center" }}>
-                        <Text color="text.tertiary">Nenhuma empresa encontrada para esta conta</Text>
-                      </Box>
-                    )}
-
-                     {selectedAccountId && googleLocations.length > 0 && (
-                       <>
-                          <Box css={{ mb: 6 }}>
-                            <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={3}>Empresa</Text>
-                           <Flex css={{ gap: 3, flexWrap: "wrap", alignItems: "center" }}>
-                            {googleLocations.map((location) => (
-                              <Button
-                                key={location.id}
-                                variant={selectedLocationId === location.id ? "solid" : "outline"}
-                                size="sm"
-                                onClick={() => setSelectedLocationId(location.id)}
-                              >
-                                {location.name}
-                              </Button>
-                            ))}
-                          </Flex>
-                        </Box>
-
-                        {selectedLocationId && (
-                           <Box>
-                             <Text fontSize="sm" fontWeight="medium" color="text.secondary" mb={4}>Avaliações recentes</Text>
-                            {loading ? (
-                              <Skeleton variant="text" count={5} />
-                            ) : googleReviews.length === 0 ? (
-                              <Box css={{ textAlign: "center", py: 8 }}>
-                                <Text color="text.tertiary">Nenhuma avaliação encontrada</Text>
-                              </Box>
-                            ) : (
-                            <Flex css={{ flexDirection: "column", gap: 4 }}>
-                                   {googleReviews.slice(0, 5).map((review) => (
-                                       <Box key={review.id} css={{ p: 5, bg: "surface.tertiary", borderRadius: "lg", border: "1px solid", borderColor: "surface.border", boxShadow: "sm" }}>
-                                      <Flex css={{ justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                                      <Text fontWeight="semibold" color="text.primary">{starRatingLabel(review.starRating)}</Text>
-                                      <Text fontSize="sm" color="text.tertiary">{formatDate(review.updatedAt)}</Text>
-                                    </Flex>
-                                     <Text color="text.secondary" fontSize="sm">{review.reviewerName ?? "Cliente Google"}</Text>
-                                     {review.comment && <Text mt={2.5} color="text.primary">{review.comment}</Text>}
-                                  </Box>
-                                ))}
-                              </Flex>
-                            )}
-                          </Box>
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-              </CardBody>
-              <CardFooter>
-                <Button variant="outline" colorScheme="red" size="sm" onClick={handleGoogleDisconnect}>
-                  Desconectar Google
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-        </>
-      )}
-    </Box>
-  );
+        </Box>
+        <Box css={{ display: "grid", gap: 5, alignContent: "start" }}>
+          <AttentionCard newComments={newComments} googleConnected={googleConnected} instagramConnected={instagramConnected} />
+          <ChannelsCard googleConnected={googleConnected} instagramConnected={instagramConnected} />
+          <CommentsCard comments={comments} />
+        </Box>
+      </Box>
+    </>}
+  </Box>;
 }
+
+function DashboardHeader({ refreshing, onRefresh }: { userName: string | null; refreshing: boolean; onRefresh: () => void }) {
+  return <Flex css={{ justifyContent: "space-between", alignItems: { base: "flex-start", md: "flex-end" }, gap: 5, flexWrap: "wrap", mb: 8 }}>
+    <Box>
+      <Text css={{ fontSize: "xs", color: "text.quaternary", fontWeight: "semibold", letterSpacing: "wide", textTransform: "uppercase" }}>Visão geral</Text>
+      <Text as="h1" css={{ mt: 2, fontSize: { base: "xl", md: "2xl" }, fontWeight: "semibold", letterSpacing: "tight", color: "text.primary" }}>Resumo da reputação e atividade recente</Text>
+      <Text css={{ mt: 2, color: "text.tertiary", fontSize: "sm" }}>Acompanhe o desempenho dos seus canais e veja o que precisa da sua atenção hoje.</Text>
+    </Box>
+    <Flex css={{ gap: 3, alignItems: "center", flexWrap: "wrap" }}>
+      <Button size="sm" variant="outline" loading={refreshing} onClick={onRefresh}><RefreshCw size={15} />Atualizar</Button>
+      <Link href="/settings/integrations"><Button size="sm"><Plug size={15} />Canais</Button></Link>
+    </Flex>
+  </Flex>;
+}
+
+function Kpi({ label, value, detail, emphasis = false }: { icon: React.ReactNode; label: string; value: string; detail: string; tone?: "brand" | "warning" | "neutral" | "instagram"; emphasis?: boolean }) {
+  return <Box css={{ minW: 0, p: { base: 4, md: 5 }, borderRight: { xl: "1px solid" }, borderBottom: { base: "1px solid", xl: "0" }, borderColor: "surface.border", _last: { borderRight: 0, borderBottom: 0 } }}>
+    <Flex css={{ justifyContent: "space-between", alignItems: "flex-start", gap: 3 }}><Text css={{ fontSize: "xs", color: "text.tertiary", fontWeight: "medium" }}>{label}</Text></Flex>
+    <Flex css={{ alignItems: "baseline", gap: 2, mt: 3 }}><Text css={{ fontSize: "2xl", fontWeight: "semibold", letterSpacing: "tight", lineHeight: "tight" }}>{value}</Text>{emphasis && value !== "—" && <Text css={{ color: "#b7791f", fontSize: "xs", letterSpacing: 1 }}>★★★★★</Text>}</Flex>
+    <Text css={{ mt: 2, color: "text.tertiary", fontSize: "xs" }}>{detail}</Text>
+  </Box>;
+}
+
+function SectionHeader({ title, description, href, action }: { title: string; description: string; href?: string; action?: string }) {
+  return <Flex css={{ p: 5, justifyContent: "space-between", alignItems: "flex-start", gap: 3, borderBottom: "1px solid", borderColor: "surface.border" }}><Box><Text css={{ color: "text.primary", fontWeight: "bold" }}>{title}</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>{description}</Text></Box>{href && <Link href={href}><Button variant="ghost" size="sm">{action ?? "Ver tudo"}<ArrowRight size={14} /></Button></Link>}</Flex>;
+}
+
+function ReputationCard({ average, total, distribution, maximum, googleConnected }: { average: number | null; total: number | null; distribution: Array<{ value: number; count: number }>; maximum: number; googleConnected: boolean }) {
+  return <Card variant="default" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Reputação geral" description="Resumo das avaliações do Google Business Profile" /><Box css={{ p: { base: 5, md: 6 }, display: "grid", gridTemplateColumns: { base: "1fr", md: "minmax(210px, .72fr) minmax(0, 1fr)" }, gap: { base: 6, md: 9 }, alignItems: "center" }}>
+    <Box css={{ p: 5, borderRadius: "lg", bg: "surface.secondary", border: "1px solid", borderColor: "surface.border" }}><Text css={{ fontSize: "xs", fontWeight: "semibold", letterSpacing: "wide", color: "text.tertiary" }}>ÍNDICE ATUAL</Text><Text css={{ mt: 3, fontSize: "4xl", fontWeight: "semibold", lineHeight: "tight", letterSpacing: "tight" }}>{average?.toFixed(1) ?? "—"}</Text><Text css={{ mt: 1, color: "#b7791f", letterSpacing: 2 }}>★★★★★</Text><Text css={{ mt: 4, color: "text.secondary", fontSize: "sm", fontWeight: "medium" }}>{average ? "Sua reputação está sendo acompanhada." : googleConnected ? "Aguardando a primeira avaliação." : "Google ainda não conectado."}</Text><Text css={{ mt: 1, color: "text.tertiary", fontSize: "xs" }}>{total !== null ? `${total.toLocaleString("pt-BR")} avaliações registradas` : "Sem volume disponível"}</Text></Box>
+    <Box><Text css={{ fontSize: "sm", color: "text.secondary", fontWeight: "semibold", mb: 4 }}>Distribuição da lista carregada</Text>{distribution.some((item) => item.count) ? <Flex css={{ flexDirection: "column", gap: 3 }}>{distribution.map((item) => <Flex key={item.value} css={{ alignItems: "center", gap: 3 }}><Text css={{ w: 5, fontSize: "xs", color: "text.tertiary" }}>{item.value}★</Text><Box css={{ flex: 1, h: 2, borderRadius: "full", bg: "surface.tertiary", overflow: "hidden" }}><Box css={{ h: "full", w: `${(item.count / maximum) * 100}%`, minW: item.count ? "6px" : 0, borderRadius: "full", bg: item.value >= 4 ? "brand.500" : item.value === 3 ? "amber.400" : "red.400" }} /></Box><Text css={{ w: 5, textAlign: "right", fontSize: "xs", fontWeight: "semibold", color: "text.secondary" }}>{item.count}</Text></Flex>)}</Flex> : <Text css={{ color: "text.tertiary", fontSize: "sm", lineHeight: "relaxed" }}>A distribuição aparecerá quando houver avaliações disponíveis para esta empresa.</Text>}</Box>
+  </Box></CardBody></Card>;
+}
+
+function AttentionCard({ newComments, googleConnected, instagramConnected }: { newComments: number; googleConnected: boolean; instagramConnected: boolean }) {
+  const hasIssue = newComments > 0 || !googleConnected || !instagramConnected;
+  return <Card variant="default" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Precisa da sua atenção" description={hasIssue ? "Itens que merecem uma revisão rápida." : "Tudo certo nos canais conectados."} /><Box css={{ p: 3, display: "grid", gap: 1 }}>
+    {newComments > 0 && <AttentionItem icon={<Camera size={16} />} title={`${newComments} comentário${newComments > 1 ? "s" : ""} novo${newComments > 1 ? "s" : ""}`} detail="Instagram" href="/instagram/comments" action="Ver comentários" />}
+    {!googleConnected && <AttentionItem icon={<Plug size={16} />} title="Google não conectado" detail="Conecte para acompanhar avaliações" href="/settings/integrations" action="Conectar" />}
+    {!instagramConnected && <AttentionItem icon={<Plug size={16} />} title="Instagram não conectado" detail="Conecte para acompanhar comentários" href="/settings/integrations" action="Conectar" />}
+    {!hasIssue && <Flex css={{ p: 4, gap: 3, alignItems: "center", borderRadius: "xl", bg: "#edf9f0" }}><CheckCircle2 size={18} color="#197544" /><Text css={{ fontSize: "sm", color: "text.secondary" }}>Nenhuma pendência identificada agora.</Text></Flex>}
+  </Box></CardBody></Card>;
+}
+function AttentionItem({ icon, title, detail, href, action }: { icon: React.ReactNode; title: string; detail: string; href: string; action: string }) { return <Flex css={{ alignItems: "center", gap: 3, p: 3, borderRadius: "xl", _hover: { bg: "surface.secondary" } }}><Box css={{ display: "grid", placeItems: "center", w: 9, h: 9, borderRadius: "xl", bg: "#fff7e5", color: "#a86700" }}>{icon}</Box><Box css={{ flex: 1, minW: 0 }}><Text css={{ fontSize: "sm", fontWeight: "semibold" }}>{title}</Text><Text css={{ mt: .5, fontSize: "xs", color: "text.tertiary" }}>{detail}</Text></Box><Link href={href}><Button variant="ghost" size="sm">{action}</Button></Link></Flex>; }
+
+function ActivityCard({ activity }: { activity: Array<{ id: string; type: "google" | "instagram"; date: string; title: string; detail: string }> }) { return <Card variant="default" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Atividade recente" description="Últimas movimentações dos canais." href="/inbox" action="Abrir inbox" /><Box css={{ p: 3 }}>{activity.length ? activity.map((item) => <Flex key={item.id} css={{ gap: 3, py: 3, px: 2, alignItems: "flex-start", borderBottom: "1px solid", borderColor: "surface.border", _last: { borderBottom: 0 } }}><Box css={{ display: "grid", placeItems: "center", w: 8, h: 8, borderRadius: "full", flexShrink: 0, bg: item.type === "google" ? "#e8f0fe" : "#fce7ef", color: item.type === "google" ? "#1a73e8" : "#c13584", fontSize: "10px", fontWeight: "bold" }}>{item.type === "google" ? "G" : "IG"}</Box><Box css={{ flex: 1, minW: 0 }}><Text css={{ fontSize: "sm", fontWeight: "semibold", truncate: true }}>{item.title}</Text><Text css={{ mt: .5, fontSize: "xs", color: "text.tertiary", truncate: true }}>{item.detail}</Text></Box><Text css={{ fontSize: "xs", color: "text.quaternary", whiteSpace: "nowrap" }}>{relativeDate(item.date)}</Text></Flex>) : <InlineEmpty text="A atividade dos seus canais aparecerá aqui." />}</Box></CardBody></Card>; }
+function ReviewsCard({ reviews }: { reviews: GoogleReview[] }) { return <Card variant="default" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Últimas avaliações" description="Feedbacks recentes do Google." href="/reviews" action="Ver avaliações" /><Box css={{ p: 3 }}>{reviews.length ? reviews.slice(0, 3).map((review) => <Flex key={review.id} css={{ gap: 3, py: 3, px: 2, borderBottom: "1px solid", borderColor: "surface.border", _last: { borderBottom: 0 } }}><Box css={{ display: "grid", placeItems: "center", w: 8, h: 8, borderRadius: "full", flexShrink: 0, bg: "brand.50", color: "brand.700", fontSize: "10px", fontWeight: "bold" }}>{(review.reviewerName ?? "CG").slice(0, 2).toUpperCase()}</Box><Box css={{ flex: 1, minW: 0 }}><Flex css={{ alignItems: "center", justifyContent: "space-between", gap: 2 }}><Text css={{ fontSize: "sm", fontWeight: "semibold", truncate: true }}>{review.reviewerName ?? "Cliente Google"}</Text><Text css={{ color: "#d49a10", fontSize: "xs" }}>{"★".repeat(score(review.starRating))}</Text></Flex><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary", lineClamp: 2 }}>{review.comment ?? "Avaliação sem comentário."}</Text></Box></Flex>) : <InlineEmpty text="Ainda não há avaliações para mostrar." />}</Box></CardBody></Card>; }
+function ChannelsCard({ googleConnected, instagramConnected }: { googleConnected: boolean; instagramConnected: boolean }) { return <Card variant="filled" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Canais conectados" description="Estado atual das integrações." href="/settings/integrations" action="Gerenciar" /><Box css={{ p: 3, display: "grid", gap: 2 }}><ChannelStatus label="Google Business Profile" connected={googleConnected} detail={googleConnected ? "Dados disponíveis no dashboard" : "Aguardando conexão"} /><ChannelStatus label="Instagram" connected={instagramConnected} detail={instagramConnected ? "Comentários monitorados" : "Aguardando conexão"} /><Flex css={{ alignItems: "center", justifyContent: "space-between", p: 3, opacity: .65 }}><Text css={{ fontSize: "sm", fontWeight: "medium" }}>Facebook</Text><StatusBadge status="comingSoon" /></Flex></Box></CardBody></Card>; }
+function ChannelStatus({ label, connected, detail }: { label: string; connected: boolean; detail: string }) { return <Flex css={{ alignItems: "center", gap: 3, p: 3, bg: "surface.primary", borderRadius: "xl" }}><Box css={{ w: 2, h: 2, borderRadius: "full", bg: connected ? "#28a65b" : "#a0aba4", boxShadow: connected ? "0 0 0 4px #e3f7e9" : "none" }} /><Box css={{ flex: 1 }}><Text css={{ fontSize: "sm", fontWeight: "semibold" }}>{label}</Text><Text css={{ mt: .5, fontSize: "xs", color: "text.tertiary" }}>{detail}</Text></Box><StatusBadge status={connected ? "connected" : "disconnected"} /></Flex>; }
+function CommentsCard({ comments }: { comments: InstagramComment[] }) { return <Card variant="default" padding="none"><CardBody css={{ p: 0 }}><SectionHeader title="Comentários recentes" description="Interações mais recentes no Instagram." href="/instagram/comments" action="Ver comentários" /><Box css={{ p: 3 }}>{comments.length ? comments.slice(0, 3).map((comment) => <Flex key={comment.id} css={{ gap: 3, py: 3, px: 2, borderBottom: "1px solid", borderColor: "surface.border", _last: { borderBottom: 0 } }}><Box css={{ display: "grid", placeItems: "center", w: 8, h: 8, borderRadius: "full", flexShrink: 0, bg: "#fce7ef", color: "#c13584" }}><Camera size={14} /></Box><Box css={{ flex: 1, minW: 0 }}><Flex css={{ justifyContent: "space-between", gap: 2 }}><Text css={{ fontSize: "sm", fontWeight: "semibold" }}>@{comment.author.username ?? "cliente"}</Text>{comment.status === "NEW" && <StatusBadge status="new" />}</Flex><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary", lineClamp: 2 }}>{comment.text ?? "Comentário sem conteúdo de texto."}</Text></Box></Flex>) : <InlineEmpty text="Novos comentários aparecerão aqui." />}</Box></CardBody></Card>; }
+function InlineEmpty({ text }: { text: string }) { return <Flex css={{ py: 6, gap: 2, justifyContent: "center", alignItems: "center", color: "text.tertiary" }}><Clock3 size={15} /><Text css={{ fontSize: "sm" }}>{text}</Text></Flex>; }
+function DashboardSkeleton() { return <Box css={{ display: "grid", gap: 5 }}><Box css={{ display: "grid", gridTemplateColumns: { base: "1fr", sm: "repeat(2,1fr)", xl: "repeat(4,1fr)" }, gap: 4 }}>{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="158px" />)}</Box><Box css={{ display: "grid", gridTemplateColumns: { base: "1fr", xl: "1.55fr .8fr" }, gap: 5 }}><Skeleton height="480px" /><Skeleton height="480px" /></Box></Box>; }
+function DisconnectedDashboard() { return <Box css={{ maxW: "900px" }}><Text css={{ fontSize: "sm", fontWeight: "semibold", mb: 3 }}>Primeiros passos</Text><EmptyState icon={<Plug size={20} strokeWidth={1.6} />} title="Nenhum canal conectado" description="Conecte Google Business Profile ou Instagram para começar a acompanhar sua reputação." action={{ label: "Conectar canal", onClick: () => { window.location.href = "/settings/integrations"; } }} size="md" /><Box css={{ mt: 5, border: "1px solid", borderColor: "surface.border", borderRadius: "lg", overflow: "hidden", bg: "surface.primary" }}>{[["Google Business Profile", "Avaliações e reputação no Google.", "Conectar"], ["Instagram", "Comentários e mensagens da conta profissional.", "Conectar"], ["Facebook", "Comentários e Messenger.", "Em breve"]].map(([title, description, action]) => <Flex key={title} css={{ alignItems: "center", gap: 4, p: 4, borderBottom: "1px solid", borderColor: "surface.border", _last: { borderBottom: 0 }, flexWrap: "wrap" }}><Box css={{ flex: 1 }}><Text css={{ fontSize: "sm", fontWeight: "medium" }}>{title}</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>{description}</Text></Box>{action === "Conectar" ? <Link href="/settings/integrations"><Button size="sm" variant="outline">Conectar</Button></Link> : <Text css={{ fontSize: "xs", color: "text.quaternary" }}>Em breve</Text>}</Flex>)}</Box></Box>; }

@@ -27,6 +27,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const closeSidebar = () => setIsSidebarOpen(false);
   const openSidebar = () => setIsSidebarOpen(true);
   const handleSidebarOpenChange = (details: { open: boolean }) => setIsSidebarOpen(details.open);
@@ -106,8 +107,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <Box css={{ display: "flex", minH: "100vh", bg: "surface.secondary" }}>
         <DrawerBackdrop bg="rgba(15, 23, 42, 0.4)" css={{ bg: "rgba(15, 23, 42, 0.4)" }} />
         <DrawerPositioner>
-          <DrawerContent css={{ bg: "surface.primary", boxShadow: "none" }}>
-            <DrawerHeader>
+          <DrawerContent css={{ bg: "var(--sidebar)", boxShadow: "lg", maxW: "250px" }}>
+            <DrawerHeader css={{ display: "none" }}>
               <Box css={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Text fontWeight="semibold" fontSize="lg" color="text.primary">
                   Business Reputation Hub
@@ -129,6 +130,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 userInitials={userInitials}
                 connectedProviders={connectedProviders}
                 onSignOut={handleSignOut}
+                onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
               />
             </DrawerBody>
           </DrawerContent>
@@ -137,8 +139,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <Box
           css={{
             display: { base: "none", md: "flex" },
-            width: "280px",
+            width: isSidebarCollapsed ? "48px" : "240px",
+            transition: "width 160ms ease",
             flexShrink: 0,
+            position: "sticky",
+            top: 0,
+            height: "100vh",
           }}
         >
           <Sidebar
@@ -149,10 +155,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             userInitials={userInitials}
             connectedProviders={connectedProviders}
             onSignOut={handleSignOut}
+            collapsed={isSidebarCollapsed}
+            onToggleCollapsed={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
           />
         </Box>
 
-        <Flex css={{ display: "flex", flexDirection: "column", flex: 1, minW: 0 }}>
+        <Flex css={{ display: "flex", flexDirection: "column", flex: 1, minW: 0, minH: "100vh" }}>
           <Topbar
             title={getPageTitle(pathname)}
             breadcrumb={breadcrumb}
@@ -181,7 +189,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <Box
             css={{
               flex: 1,
-              p: { base: 4, md: 6 },
+              pt: { base: 5, md: 7 }, px: { base: 4, md: 7, xl: 8 }, pb: { base: 6, md: 8 },
               overflowX: "hidden",
               overflowY: "auto",
               scrollbarGutter: "stable",
@@ -200,6 +208,7 @@ function getPageTitle(pathname: string): string {
     "/dashboard": "Visão geral",
     "/inbox": "Inbox",
     "/reviews": "Avaliações",
+    "/instagram/comments": "Comentários Instagram",
     "/settings/integrations": "Integrações",
     "/settings": "Configurações",
   };
@@ -214,6 +223,8 @@ function getPageTitle(pathname: string): string {
 
 function getBreadcrumb(pathname: string): Array<{ label: string; href?: string }> | undefined {
   if (pathname === "/dashboard") return [{ label: "Visão geral" }];
+  if (pathname.startsWith("/inbox")) return [{ label: "Inbox" }];
+  if (pathname.startsWith("/instagram/comments")) return [{ label: "Monitoramento" }, { label: "Comentários Instagram" }];
   if (pathname.startsWith("/reviews")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Avaliações" }];
   if (pathname.startsWith("/settings/integrations")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações", href: "/settings" }, { label: "Integrações" }];
   if (pathname.startsWith("/settings")) return [{ label: "Visão geral", href: "/dashboard" }, { label: "Configurações" }];

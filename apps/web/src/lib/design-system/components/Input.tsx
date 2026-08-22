@@ -64,15 +64,18 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
             alignItems: "center",
             width: "100%",
             bg: "surface.primary",
+            border: "1px solid",
+            borderColor: error ? "red.400" : "surface.border",
             borderRadius: "md",
-            boxShadow: "sm",
+            boxShadow: "none",
             transition: "all 0.15s ease",
             position: "relative",
             _focusWithin: {
-              boxShadow: error ? "0 0 0 2px {colors.status.error.icon}.300" : "0 0 0 2px {colors.brand.500}.300",
+              borderColor: error ? "red.500" : "brand.600",
+              boxShadow: "0 0 0 2px rgba(22, 131, 75, .16)",
             },
             _hover: {
-              boxShadow: error ? "sm" : "md",
+              borderColor: error ? "red.400" : "surface.borderStrong",
             },
             opacity: disabled ? 0.5 : 1,
           }}
@@ -97,7 +100,7 @@ const InputWrapper = forwardRef<HTMLInputElement, InputProps>(
               outline: "none",
               fontSize: "var(--fontSizes-sm)",
               color: "var(--colors-text-primary)",
-              height: "44px",
+              height: "38px",
               _placeholder: { color: "var(--colors-text-quaternary)", opacity: 0.7 },
               _disabled: { opacity: 0.5, cursor: "not-allowed" },
             }}

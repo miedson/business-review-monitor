@@ -3,6 +3,29 @@ import { colors, spacing, borderRadius, typography, shadows } from "./tokens";
 
 const config = defineConfig({
   theme: {
+    semanticTokens: {
+      colors: {
+        surface: {
+          primary: { value: { base: "#ffffff", _dark: "#121212" } },
+          secondary: { value: { base: "#ffffff", _dark: "#0b0b0b" } },
+          tertiary: { value: { base: "#f7f7f7", _dark: "#202020" } },
+          border: { value: { base: "#e5e5e5", _dark: "#2a2a2a" } },
+          borderStrong: { value: { base: "#d4d4d4", _dark: "#3a3a3a" } },
+        },
+        text: {
+          primary: { value: { base: "#171717", _dark: "#ededed" } },
+          secondary: { value: { base: "#666666", _dark: "#ababab" } },
+          tertiary: { value: { base: "#757575", _dark: "#999999" } },
+          quaternary: { value: { base: "#999999", _dark: "#727272" } },
+        },
+        status: {
+          success: { bg: { value: { base: "#f4fbf6", _dark: "#13251a" } }, border: { value: { base: "#cfe9d8", _dark: "#285438" } }, text: { value: { base: "#1e7a42", _dark: "#78c997" } }, icon: { value: { base: "#18a058", _dark: "#45b978" } } },
+          warning: { bg: { value: { base: "#fffaf0", _dark: "#2a2110" } }, border: { value: { base: "#eedca8", _dark: "#5b4822" } }, text: { value: { base: "#8a620b", _dark: "#d6b45c" } }, icon: { value: { base: "#b78113", _dark: "#d6a94a" } } },
+          error: { bg: { value: { base: "#fff6f5", _dark: "#2a1514" } }, border: { value: { base: "#f1cfca", _dark: "#5d302d" } }, text: { value: { base: "#ad3c35", _dark: "#e0847d" } }, icon: { value: { base: "#d14e45", _dark: "#e56e66" } } },
+          info: { bg: { value: { base: "#f5f9fd", _dark: "#14202d" } }, border: { value: { base: "#ceddeb", _dark: "#29435d" } }, text: { value: { base: "#396b99", _dark: "#83afd7" } }, icon: { value: { base: "#4a83b8", _dark: "#75a7dd" } } },
+        },
+      },
+    },
     tokens: {
       colors: {
         brand: Object.fromEntries(

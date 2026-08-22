@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useContext, createContext, type ReactNode } from "react";
 
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
 
 export type ThemeContextType = {
   themeMode: ThemeMode;
@@ -24,11 +24,11 @@ interface ThemeProviderProps {
   initialThemeMode?: ThemeMode;
 }
 
-export function ThemeProvider({ children, initialThemeMode = "light" }: ThemeProviderProps) {
+export function ThemeProvider({ children, initialThemeMode = "system" }: ThemeProviderProps) {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(initialThemeMode);
 
   useEffect(() => {
-    const saved = getStoredTheme() || "light";
+    const saved = getStoredTheme() || "system";
     setThemeModeState(saved);
     updateThemeClass(saved);
   }, []);
@@ -56,7 +56,7 @@ function getStoredTheme(): ThemeMode | null {
 
   try {
     const stored = localStorage.getItem("theme");
-    if (stored && (stored === "light" || stored === "dark")) {
+    if (stored && (stored === "light" || stored === "dark" || stored === "system")) {
       return stored;
     }
   } catch {
@@ -81,7 +81,8 @@ function updateThemeClass(theme: ThemeMode) {
 
   const html = document.documentElement;
   
-  if (theme === "dark") {
+  const resolvedTheme = theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : theme;
+  if (resolvedTheme === "dark") {
     html.classList.add("dark");
     html.setAttribute("data-theme", "dark");
   } else {

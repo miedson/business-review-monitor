@@ -25,7 +25,7 @@ interface ChannelCardProps {
   onDisconnectClick?: () => void;
 }
 
-const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string }> = {
+const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string; background: string; foreground: string }> = {
   google: {
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -35,7 +35,7 @@ const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string }
         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
       </svg>
     ),
-    color: "blue",
+    color: "blue", background: "#e8f0fe", foreground: "#1a73e8",
   },
   instagram: {
     icon: (
@@ -45,7 +45,7 @@ const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string }
         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
       </svg>
     ),
-    color: "pink",
+    color: "pink", background: "#fce7ef", foreground: "#c13584",
   },
   facebook: {
     icon: (
@@ -53,7 +53,7 @@ const providerConfig: Record<ChannelProvider, { icon: ReactNode; color: string }
         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
       </svg>
     ),
-    color: "blue",
+    color: "blue", background: "#e7f0fd", foreground: "#1877f2",
   },
 };
 
@@ -93,7 +93,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
     },
     ref
   ) => {
-    const { icon, color } = providerConfig[provider];
+    const { icon, background, foreground } = providerConfig[provider];
     const isConnected = status === "connected";
     const isConnecting = status === "connecting" || (isLoading ?? false);
 
@@ -121,25 +121,25 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
           }}
           className={className}
         >
-          <Box css={{ display: "flex", alignItems: "flex-start", gap: 4, width: "full", mb: 4, flexWrap: "wrap" }}>
+          <Box css={{ display: "flex", alignItems: "flex-start", gap: 3, width: "full", flexWrap: "wrap" }}>
             <Box
               css={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                w: 10,
-                h: 10,
-                borderRadius: "lg",
+                w: 8,
+                h: 8,
+                borderRadius: "md",
                 flexShrink: 0,
-                bg: `{colors.${color}.50}`,
-                color: `{colors.${color}.600}`,
+                bg: background,
+                color: foreground,
               }}
             >
               {icon}
             </Box>
             <Box css={{ flex: 1, minWidth: 0 }}>
-              <Box css={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
-                <Text css={{ fontSize: "lg", fontWeight: "semibold", color: "text.primary", lineHeight: "snug" }}>
+              <Box css={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Text css={{ fontSize: "sm", fontWeight: "semibold", color: "text.primary", lineHeight: "snug" }}>
                   {title}
                 </Text>
                 <Badge variant="subtle" colorScheme={statusVariants[status] as "success" | "default" | "info" | "warning"} size="sm">
@@ -147,7 +147,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
                 </Badge>
                 {accountLabel && <Badge variant="subtle" colorScheme="slate" size="sm">{accountLabel}</Badge>}
               </Box>
-              {subtitle && <Text css={{ fontSize: "sm", color: "text.tertiary", lineHeight: "normal", mt: 1 }}>{subtitle}</Text>}
+              {subtitle && <Text css={{ fontSize: "xs", color: "text.tertiary", lineHeight: "normal", mt: 1 }}>{subtitle}</Text>}
             </Box>
             {
                 isConnected ? (
@@ -171,7 +171,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
             }
           </Box>
 
-          <Box css={{ flex: 1 }}>
+          <Box css={{ flex: 1, ml: { base: 0, md: 11 }, mt: 2 }}>
             <Text css={{ fontSize: "sm", color: "text.tertiary", lineHeight: "normal", margin: 0 }}>
               {description}
             </Text>
@@ -182,25 +182,7 @@ const ChannelCard = forwardRef<HTMLDivElement, ChannelCardProps>(
             )}
           </Box>
 
-          <Box
-            css={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 2,
-              mt: 6,
-              pt: 4,
-              borderTop: "1px solid",
-              borderColor: "surface.border",
-              flexWrap: "wrap",
-            }}
-          >
-            {comingSoon &&
-              <Button variant="ghost" size="sm" disabled>
-                Em breve
-              </Button>
-              }
-          </Box>
+          {comingSoon && <Text css={{ mt: 2, ml: { base: 0, md: 11 }, fontSize: "xs", color: "text.quaternary" }}>Em breve</Text>}
         </Box>
 
         <ConfirmDialog

@@ -5,6 +5,7 @@ import {
   Button,
   Input,
   Alert,
+  AppBrand,
   Text,
   Flex,
   Link as ChakraLink,
@@ -21,8 +22,6 @@ import { storeSession, getStoredSession } from "@/lib/auth-session";
 const pageBackgroundCss = {
   minH: "100vh",
   bg: "surface.secondary",
-  backgroundImage:
-    "radial-gradient(ellipse at top, rgba(16,185,137,0.035) 0%, transparent 55%), radial-gradient(ellipse at bottom, rgba(56,182,191,0.025) 0%, transparent 55%)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -32,13 +31,12 @@ const pageBackgroundCss = {
 
 const cardCss = {
   w: "full",
-  maxW: "440px",
+  maxW: "460px",
   bg: "surface.primary",
-  borderRadius: "2xl",
-  boxShadow: "xl",
-  position: "relative",
-  overflow: "hidden",
-  p: 10,
+  borderRadius: "xl",
+  border: "1px solid",
+  borderColor: "surface.border",
+  p: { base: 5, md: 6 },
 };
 
 export default function LoginPage() {
@@ -95,35 +93,9 @@ export default function LoginPage() {
   return (
     <Box css={pageBackgroundCss}>
       <Box css={cardCss}>
-        <Box css={{ textAlign: "center", mb: 8 }}>
-          <Box
-            css={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              w: 16,
-              h: 16,
-              borderRadius: "full",
-              backgroundImage:
-                "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "2xl",
-              mb: 4,
-              boxShadow: "lg",
-            }}
-          >
-            BRH
-          </Box>
-          <Text fontSize="2xl" fontWeight="semibold" color="text.primary">
-            Business Reputation Hub
-          </Text>
-          <Text mt={2} color="text.tertiary" fontSize="sm">
-            Centralize sua reputação digital
-          </Text>
-        </Box>
+        <Box css={{ display: "flex", justifyContent: "center", mb: 8 }}><AppBrand size="auth" /></Box>
 
-        <Heading as="h1" fontSize="lg" fontWeight="semibold" color="text.primary" mb={1}>
+        <Heading as="h1" fontSize="xl" fontWeight="semibold" color="text.primary" mb={1}>
           Entrar na sua conta
         </Heading>
         <Text color="text.tertiary" fontSize="sm" mb={6} lineHeight="relaxed">
@@ -146,8 +118,7 @@ export default function LoginPage() {
             css={{
               display: "flex",
               flexDirection: "column",
-              gap: 6,
-              mb: 6,
+            gap: 4, mb: 5,
             }}
           >
             <Input

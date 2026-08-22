@@ -13,8 +13,8 @@ interface CardProps {
 const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
   ({ variant = "default", padding = "md", children, className, ...rest }, ref) => {
     const variantStyles = {
-      default: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border" },
-      elevated: { bg: "surface.primary", boxShadow: "sm" },
+      default: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border", boxShadow: "xs" },
+      elevated: { bg: "surface.primary", border: "1px solid", borderColor: "surface.border", boxShadow: "sm" },
       outlined: { bg: "transparent", border: "1px solid", borderColor: "surface.borderStrong" },
       filled: { bg: "surface.secondary" },
     };
@@ -23,13 +23,13 @@ const CardWrapper = forwardRef<HTMLDivElement, CardProps>(
       none: { p: 0 },
       sm: { p: 4 },
       md: { p: 6 },
-      lg: { p: 8 },
+      lg: { p: 6 },
     };
 
     return (
       <Card.Root
         ref={ref}
-        css={{ borderRadius: "2xl", transition: "all 0.15s ease", ...variantStyles[variant], ...paddingStyles[padding] }}
+        css={{ borderRadius: "xl", overflow: "hidden", transition: "border-color 0.15s ease, background-color 0.15s ease", ...variantStyles[variant], ...paddingStyles[padding] }}
         className={className}
         {...rest}
       >

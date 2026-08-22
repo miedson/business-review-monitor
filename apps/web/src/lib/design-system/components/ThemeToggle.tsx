@@ -31,10 +31,10 @@ export interface ThemeToggleProps {
 export function ThemeToggle({ variant = "icon", "aria-label": providedAriaLabel, ...rest }: ThemeToggleProps) {
   const { themeMode, setThemeMode } = useThemeMode();
 
-  const isDark = themeMode === "dark";
-  const toggleTheme = () => setThemeMode(isDark ? "light" : "dark");
+  const isDark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
+  const toggleTheme = () => setThemeMode(themeMode === "light" ? "dark" : themeMode === "dark" ? "system" : "light");
 
-  const ariaLabel = providedAriaLabel ?? (isDark ? "Modo claro" : "Modo escuro");
+  const ariaLabel = providedAriaLabel ?? `Tema: ${themeMode}. Alterar tema`;
 
   if (variant === "icon") {
     return (

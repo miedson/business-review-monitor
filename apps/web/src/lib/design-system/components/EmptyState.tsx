@@ -23,9 +23,9 @@ interface EmptyStateProps {
 }
 
 const sizes = {
-  sm: { p: 6, gap: 3, iconSize: 40, titleSize: "lg", descSize: "sm" },
-  md: { p: 8, gap: 4, iconSize: 56, titleSize: "xl", descSize: "md" },
-  lg: { p: 12, gap: 5, iconSize: 72, titleSize: "2xl", descSize: "lg" },
+  sm: { p: 4, gap: 2, iconSize: 28, titleSize: "sm", descSize: "xs" },
+  md: { p: 5, gap: 3, iconSize: 32, titleSize: "md", descSize: "sm" },
+  lg: { p: 6, gap: 3, iconSize: 36, titleSize: "lg", descSize: "sm" },
 };
 
 const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
@@ -53,7 +53,7 @@ const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: "xl",
+          borderRadius: "lg",
           bg: "surface.primary",
           border: "1px solid",
           borderColor: "surface.border",

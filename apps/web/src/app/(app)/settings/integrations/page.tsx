@@ -10,7 +10,7 @@ import {
   listGoogleAccounts,
   listInstagramAccounts,
 } from "@/lib/api-client";
-import { Box, Text, Alert, ChannelCard, Modal, Button } from "@/lib/design-system";
+import { Box, Text, Alert, ChannelCard, Modal, Button, Card, CardBody, PageHeader } from "@/lib/design-system";
 
 type InstagramDisconnectChoice = "keep" | "delete" | null;
 
@@ -188,11 +188,7 @@ export default function IntegrationsPage() {
 
   return (
     <Box>
-      <Box css={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 6, flexWrap: "wrap", gap: 3 }}>
-        <Text fontSize="2xl" fontWeight="bold" color="text.primary">
-          Integrações
-        </Text>
-      </Box>
+      <PageHeader eyebrow="Configurações" title="Integrações" description="Conecte os canais que fazem parte da reputação digital da sua empresa." />
 
       {message && (
         <Alert tone={message.type === "success" ? "success" : "error"} onClose={() => setMessage(null)} dismissible>
@@ -200,8 +196,9 @@ export default function IntegrationsPage() {
         </Alert>
       )}
 
-      <Box css={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <ChannelCard
+      <Card variant="default" padding="none"><CardBody css={{ p: 0 }}>
+        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><Text css={{ fontSize: "sm", fontWeight: "semibold" }}>Canais</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary" }}>Conexões ativas e disponíveis para este workspace.</Text></Box>
+        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><ChannelCard
           provider="google"
           title="Google Business Profile"
           description="Conecte sua conta para monitorar avaliações, responder clientes e acompanhar a reputação da sua empresa no Google Maps e Busca."
@@ -212,9 +209,9 @@ export default function IntegrationsPage() {
           onDisconnectClick={handleGoogleDisconnectClick}
           isLoading={googleLoading}
           disabled={googleLoading}
-        />
+        /></Box>
 
-        <ChannelCard
+        <Box css={{ p: 5, borderBottom: "1px solid", borderColor: "surface.border" }}><ChannelCard
           provider="instagram"
           title="Instagram"
           description="Conecte sua conta profissional (Business ou Creator) para centralizar comentários e mensagens diretas do Instagram."
@@ -225,16 +222,16 @@ export default function IntegrationsPage() {
           onDisconnectClick={handleInstagramDisconnectClick}
           isLoading={instagramLoading}
           disabled={instagramLoading}
-        />
+        /></Box>
 
-        <ChannelCard
+        <Box css={{ p: 5, opacity: .72 }}><ChannelCard
           provider="facebook"
           title="Facebook"
           description="Em breve: conecte sua página do Facebook para gerenciar comentários e mensagens do Messenger."
           status="disconnected"
           comingSoon
-        />
-      </Box>
+        /></Box>
+      </CardBody></Card>
 
       <Modal
         isOpen={showGoogleDisconnectModal}

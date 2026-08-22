@@ -4,6 +4,7 @@ const THEME_STORAGE_KEY = "theme";
 const THEME_CLASS_MAPPING: Record<ThemeMode, string> = {
   light: "",
   dark: "dark",
+  system: "",
 };
 
 export function getStoredTheme(): ThemeMode | null {
@@ -11,7 +12,7 @@ export function getStoredTheme(): ThemeMode | null {
 
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored && (stored === "light" || stored === "dark")) {
+    if (stored && (stored === "light" || stored === "dark" || stored === "system")) {
       return stored;
     }
   } catch {
@@ -35,7 +36,10 @@ export function updateThemeClass(theme: ThemeMode) {
   if (typeof window === "undefined") return;
 
   const html = document.documentElement;
-  const className = THEME_CLASS_MAPPING[theme];
+  const resolvedTheme = theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : theme;
+  const className = THEME_CLASS_MAPPING[resolvedTheme];
   
   if (className) {
     html.classList.add(className);
@@ -47,8 +51,8 @@ export function updateThemeClass(theme: ThemeMode) {
 }
 
 export function toggleTheme(): ThemeMode {
-  const current = getStoredTheme();
-  const next: ThemeMode = current === "dark" ? "light" : "dark";
+  const current = getStoredTheme() ?? "system";
+  const next: ThemeMode = current === "system" ? "light" : current === "light" ? "dark" : "system";
   setStoredTheme(next);
   updateThemeClass(next);
   return next;

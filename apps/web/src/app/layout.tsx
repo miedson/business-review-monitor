@@ -13,6 +13,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.setAttribute('data-theme','dark')}catch(e){}" }} />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { MessageCircle } from "lucide-react";
 import { getStoredSession } from "@/lib/auth-session";
 import {
   listInboxConversations,
   listInboxConversationMessages,
   markInboxConversationAsRead,
 } from "@/lib/api-client";
-import { Box, Text, Flex, Badge, EmptyState, LoadingSpinner } from "@/lib/design-system";
+import { Box, Text, Flex, Badge, LoadingSpinner, PageHeader } from "@/lib/design-system";
 
 type InboxConversation = {
   id: string;
@@ -138,11 +139,13 @@ export default function InboxPage() {
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
 
   return (
-    <Box css={{ display: "flex", height: "calc(100vh - 200px)", minHeight: "400px", border: "1px solid", borderColor: "surface.border", borderRadius: "xl", overflow: "hidden", bg: "surface.primary", boxShadow: "sm" }}>
-      <Box css={{ width: "320px", borderRight: "1px solid", borderColor: "surface.border", display: "flex", flexDirection: "column" }}>
-        <Box css={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "surface.border" }}>
-          <Text css={{ fontSize: "lg", fontWeight: "semibold", color: "text.primary" }}>
-            Mensagens
+    <Box css={{ maxW: "1440px", mx: "auto" }}>
+      <PageHeader eyebrow="Central de mensagens" title="Inbox" description="Acompanhe conversas do Instagram em uma área preparada para novos canais." />
+    <Box css={{ display: "flex", height: { base: "auto", md: "min(640px, calc(100vh - 190px))" }, minHeight: { base: "520px", md: "560px" }, border: "1px solid var(--border)", borderRadius: "xl", overflow: "hidden", bg: "surface.primary", boxShadow: "xs", flexDirection: { base: "column", md: "row" } }}>
+      <Box css={{ width: { base: "full", md: "360px" }, height: { base: selectedConversation ? "220px" : "420px", md: "auto" }, borderRight: { base: "0", md: "1px solid var(--border)" }, borderBottom: { base: "1px solid var(--border)", md: "0" }, display: "flex", flexDirection: "column" }}>
+        <Box css={{ px: 4, py: 3, borderBottom: "1px solid var(--border)" }}>
+          <Text css={{ fontSize: "sm", fontWeight: "semibold", color: "text.primary" }}>
+            Conversas
           </Text>
           <Text css={{ fontSize: "xs", color: "text.tertiary", mt: 0.5 }}>
             Instagram Direct
@@ -150,12 +153,7 @@ export default function InboxPage() {
         </Box>
         <Box css={{ flex: 1, overflowY: "auto", scrollbarGutter: "stable" }}>
           {conversations.length === 0 && !loadingConversations && (
-            <Box css={{ p: 4 }}>
-              <EmptyState
-                title="Nenhuma conversa recebida ainda"
-                description="Novas mensagens do Instagram aparecerão aqui."
-              />
-            </Box>
+            <Box css={{ p: 5 }}><Text css={{ fontSize: "sm", fontWeight: "medium" }}>Nenhuma conversa recebida ainda</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary", lineHeight: "relaxed" }}>Novas mensagens do Instagram aparecerão aqui.</Text></Box>
           )}
           {conversations.map((conversation) => {
             const isActive = conversation.id === selectedConversationId;
@@ -226,7 +224,7 @@ export default function InboxPage() {
         </Box>
       </Box>
 
-      <Box css={{ flex: 1, display: "flex", flexDirection: "column", bg: "surface.secondary" }}>
+      <Box css={{ flex: 1, minHeight: { base: "420px", md: "auto" }, display: "flex", flexDirection: "column", bg: "surface.secondary" }}>
         {selectedConversation ? (
           <>
             <Box css={{ px: 4, py: 3, borderBottom: "1px solid", borderColor: "surface.border", bg: "surface.primary" }}>
@@ -313,14 +311,11 @@ export default function InboxPage() {
             </Box>
           </>
         ) : (
-          <Box css={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <EmptyState
-              title="Nenhuma conversa selecionada"
-              description="Selecione uma conversa para ver as mensagens."
-            />
+          <Box css={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", p: 6 }}>
+            <Box css={{ textAlign: "center", maxW: "280px" }}><Box css={{ display: "inline-grid", placeItems: "center", w: 9, h: 9, borderRadius: "md", bg: "surface.tertiary", color: "text.quaternary", mb: 3 }}><MessageCircle size={17} strokeWidth={1.6} /></Box><Text css={{ fontSize: "sm", fontWeight: "medium" }}>Nenhuma conversa selecionada</Text><Text css={{ mt: 1, fontSize: "xs", color: "text.tertiary", lineHeight: "relaxed" }}>Selecione uma conversa para ver as mensagens.</Text></Box>
           </Box>
         )}
       </Box>
-    </Box>
+    </Box></Box>
   );
 }
