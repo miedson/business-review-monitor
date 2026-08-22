@@ -90,6 +90,7 @@ const instagramAccountsResponseSchema = z.object({
 const instagramCommentAuthorSchema = z.object({
   id: z.string().nullable().optional(),
   username: z.string().nullable().optional(),
+  profilePictureUrl: z.string().nullable().optional(),
 });
 
 const instagramCommentSchema = z.object({
@@ -98,6 +99,7 @@ const instagramCommentSchema = z.object({
   commentId: z.string(),
   mediaId: z.string().nullable().optional(),
   author: instagramCommentAuthorSchema,
+  media: z.object({ id: z.string(), media_type: z.string().optional(), media_product_type: z.string().optional(), media_url: z.string().optional(), thumbnail_url: z.string().optional(), permalink: z.string().optional(), caption: z.string().optional(), timestamp: z.string().optional() }).nullable().optional(),
   text: z.string().nullable().optional(),
   createdAt: z.string(),
   status: z.enum(["NEW", "READ"]),

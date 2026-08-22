@@ -1,6 +1,7 @@
 import type {
   ListBusinessProfileAccountsInput,
   InstagramReviewProvider,
+  InstagramMediaMetadata,
   ListBusinessProfileAccountsResult,
   ListBusinessProfileLocationsResult,
   ListBusinessReviewsResult,
@@ -58,6 +59,8 @@ type InstagramUserProfile = {
   username: string;
   account_type: string;
   media_count?: number;
+  name?: string;
+  profile_pic?: string;
 };
 
 export class InstagramApiProvider implements InstagramReviewProvider {
@@ -223,7 +226,7 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     });
 
     const url = new URL(`${this.graphApiBase}/me`);
-    url.searchParams.set("fields", "id,username,account_type,media_count");
+    url.searchParams.set("fields", "id,username,account_type,media_count,name,profile_pic");
     url.searchParams.set("access_token", accessToken);
 
     const response = await this.fetchFn(url, {
@@ -259,6 +262,21 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     });
 
     return payload;
+  }
+
+  async getExternalUserProfile(accessToken: string, userId: string): Promise<InstagramUserProfile> {
+    const url = new URL(`${this.graphApiBase}/${encodeURIComponent(userId)}`);
+    url.searchParams.set("fields", "id,username,name,profile_pic"); url.searchParams.set("access_token", accessToken);
+    const response = await this.fetchFn(url, { headers: { Accept: "application/json" } }); const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || typeof payload.id !== "string" || typeof payload.username !== "string") throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram user profile request failed");
+    return { id: payload.id, username: payload.username, account_type: typeof payload.account_type === "string" ? payload.account_type : "", ...(typeof payload.name === "string" ? { name: payload.name } : {}), ...(typeof payload.profile_pic === "string" ? { profile_pic: payload.profile_pic } : {}) };
+  }
+
+  async getMediaMetadata(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata> {
+    const url = new URL(`${this.graphApiBase}/${encodeURIComponent(mediaId)}`); url.searchParams.set("fields", "id,media_type,media_product_type,media_url,thumbnail_url,permalink,caption,timestamp"); url.searchParams.set("access_token", accessToken);
+    const response = await this.fetchFn(url, { headers: { Accept: "application/json" } }); const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || typeof payload.id !== "string") throw new GoogleBusinessProfileProviderError(mapInstagramApiErrorStatus(response.status), "Instagram media request failed");
+    return { id: payload.id, ...(typeof payload.media_type === "string" ? { media_type: payload.media_type } : {}), ...(typeof payload.media_product_type === "string" ? { media_product_type: payload.media_product_type } : {}), ...(typeof payload.media_url === "string" ? { media_url: payload.media_url } : {}), ...(typeof payload.thumbnail_url === "string" ? { thumbnail_url: payload.thumbnail_url } : {}), ...(typeof payload.permalink === "string" ? { permalink: payload.permalink } : {}), ...(typeof payload.caption === "string" ? { caption: payload.caption } : {}), ...(typeof payload.timestamp === "string" ? { timestamp: new Date(payload.timestamp) } : {}) };
   }
 
   async resolveWebhookAccountId(

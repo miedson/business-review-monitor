@@ -72,7 +72,10 @@ export type InstagramUserProfile = {
   id: string;
   username: string;
   account_type: string;
+  name?: string;
+  profile_pic?: string;
 };
+export type InstagramMediaMetadata = { id: string; media_type?: string; media_product_type?: string; media_url?: string; thumbnail_url?: string; permalink?: string; caption?: string; timestamp?: Date };
 
 export type ResolveWebhookAccountIdInput = {
   webhookAccountId: string;
@@ -107,6 +110,8 @@ export interface BusinessProfileReviewProvider {
 export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
   replyToComment(input: { accessToken: string; commentId: string; message: string }): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
+  getExternalUserProfile(accessToken: string, userId: string): Promise<InstagramUserProfile>;
+  getMediaMetadata(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
   resolveWebhookAccountId(
     input: ResolveWebhookAccountIdInput
   ): Promise<ResolveWebhookAccountIdResult>;

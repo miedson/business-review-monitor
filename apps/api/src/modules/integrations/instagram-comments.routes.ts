@@ -26,9 +26,11 @@ const instagramCommentResponseSchema = {
       properties: {
         id: { type: ["string", "null"] },
         username: { type: ["string", "null"] }
+        ,profilePictureUrl: { type: ["string", "null"] }
       }
     },
     text: { type: ["string", "null"] },
+    media: { type: ["object", "null"] },
     createdAt: { type: "string", format: "date-time" },
     status: { type: "string", enum: ["NEW", "READ"] }
   }
@@ -102,6 +104,15 @@ export function registerInstagramCommentsRoutes(
       if (query.cursor) executeInput.cursor = query.cursor;
 
       const result = await options.listInstagramComments.execute(executeInput);
+      const connection = await options.instagramConnectionRepository.findByTenantId(session.tenant.id);
+      const accessToken = connection?.encryptedAccessToken ? options.tokenCipher.decrypt(connection.encryptedAccessToken) : null;
+      const mediaIds = [...new Set(result.comments.map((comment) => comment.externalMediaId).filter((id): id is string => Boolean(id)))];
+      const authorIds = [...new Set(result.comments.map((comment) => comment.authorExternalId).filter((id): id is string => Boolean(id)))];
+      const [mediaEntries, userEntries] = accessToken ? await Promise.all([
+        Promise.all(mediaIds.map(async (id) => [id, await options.instagramProvider.getMediaMetadata(accessToken, id).catch(() => null)] as const)),
+        Promise.all(authorIds.map(async (id) => [id, await options.instagramProvider.getExternalUserProfile(accessToken, id).catch(() => null)] as const))
+      ]) : [[], []];
+      const mediaById = new Map(mediaEntries); const userById = new Map(userEntries);
 
       const comments = result.comments.map((comment) => ({
         id: comment.id,
@@ -111,11 +122,13 @@ export function registerInstagramCommentsRoutes(
         author: {
           id: comment.authorExternalId ?? undefined,
           username: comment.authorUsername ?? undefined
+          ,profilePictureUrl: comment.authorExternalId ? userById.get(comment.authorExternalId)?.profile_pic ?? null : null
         },
         text: comment.text ?? undefined,
         createdAt: comment.createdAtExternal?.toISOString() ?? comment.createdAt.toISOString(),
         status: comment.status
         ,repliedAt: comment.repliedAt?.toISOString() ?? null
+        ,media: comment.externalMediaId ? mediaById.get(comment.externalMediaId) ?? null : null
       }));
 
       return reply.send({
