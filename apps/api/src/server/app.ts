@@ -57,6 +57,7 @@ import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth
 import { registerInboxRoutes } from "../modules/integrations/inbox.routes.js";
 import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
 import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
+import { registerIntegrationStatusRoute } from "../modules/integrations/integration-status.routes.js";
 import { registerMetaWebhookRoutes } from "../modules/integrations/meta-webhook.routes.js";
 import { registerMvpManagementRoutes } from "../modules/integrations/mvp-management.routes.js";
 import { metaWebhookQueueName } from "../modules/integrations/queue-names.js";
@@ -326,6 +327,12 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   registerAttentionSummaryRoute(app, { prisma, authService });
   registerRealtimeRoute(app, { gateway: realtimeGateway, authService, webUrl: config.WEB_URL });
   registerNotificationRoutes(app, { prisma, authService });
+  registerIntegrationStatusRoute(app, {
+    authService,
+    listGoogleAccounts,
+    listGoogleLocations,
+    listInstagramAccounts,
+  });
   registerGoogleIntegrationRoutes(app, {
     authService,
     startGoogleOAuthConnection,

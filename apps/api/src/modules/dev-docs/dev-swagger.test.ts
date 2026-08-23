@@ -54,6 +54,7 @@ describe("development Swagger documentation", () => {
       }>();
 
       expect(Object.keys(document.paths).sort()).toEqual([
+        "/attention-summary",
         "/auth/login",
         "/auth/logout",
         "/auth/me",
@@ -66,6 +67,8 @@ describe("development Swagger documentation", () => {
         "/inbox/conversations/{id}/messages",
         "/inbox/conversations/{id}/read",
         "/instagram/comments",
+        "/instagram/comments/{id}/mark-replied",
+        "/instagram/comments/{id}/reply",
         "/integrations/google/accounts",
         "/integrations/google/callback",
         "/integrations/google/connect",
@@ -74,11 +77,19 @@ describe("development Swagger documentation", () => {
         "/integrations/google/locations",
         "/integrations/google/reviews",
         "/integrations/google/reviews/cache",
+        "/integrations/status",
         "/integrations/instagram/accounts",
         "/integrations/instagram/callback",
         "/integrations/instagram/connect",
         "/integrations/instagram/connect-url",
         "/integrations/instagram/disconnect",
+        "/integrations/instagram/status",
+        "/integrations/status",
+        "/notifications",
+        "/notifications/read-all",
+        "/notifications/{id}/read",
+        "/realtime",
+        "/reviews/{reviewId}/reply",
         "/webhooks/meta",
       ]);
       expect(document.paths["/auth/register"]?.post?.requestBody).toBeDefined();

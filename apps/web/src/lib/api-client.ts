@@ -84,6 +84,18 @@ const instagramAccountsResponseSchema = z.object({
   accounts: z.array(instagramAccountSchema),
 });
 
+const integrationStatusResponseSchema = z.object({
+  google: z.object({
+    connected: z.boolean(),
+    accountName: z.string().nullable(),
+    locationCount: z.number().int().nonnegative(),
+  }),
+  instagram: z.object({
+    connected: z.boolean(),
+    username: z.string().nullable(),
+  }),
+});
+
 const instagramCommentAuthorSchema = z.object({
   id: z.string().nullable().optional(),
   username: z.string().nullable().optional(),
@@ -136,6 +148,7 @@ export type GoogleReview = z.infer<typeof googleReviewSchema>;
 export type GoogleReviewsResponse = z.infer<typeof googleReviewsResponseSchema>;
 export type GoogleSyncResponse = z.infer<typeof googleSyncResponseSchema>;
 export type InstagramAccount = z.infer<typeof instagramAccountSchema>;
+export type IntegrationStatus = z.infer<typeof integrationStatusResponseSchema>;
 export type InstagramCommentAuthor = z.infer<typeof instagramCommentAuthorSchema>;
 export type InstagramComment = z.infer<typeof instagramCommentSchema>;
 export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponseSchema>;
@@ -214,6 +227,12 @@ export async function buildGoogleConnectUrl(accessToken: string): Promise<string
     await requestJson("/integrations/google/connect-url", { accessToken }),
   );
   return result.authorizationUrl;
+}
+
+export async function getIntegrationStatus(accessToken: string): Promise<IntegrationStatus> {
+  return integrationStatusResponseSchema.parse(
+    await requestJson("/integrations/status", { accessToken }),
+  );
 }
 
 export async function listGoogleAccounts(

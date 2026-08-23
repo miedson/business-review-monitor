@@ -5,9 +5,7 @@ import {
   buildInstagramConnectUrl,
   disconnectGoogle,
   disconnectInstagram,
-  listGoogleAccounts,
-  listGoogleLocations,
-  listInstagramAccounts,
+  getIntegrationStatus,
 } from "@/lib/api-client";
 import { getStoredSession } from "@/lib/auth-session";
 import {
@@ -65,9 +63,9 @@ export default function IntegrationsPage() {
   const [instagramAccount, setInstagramAccount] = useState<{
     username?: string | undefined;
   } | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(true);
   const [googleLocationCount, setGoogleLocationCount] = useState(0);
-  const [instagramLoading, setInstagramLoading] = useState(false);
+  const [instagramLoading, setInstagramLoading] = useState(true);
 
   const [showInstagramDisconnectModal, setShowInstagramDisconnectModal] = useState(false);
   const [instagramDisconnectChoice, setInstagramDisconnectChoice] =
@@ -86,41 +84,32 @@ export default function IntegrationsPage() {
   const checkConnections = async () => {
     if (!session?.accessToken) return;
 
+    setGoogleLoading(true);
+    setInstagramLoading(true);
     try {
-      setGoogleLoading(true);
-      const googleResult = await listGoogleAccounts(session.accessToken);
-      const firstGoogleAccount = googleResult.accounts[0];
-      if (firstGoogleAccount) {
+      const result = await getIntegrationStatus(session.accessToken);
+
+      if (result.google.connected) {
         setGoogleAccount({
-          name: firstGoogleAccount.name,
-          accountName: firstGoogleAccount.accountName ?? undefined,
+          name: result.google.accountName ?? undefined,
+          accountName: result.google.accountName ?? undefined,
         });
-        const locations = await Promise.all(
-          googleResult.accounts.map((account) =>
-            listGoogleLocations({ accessToken: session.accessToken, accountId: account.id }),
-          ),
-        );
-        setGoogleLocationCount(locations.reduce((total, page) => total + page.locations.length, 0));
       } else {
-        setGoogleLocationCount(0);
+        setGoogleAccount(null);
+      }
+      setGoogleLocationCount(result.google.locationCount);
+
+      if (result.instagram.connected) {
+        setInstagramAccount({ username: result.instagram.username ?? undefined });
+      } else {
+        setInstagramAccount(null);
       }
     } catch {
       setGoogleAccount(null);
+      setInstagramAccount(null);
       setGoogleLocationCount(0);
     } finally {
       setGoogleLoading(false);
-    }
-
-    try {
-      setInstagramLoading(true);
-      const instagramResult = await listInstagramAccounts(session.accessToken);
-      const firstInstagramAccount = instagramResult.accounts[0];
-      if (firstInstagramAccount) {
-        setInstagramAccount({ username: firstInstagramAccount.username });
-      }
-    } catch {
-      setInstagramAccount(null);
-    } finally {
       setInstagramLoading(false);
     }
   };

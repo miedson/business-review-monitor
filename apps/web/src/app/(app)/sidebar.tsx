@@ -95,7 +95,8 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
         }}
       >
         {entries.map(([href, label, Icon]) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+          const active =
+            pathname === href || (href !== "/settings" && pathname.startsWith(`${href}/`));
           return (
             <Link
               key={href}
