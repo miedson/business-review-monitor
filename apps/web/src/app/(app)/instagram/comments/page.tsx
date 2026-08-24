@@ -251,9 +251,12 @@ function groupThreads(comments: InstagramComment[]): CommentThread[] {
 
 function ThreadRow({ thread, onOpen }: { thread: CommentThread; onOpen: () => void }) {
   const latest = thread.latest;
-  const name = latest.author.username ?? "cliente";
+  const contact = getContactComment(thread);
+  const name = contact.author.username ?? "cliente";
+  const sender =
+    latest.authorType === "BUSINESS" ? "Sua empresa" : `@${latest.author.username ?? "cliente"}`;
   const date = formatDate(latest.createdAt);
-  const pending = latest.authorType === "CUSTOMER" && !latest.repliedAt;
+  const pending = latest.authorType === "CUSTOMER" && !contact.repliedAt;
   return (
     <Flex
       css={{
@@ -293,7 +296,7 @@ function ThreadRow({ thread, onOpen }: { thread: CommentThread; onOpen: () => vo
               Abrir
             </Button>
             {pending && (
-              <Button variant="ghost" size="sm" onClick={() => void markCommentReplied(latest.id)}>
+              <Button variant="ghost" size="sm" onClick={() => void markCommentReplied(contact.id)}>
                 Marcar respondido
               </Button>
             )}
@@ -308,6 +311,10 @@ function ThreadRow({ thread, onOpen }: { thread: CommentThread; onOpen: () => vo
             whiteSpace: "pre-wrap",
           }}
         >
+          <Text as="span" css={{ fontWeight: "medium", color: "text.primary" }}>
+            {sender}
+          </Text>
+          {" · "}
           {latest.text ?? "Comentário sem conteúdo de texto."}
         </Text>
         <ContextPreview media={thread.media} />
@@ -340,7 +347,7 @@ function ConversationDrawer({
         <ConversationHeader onClose={onClose}>
           <Text css={{ fontWeight: "semibold", fontSize: "lg" }}>Conversa no Instagram</Text>
           <Text css={{ mt: 1, fontSize: "sm", color: "text.tertiary" }}>
-            @{thread.messages[0]?.author.username ?? "cliente"}
+            @{getContactComment(thread).author.username ?? "cliente"}
           </Text>
         </ConversationHeader>
       }
@@ -366,6 +373,14 @@ function ConversationDrawer({
         })}
       </Box>
     </ConversationShell>
+  );
+}
+
+function getContactComment(thread: CommentThread): InstagramComment {
+  return (
+    [...thread.messages].reverse().find((comment) => comment.authorType === "CUSTOMER") ??
+    thread.messages[0] ??
+    thread.latest
   );
 }
 
