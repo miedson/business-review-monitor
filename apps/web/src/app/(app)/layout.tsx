@@ -246,6 +246,7 @@ function getPageTitle(pathname: string): string {
 function getBreadcrumb(pathname: string): Array<{ label: string; href?: string }> | undefined {
   if (pathname === "/dashboard") return [{ label: "Visão geral" }];
   if (pathname.startsWith("/inbox")) return [{ label: "Instagram" }, { label: "Direct" }];
+  if (pathname.startsWith("/automations")) return [{ label: "Instagram" }, { label: "Automoções" }];
   if (pathname.startsWith("/instagram/comments"))
     return [{ label: "Instagram" }, { label: "Comentários" }];
   if (pathname.startsWith("/reviews"))

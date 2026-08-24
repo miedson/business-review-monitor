@@ -100,6 +100,8 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   await app.register(cors, {
     origin: config.WEB_URL,
     credentials: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Authorization", "Content-Type"],
   });
   await app.register(rateLimit, {
     max: 100,
