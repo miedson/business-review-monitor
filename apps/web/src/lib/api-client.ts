@@ -78,6 +78,7 @@ const instagramConnectUrlResponseSchema = z.object({
 const instagramAccountSchema = z.object({
   id: z.string(),
   username: z.string(),
+  connectionId: z.string().optional(),
 });
 
 const instagramAccountsResponseSchema = z.object({
@@ -134,6 +135,68 @@ const instagramCommentsResponseSchema = z.object({
   nextCursor: z.string().nullable().optional(),
 });
 
+const instagramAutomationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  instagramConnectionId: z.string(),
+  status: z.enum(["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"]),
+  scopeType: z.enum(["SPECIFIC_MEDIA", "ALL_MEDIA", "NEXT_MEDIA"]),
+  instagramMediaId: z.string().nullable(),
+  matchType: z.enum(["ANY_COMMENT", "CONTAINS", "EXACT_MATCH", "FULL_WORD"]),
+  keywords: z.array(z.string()),
+  excludedKeywords: z.array(z.string()),
+  publicReplyEnabled: z.boolean(),
+  publicReplyMessages: z.array(z.string()),
+  dmMessage: z.string(),
+  dmLink: z.string().nullable(),
+  priority: z.number(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  actions: z.array(z.object({ id: z.string(), type: z.string(), position: z.number() })).optional(),
+});
+const instagramAutomationsResponseSchema = z.object({
+  automations: z.array(instagramAutomationSchema),
+});
+const instagramAutomationMediaSchema = z.object({
+  id: z.string(),
+  media_type: z.string().optional(),
+  media_product_type: z.string().optional(),
+  thumbnail_url: z.string().optional(),
+  media_url: z.string().optional(),
+  permalink: z.string().optional(),
+  caption: z.string().optional(),
+  timestamp: z.string().datetime().optional(),
+});
+const instagramAutomationExecutionsResponseSchema = z.object({
+  executions: z.array(
+    z.object({
+      id: z.string(),
+      instagramCommentId: z.string(),
+      instagramUserId: z.string().nullable(),
+      instagramMediaId: z.string().nullable(),
+      matchedKeyword: z.string().nullable(),
+      status: z.string(),
+      errorMessage: z.string().nullable(),
+      createdAt: z.string().datetime(),
+      completedAt: z.string().datetime().nullable(),
+      actionExecutions: z.array(
+        z.object({
+          actionId: z.string(),
+          type: z.string(),
+          status: z.string(),
+          errorMessage: z.string().nullable(),
+          externalId: z.string().nullable(),
+        }),
+      ),
+    }),
+  ),
+});
+export type InstagramAutomation = z.infer<typeof instagramAutomationSchema>;
+export type InstagramAutomationMedia = z.infer<typeof instagramAutomationMediaSchema>;
+export type InstagramAutomationExecution = z.infer<
+  typeof instagramAutomationExecutionsResponseSchema
+>["executions"][number];
+
 type RequestOptions = {
   accessToken?: string;
   body?: unknown;
@@ -152,6 +215,81 @@ export type IntegrationStatus = z.infer<typeof integrationStatusResponseSchema>;
 export type InstagramCommentAuthor = z.infer<typeof instagramCommentAuthorSchema>;
 export type InstagramComment = z.infer<typeof instagramCommentSchema>;
 export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponseSchema>;
+
+export async function listInstagramAutomations(
+  accessToken: string,
+): Promise<{ automations: InstagramAutomation[] }> {
+  return instagramAutomationsResponseSchema.parse(
+    await requestJson("/automations", { accessToken }),
+  );
+}
+export async function createInstagramAutomation(input: {
+  accessToken: string;
+  name: string;
+  instagramConnectionId: string;
+  scopeType: "SPECIFIC_MEDIA" | "ALL_MEDIA";
+  instagramMediaId?: string | null;
+  matchType: "ANY_COMMENT" | "CONTAINS" | "EXACT_MATCH" | "FULL_WORD";
+  keywords: string[];
+  excludedKeywords: string[];
+  dmMessage: string;
+  dmLink?: string | null;
+  publicReplyEnabled?: boolean;
+  publicReplyMessages?: string[];
+  priority?: number;
+  triggerFrequency?: "ONCE_PER_COMMENT" | "ONCE_PER_USER_PER_POST" | "ONCE_PER_USER";
+  status?: "DRAFT" | "ACTIVE";
+}): Promise<InstagramAutomation> {
+  return instagramAutomationSchema.parse(
+    await requestJson("/automations", {
+      accessToken: input.accessToken,
+      method: "POST",
+      body: {
+        ...input,
+        accessToken: undefined,
+        publicReplyEnabled: input.publicReplyEnabled ?? false,
+        publicReplyMessages: input.publicReplyMessages ?? [],
+      },
+    }),
+  );
+}
+export async function listInstagramAutomationMedia(
+  accessToken: string,
+): Promise<{ media: InstagramAutomationMedia[] }> {
+  return z
+    .object({ media: z.array(instagramAutomationMediaSchema) })
+    .parse(await requestJson("/automations/media", { accessToken }));
+}
+export async function listInstagramAutomationExecutions(input: {
+  accessToken: string;
+  automationId: string;
+}): Promise<{ executions: InstagramAutomationExecution[] }> {
+  return instagramAutomationExecutionsResponseSchema.parse(
+    await requestJson(`/automations/${encodeURIComponent(input.automationId)}/executions`, {
+      accessToken: input.accessToken,
+    }),
+  );
+}
+export async function testInstagramAutomation(input: {
+  accessToken: string;
+  text: string;
+  matchType: "ANY_COMMENT" | "CONTAINS" | "EXACT_MATCH" | "FULL_WORD";
+  keywords: string[];
+  excludedKeywords: string[];
+}): Promise<{ matched: boolean; keyword?: string | undefined }> {
+  return z.object({ matched: z.boolean(), keyword: z.string().optional() }).parse(
+    await requestJson("/automations/test", {
+      accessToken: input.accessToken,
+      method: "POST",
+      body: {
+        text: input.text,
+        matchType: input.matchType,
+        keywords: input.keywords,
+        excludedKeywords: input.excludedKeywords,
+      },
+    }),
+  );
+}
 
 const attentionSummarySchema = z.object({
   googleReviewsPendingReply: z.number().int(),

@@ -15,6 +15,7 @@ import {
   DefaultInstagramCommentWebhookNormalizer,
   DefaultInstagramMessageWebhookNormalizer,
   ProcessInstagramDirectMessage,
+  type InstagramCommentAutomationInput,
   type InstagramCommentWebhookNormalizer,
   type InstagramMessageWebhookNormalizer,
   type ProcessInstagramDirectMessageInput,
@@ -107,6 +108,9 @@ export type NotificationStore = {
     dedupeKey: string;
   }): Promise<void>;
 };
+export type InstagramCommentAutomationExecutor = {
+  execute(input: InstagramCommentAutomationInput): Promise<void>;
+};
 
 export class ProcessMetaWebhookEventJob {
   constructor(
@@ -130,6 +134,7 @@ export class ProcessMetaWebhookEventJob {
     private readonly messageNormalizer: InstagramMessageWebhookNormalizer = new DefaultInstagramMessageWebhookNormalizer(),
     private readonly realtimeEventPublisher?: RealtimeEventPublisher,
     private readonly notificationStore?: NotificationStore,
+    private readonly instagramCommentAutomationExecutor?: InstagramCommentAutomationExecutor,
   ) {}
 
   async handle(job: Job<ProcessMetaWebhookEventJobData>): Promise<void> {
@@ -334,6 +339,16 @@ export class ProcessMetaWebhookEventJob {
       tenantId: comment.tenantId,
       instagramConnectionId: comment.instagramConnectionId,
       status: comment.status,
+    });
+    await this.instagramCommentAutomationExecutor?.execute({
+      tenantId: comment.tenantId,
+      instagramConnectionId: comment.instagramConnectionId,
+      externalCommentId: comment.externalCommentId,
+      commentId: comment.id,
+      mediaId: comment.externalMediaId,
+      authorExternalId: comment.authorExternalId,
+      username: comment.authorUsername,
+      text: comment.text ?? "",
     });
   }
 

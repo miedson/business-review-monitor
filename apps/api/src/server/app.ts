@@ -30,6 +30,7 @@ import {
   MarkInstagramConversationAsRead,
   PrismaBusinessLocationRepository,
   PrismaGoogleConnectionRepository,
+  PrismaInstagramAutomationRepository,
   PrismaInstagramCommentRepository,
   PrismaInstagramConnectionRepository,
   PrismaInstagramConversationRepository,
@@ -55,6 +56,7 @@ import {
 import { registerGoogleIntegrationRoutes } from "../modules/integrations/google-integration.routes.js";
 import { InMemoryOAuthStateStore } from "../modules/integrations/in-memory-oauth-state.store.js";
 import { registerInboxRoutes } from "../modules/integrations/inbox.routes.js";
+import { registerInstagramAutomationRoutes } from "../modules/integrations/instagram-automations.routes.js";
 import { registerInstagramCommentsRoutes } from "../modules/integrations/instagram-comments.routes.js";
 import { registerInstagramIntegrationRoutes } from "../modules/integrations/instagram-integration.routes.js";
 import { registerIntegrationStatusRoute } from "../modules/integrations/integration-status.routes.js";
@@ -266,6 +268,7 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
   const instagramCommentRepository = new PrismaInstagramCommentRepository(prisma);
   const instagramConversationRepository = new PrismaInstagramConversationRepository(prisma);
   const instagramMessageRepository = new PrismaInstagramMessageRepository(prisma);
+  const instagramAutomationRepository = new PrismaInstagramAutomationRepository(prisma);
   const listInstagramComments = new ListInstagramComments({
     instagramCommentRepository,
   });
@@ -368,6 +371,13 @@ export async function buildApi(options: BuildApiOptions = {}): Promise<FastifyIn
     instagramProvider,
     tokenCipher,
     realtimeGateway,
+  });
+  registerInstagramAutomationRoutes(app, {
+    authService,
+    repository: instagramAutomationRepository,
+    connectionRepository: instagramConnectionRepository,
+    provider: instagramProvider,
+    tokenCipher,
   });
 
   registerInboxRoutes(app, {

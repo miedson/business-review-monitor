@@ -3,12 +3,14 @@ import { prisma } from "@brm/database";
 import {
   CleanupExpiredReviewCache,
   EncryptionTokenCipher,
+  ExecuteInstagramCommentAutomation,
   GoogleBusinessProfileApiProvider,
   GoogleBusinessProfileMockProvider,
   InstagramApiMockProvider,
   InstagramApiProvider,
   PrismaBusinessLocationRepository,
   PrismaGoogleConnectionRepository,
+  PrismaInstagramAutomationRepository,
   PrismaInstagramCommentRepository,
   PrismaInstagramConnectionRepository,
   PrismaInstagramConversationRepository,
@@ -118,6 +120,12 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
     undefined,
     new RedisRealtimeEventPublisher(createRedisClient(config.REDIS_URL)),
     createNotificationStore(),
+    new ExecuteInstagramCommentAutomation({
+      repository: new PrismaInstagramAutomationRepository(prisma),
+      connectionRepository,
+      provider: instagramProvider,
+      tokenCipher,
+    }),
   );
 }
 

@@ -55,6 +55,10 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     this.throwScenarioError();
     return { id: `mock-message-${Date.now()}` };
   }
+  async sendPrivateReply(): Promise<{ id: string }> {
+    this.throwScenarioError();
+    return { id: `mock-private-reply-${Date.now()}` };
+  }
   async getExternalUserProfile(
     _accessToken: string,
     userId: string,
@@ -68,6 +72,20 @@ export class InstagramApiMockProvider implements InstagramReviewProvider {
     import("../../application/ports/business-profile-review-provider.js").InstagramMediaMetadata
   > {
     return { id: mediaId, media_type: "IMAGE", media_product_type: "FEED" };
+  }
+  async listMedia(input: {
+    instagramAccountId: string;
+  }): Promise<
+    import("../../application/ports/business-profile-review-provider.js").InstagramMediaListItem[]
+  > {
+    return [
+      {
+        id: "mock-media-id",
+        media_product_type: "FEED",
+        media_type: "IMAGE",
+        permalink: `https://instagram.com/p/${input.instagramAccountId}`,
+      },
+    ];
   }
 
   buildAuthorizationUrl(input: ProviderAuthorizationUrlInput): string {

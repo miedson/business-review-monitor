@@ -28,6 +28,7 @@ import {
   Plug,
   Settings,
   Star,
+  Zap,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { forwardRef, useEffect, useState } from "react";
@@ -39,6 +40,7 @@ const primaryItems = [
 const instagramItems = [
   ["/instagram/comments", "Comentários", MessageSquareText],
   ["/inbox", "Direct", Inbox],
+  ["/automations", "Automações", Zap],
 ] as const;
 const settingsItems = [
   ["/settings", "Geral", Settings],

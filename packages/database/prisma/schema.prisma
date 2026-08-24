@@ -32,6 +32,8 @@ model Tenant {
   instagramConnections InstagramConnection[]
   instagramConversations InstagramConversation[]
   instagramMessages    InstagramMessage[]
+  instagramAutomations InstagramAutomation[]
+  instagramAutomationExecutions InstagramAutomationExecution[]
   notifications        Notification[]
   reviewCaches         ReviewCache[]
   users                TenantUser[]
@@ -93,6 +95,7 @@ model InstagramConnection {
   media                           InstagramMedia[]
   externalUsers                   InstagramExternalUser[]
   conversations                   InstagramConversation[]
+  automations                     InstagramAutomation[]
   tenant                          Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
@@ -226,6 +229,95 @@ model InstagramMessage {
   @@map("instagram_messages")
 }
 
+model InstagramAutomation {
+  id                    String                         @id @default(cuid())
+  tenantId              String
+  instagramConnectionId String
+  createdBy             String
+  name                  String
+  status                InstagramAutomationStatus      @default(DRAFT)
+  triggerType           InstagramAutomationTriggerType @default(INSTAGRAM_COMMENT)
+  scopeType             InstagramAutomationScopeType   @default(SPECIFIC_MEDIA)
+  instagramMediaId      String?
+  matchType             InstagramAutomationMatchType   @default(ANY_COMMENT)
+  keywords              Json
+  excludedKeywords      Json
+  triggerFrequency      InstagramAutomationTriggerFrequency @default(ONCE_PER_COMMENT)
+  publicReplyEnabled    Boolean                        @default(false)
+  publicReplyMessages   Json
+  dmMessage             String
+  dmLink                String?
+  priority              Int                            @default(0)
+  createdAt             DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                       @updatedAt @db.Timestamptz(3)
+  tenant                Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  instagramConnection   InstagramConnection            @relation(fields: [instagramConnectionId], references: [id], onDelete: Cascade)
+  actions               InstagramAutomationAction[]
+  executions            InstagramAutomationExecution[]
+
+  @@index([tenantId, instagramConnectionId, status, triggerType])
+  @@index([instagramConnectionId, status, scopeType, instagramMediaId])
+  @@map("instagram_automations")
+}
+
+model InstagramAutomationAction {
+  id           String                         @id @default(cuid())
+  automationId String
+  type         InstagramAutomationActionType
+  position     Int
+  config       Json
+  automation   InstagramAutomation            @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  executions   InstagramAutomationActionExecution[]
+
+  @@unique([automationId, position])
+  @@index([automationId])
+  @@map("instagram_automation_actions")
+}
+
+model InstagramAutomationExecution {
+  id                 String                            @id @default(cuid())
+  tenantId           String
+  automationId       String
+  triggerType        InstagramAutomationTriggerType
+  externalEventId    String?
+  instagramCommentId String
+  instagramUserId    String?
+  instagramMediaId   String?
+  matchedKeyword     String?
+  status             InstagramAutomationExecutionStatus @default(PENDING)
+  startedAt          DateTime?
+  completedAt        DateTime?
+  errorCode          String?
+  errorMessage       String?
+  metadata           Json
+  createdAt          DateTime                          @default(now()) @db.Timestamptz(3)
+  tenant             Tenant                            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  automation         InstagramAutomation               @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  actionExecutions   InstagramAutomationActionExecution[]
+
+  @@unique([automationId, instagramCommentId])
+  @@index([tenantId, createdAt])
+  @@index([automationId, status, createdAt])
+  @@map("instagram_automation_executions")
+}
+
+model InstagramAutomationActionExecution {
+  id           String                            @id @default(cuid())
+  executionId  String
+  actionId     String
+  status       InstagramAutomationExecutionStatus @default(PENDING)
+  externalId   String?
+  errorCode    String?
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  execution    InstagramAutomationExecution      @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  action       InstagramAutomationAction         @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  @@unique([executionId, actionId])
+  @@map("instagram_automation_action_executions")
+}
+
 model Notification {
   id           String             @id @default(cuid())
   tenantId     String
@@ -335,6 +427,50 @@ enum InstagramMessageStatus {
   DELIVERED
   READ
   FAILED
+}
+
+enum InstagramAutomationStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum InstagramAutomationTriggerType {
+  INSTAGRAM_COMMENT
+}
+
+enum InstagramAutomationScopeType {
+  SPECIFIC_MEDIA
+  ALL_MEDIA
+  NEXT_MEDIA
+}
+
+enum InstagramAutomationMatchType {
+  ANY_COMMENT
+  CONTAINS
+  EXACT_MATCH
+  FULL_WORD
+}
+
+enum InstagramAutomationTriggerFrequency {
+  ONCE_PER_COMMENT
+  ONCE_PER_USER_PER_POST
+  ONCE_PER_USER
+}
+
+enum InstagramAutomationActionType {
+  PUBLIC_COMMENT_REPLY
+  SEND_INSTAGRAM_DM
+}
+
+enum InstagramAutomationExecutionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+  SKIPPED
 }
 
 enum NotificationType {

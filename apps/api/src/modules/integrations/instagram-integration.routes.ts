@@ -113,6 +113,7 @@ const instagramAccountsRouteSchema = {
               id: { type: "string" },
               name: { type: "string" },
               username: { type: "string" },
+              connectionId: { type: "string" },
             },
           },
         },
@@ -299,7 +300,16 @@ export function registerInstagramIntegrationRoutes(
           ...(query.pageToken ? { pageToken: query.pageToken } : {}),
         });
 
-        return reply.send(result);
+        const connection = await options.instagramConnectionRepository.findByTenantId(
+          session.tenant.id,
+        );
+        return reply.send({
+          ...result,
+          accounts: result.accounts.map((account) => ({
+            ...account,
+            connectionId: connection?.id ?? "",
+          })),
+        });
       } catch (error) {
         if (error instanceof GoogleBusinessProfileProviderError) {
           return reply.status(mapProviderErrorStatus(error)).send({

@@ -25,6 +25,7 @@ export type {
   RevokeProviderAuthorizationInput,
   ResolveWebhookAccountIdInput,
   ResolveWebhookAccountIdResult,
+  InstagramMediaListItem,
 } from "./application/ports/business-profile-review-provider.js";
 export type { BusinessProfileAccount, BusinessProfileLocation } from "./domain/business-profile.js";
 export type { BusinessReview, ReviewStarRating, ReviewSummary } from "./domain/review.js";
@@ -112,6 +113,23 @@ export type {
 export { PrismaBusinessLocationRepository } from "./adapters/database/prisma-business-location-repository.js";
 export { PrismaReviewCacheRepository } from "./adapters/database/prisma-review-cache-repository.js";
 export { PrismaInstagramCommentRepository } from "./adapters/database/prisma-instagram-comment-repository.js";
+export { PrismaInstagramAutomationRepository } from "./adapters/database/prisma-instagram-automation-repository.js";
+export type {
+  InstagramAutomationRepository,
+  InstagramAutomationWithActions,
+  SaveInstagramAutomationInput,
+} from "./application/ports/instagram-automation-repository.js";
+export {
+  matchesInstagramComment,
+  normalizeComment,
+  renderInstagramTemplate,
+} from "./domain/instagram-automation.js";
+export type {
+  InstagramAutomationMatchType,
+  InstagramTemplateVariables,
+} from "./domain/instagram-automation.js";
+export { ExecuteInstagramCommentAutomation } from "./application/use-cases/execute-instagram-comment-automation.js";
+export type { InstagramCommentAutomationInput } from "./application/use-cases/execute-instagram-comment-automation.js";
 
 export { INSTAGRAM_SCOPES, INSTAGRAM_SCOPE_STRING } from "./adapters/meta/instagram.constants.js";
 export { InstagramApiProvider } from "./adapters/meta/instagram-api-provider.js";

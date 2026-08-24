@@ -1,4 +1,5 @@
 import type {
+  InstagramMediaListItem,
   InstagramMediaMetadata,
   InstagramReviewProvider,
   ListBusinessProfileAccountsInput,
@@ -257,6 +258,32 @@ export class InstagramApiProvider implements InstagramReviewProvider {
     return { id: payload.message_id };
   }
 
+  async sendPrivateReply(input: {
+    accessToken: string;
+    instagramAccountId: string;
+    commentId: string;
+    message: string;
+  }): Promise<{ id: string }> {
+    const url = new URL(`${this.graphApiBase}/${input.instagramAccountId}/messages`);
+    url.searchParams.set("access_token", input.accessToken);
+    const response = await this.fetchFn(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        recipient: { comment_id: input.commentId },
+        message: { text: input.message },
+      }),
+    });
+    const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || typeof payload.message_id !== "string") {
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram private reply request failed",
+      );
+    }
+    return { id: payload.message_id };
+  }
+
   async getUserProfile(accessToken: string): Promise<InstagramUserProfile> {
     this.logger.info({
       provider: "instagram",
@@ -366,6 +393,45 @@ export class InstagramApiProvider implements InstagramReviewProvider {
       ...(typeof payload.caption === "string" ? { caption: payload.caption } : {}),
       ...(typeof payload.timestamp === "string" ? { timestamp: new Date(payload.timestamp) } : {}),
     };
+  }
+
+  async listMedia(input: {
+    accessToken: string;
+    instagramAccountId: string;
+    limit?: number;
+  }): Promise<InstagramMediaListItem[]> {
+    const url = new URL(
+      `${this.graphApiBase}/${encodeURIComponent(input.instagramAccountId)}/media`,
+    );
+    url.searchParams.set(
+      "fields",
+      "id,media_type,media_product_type,media_url,thumbnail_url,permalink,caption,timestamp",
+    );
+    url.searchParams.set("limit", String(input.limit ?? 50));
+    url.searchParams.set("access_token", input.accessToken);
+    const response = await this.fetchFn(url, { headers: { Accept: "application/json" } });
+    const payload = await readJson(response);
+    if (!response.ok || !isObject(payload) || !Array.isArray(payload.data)) {
+      throw new GoogleBusinessProfileProviderError(
+        mapInstagramApiErrorStatus(response.status),
+        "Instagram media listing request failed",
+      );
+    }
+    return payload.data
+      .filter(isObject)
+      .filter((item): item is Record<string, unknown> => typeof item.id === "string")
+      .map((item) => ({
+        id: String(item.id),
+        ...(typeof item.media_type === "string" ? { media_type: item.media_type } : {}),
+        ...(typeof item.media_product_type === "string"
+          ? { media_product_type: item.media_product_type }
+          : {}),
+        ...(typeof item.media_url === "string" ? { media_url: item.media_url } : {}),
+        ...(typeof item.thumbnail_url === "string" ? { thumbnail_url: item.thumbnail_url } : {}),
+        ...(typeof item.permalink === "string" ? { permalink: item.permalink } : {}),
+        ...(typeof item.caption === "string" ? { caption: item.caption } : {}),
+        ...(typeof item.timestamp === "string" ? { timestamp: new Date(item.timestamp) } : {}),
+      }));
   }
 
   async resolveWebhookAccountId(input: {

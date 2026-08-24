@@ -92,6 +92,10 @@ export type InstagramMediaMetadata = {
   caption?: string;
   timestamp?: Date;
 };
+export type InstagramMediaListItem = InstagramMediaMetadata & {
+  permalink?: string;
+  caption?: string;
+};
 
 export type ResolveWebhookAccountIdInput = {
   webhookAccountId: string;
@@ -123,10 +127,21 @@ export interface InstagramReviewProvider extends BusinessProfileReviewProvider {
     commentId: string;
     message: string;
   }): Promise<{ id: string }>;
+  sendPrivateReply?(input: {
+    accessToken: string;
+    instagramAccountId: string;
+    commentId: string;
+    message: string;
+  }): Promise<{ id: string }>;
   sendDirectMessage?(input: SendInstagramDirectMessageInput): Promise<{ id: string }>;
   getUserProfile(accessToken: string): Promise<InstagramUserProfile>;
   getExternalUserProfile?(accessToken: string, userId: string): Promise<InstagramUserProfile>;
   getMediaMetadata?(accessToken: string, mediaId: string): Promise<InstagramMediaMetadata>;
+  listMedia?(input: {
+    accessToken: string;
+    instagramAccountId: string;
+    limit?: number;
+  }): Promise<InstagramMediaListItem[]>;
   resolveWebhookAccountId(
     input: ResolveWebhookAccountIdInput,
   ): Promise<ResolveWebhookAccountIdResult>;
