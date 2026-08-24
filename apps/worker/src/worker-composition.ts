@@ -125,6 +125,7 @@ export function createProcessMetaWebhookEventJob(config: AppConfig): ProcessMeta
       connectionRepository,
       provider: instagramProvider,
       tokenCipher,
+      instagramCommentRepository: commentRepository,
     }),
   );
 }

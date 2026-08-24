@@ -153,6 +153,20 @@ export function registerInstagramAutomationRoutes(app: FastifyInstance, options:
       });
     },
   );
+  app.delete(
+    "/automations/:id",
+    { schema: { ...routeSchema, summary: "Archive Instagram comment automation" } },
+    async (request) => {
+      const session = await sessionFor(request, options.authService);
+      const params = z.object({ id: z.string() }).parse(request.params);
+      const archived = await options.repository.archive({
+        id: params.id,
+        tenantId: session.tenant.id,
+      });
+      if (!archived) throw notFound();
+      return { archived: true };
+    },
+  );
   app.post(
     "/automations/test",
     { schema: { ...routeSchema, summary: "Test an automation matcher" } },

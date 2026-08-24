@@ -74,6 +74,7 @@ export interface InstagramAutomationRepository {
   update(
     input: UpdateInstagramAutomationInput & { id: string; tenantId: string },
   ): Promise<InstagramAutomationWithActions>;
+  archive(input: { id: string; tenantId: string }): Promise<boolean>;
   findByIdForTenant(input: {
     id: string;
     tenantId: string;

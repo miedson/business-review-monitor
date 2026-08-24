@@ -56,6 +56,13 @@ export class PrismaInstagramAutomationRepository implements InstagramAutomationR
       }),
     );
   }
+  async archive(input: { id: string; tenantId: string }): Promise<boolean> {
+    const result = await this.prisma.instagramAutomation.updateMany({
+      where: { id: input.id, tenantId: input.tenantId, status: { not: "ARCHIVED" } },
+      data: { status: "ARCHIVED" },
+    });
+    return result.count === 1;
+  }
   async findByIdForTenant(input: { id: string; tenantId: string }) {
     const value = await this.prisma.instagramAutomation.findFirst({
       where: input,

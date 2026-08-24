@@ -7,6 +7,7 @@ import type {
   InstagramAutomationRepository,
   InstagramAutomationWithActions,
 } from "../ports/instagram-automation-repository.js";
+import type { InstagramCommentRepository } from "../ports/instagram-comment-repository.js";
 import type { InstagramConnectionRepository } from "../ports/instagram-connection-repository.js";
 import type { TokenCipher } from "../ports/token-cipher.js";
 
@@ -30,6 +31,7 @@ export class ExecuteInstagramCommentAutomation {
       connectionRepository: InstagramConnectionRepository;
       provider: InstagramReviewProvider;
       tokenCipher: TokenCipher;
+      instagramCommentRepository?: InstagramCommentRepository;
     },
   ) {}
 
@@ -145,6 +147,13 @@ export class ExecuteInstagramCommentAutomation {
           });
           failed++;
         }
+      }
+      if (succeeded > 0 && this.dependencies.instagramCommentRepository?.markReplied) {
+        await this.dependencies.instagramCommentRepository.markReplied({
+          id: input.commentId,
+          tenantId: input.tenantId,
+          repliedAt: new Date(),
+        });
       }
       await this.dependencies.repository.updateExecution({
         id: execution.id,

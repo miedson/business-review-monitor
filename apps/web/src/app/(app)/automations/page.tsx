@@ -1,12 +1,14 @@
 "use client";
 
 import {
+  archiveInstagramAutomation,
   createInstagramAutomation,
   listInstagramAccounts,
   listInstagramAutomationExecutions,
   listInstagramAutomationMedia,
   listInstagramAutomations,
   testInstagramAutomation,
+  updateInstagramAutomation,
   type InstagramAccount,
   type InstagramAutomation,
   type InstagramAutomationExecution,
@@ -74,6 +76,7 @@ export default function AutomationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const loadList = async (requestedPage = page) => {
     if (!session?.accessToken) return;
@@ -124,7 +127,7 @@ export default function AutomationsPage() {
     }
     try {
       setSaving(true);
-      await createInstagramAutomation({
+      const input = {
         accessToken: session.accessToken,
         name: name.trim(),
         instagramConnectionId: accountId,
@@ -140,7 +143,12 @@ export default function AutomationsPage() {
           .map((value) => value.trim())
           .filter(Boolean),
         status: "ACTIVE",
-      });
+      } as const;
+      if (editingId) {
+        await updateInstagramAutomation({ ...input, automationId: editingId });
+      } else {
+        await createInstagramAutomation(input);
+      }
       resetForm();
       await loadList(1);
       setTab("list");
@@ -160,6 +168,38 @@ export default function AutomationsPage() {
     setTestText("");
     setTestResult(null);
     setSelectedMediaId("");
+    setEditingId(null);
+  }
+
+  function editAutomation(automation: InstagramAutomation) {
+    setEditingId(automation.id);
+    setAccountId(automation.instagramConnectionId);
+    setName(automation.name);
+    setScopeType(automation.scopeType === "SPECIFIC_MEDIA" ? "SPECIFIC_MEDIA" : "ALL_MEDIA");
+    setSelectedMediaId(automation.instagramMediaId ?? "");
+    setMatchType(automation.matchType);
+    setKeyword(automation.keywords.join(", "));
+    setExcluded(automation.excludedKeywords.join(", "));
+    setPublicReplyEnabled(automation.publicReplyEnabled);
+    setPublicReply(automation.publicReplyMessages.join("\n"));
+    setMessage(automation.dmMessage);
+    setTestResult(null);
+    setError(null);
+    setTab("create");
+  }
+
+  async function archiveAutomation(automation: InstagramAutomation) {
+    if (!session?.accessToken || !window.confirm(`Arquivar a automação “${automation.name}”?`))
+      return;
+    try {
+      await archiveInstagramAutomation({
+        accessToken: session.accessToken,
+        automationId: automation.id,
+      });
+      await loadList(page > 1 && automations.length === 1 ? page - 1 : page);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível arquivar a automação.");
+    }
   }
 
   async function test() {
@@ -251,6 +291,7 @@ export default function AutomationsPage() {
           onTest={() => void test()}
           onSave={() => void save()}
           onReset={resetForm}
+          editing={Boolean(editingId)}
           saving={saving}
         />
       ) : (
@@ -263,6 +304,8 @@ export default function AutomationsPage() {
           totalPages={totalPages}
           onPageChange={(nextPage) => void loadList(nextPage)}
           onHistory={(id) => void showExecutions(id)}
+          onEdit={editAutomation}
+          onArchive={(automation) => void archiveAutomation(automation)}
           onCreate={() => setTab("create")}
         />
       )}
@@ -301,6 +344,7 @@ function CreateAutomation(props: {
   onTest: () => void;
   onSave: () => void;
   onReset: () => void;
+  editing: boolean;
   saving: boolean;
 }) {
   return (
@@ -321,7 +365,9 @@ function CreateAutomation(props: {
             <Camera size={21} />
           </Box>
           <Box>
-            <Text css={{ fontWeight: "semibold", fontSize: "lg" }}>Configure sua automação</Text>
+            <Text css={{ fontWeight: "semibold", fontSize: "lg" }}>
+              {props.editing ? "Editar automação" : "Configure sua automação"}
+            </Text>
             <Text css={{ color: "text.tertiary", fontSize: "sm", mt: 1 }}>
               Defina quando a mensagem deve ser enviada e qual conteúdo usar.
             </Text>
@@ -522,7 +568,7 @@ function CreateAutomation(props: {
               Limpar
             </Button>
             <Button colorPalette="teal" onClick={props.onSave} loading={props.saving}>
-              Salvar e ativar
+              {props.editing ? "Salvar alterações" : "Salvar e ativar"}
             </Button>
           </Flex>
         </Box>
@@ -540,6 +586,8 @@ function AutomationList(props: {
   totalPages: number;
   onPageChange: (page: number) => void;
   onHistory: (id: string) => void;
+  onEdit: (automation: InstagramAutomation) => void;
+  onArchive: (automation: InstagramAutomation) => void;
   onCreate: () => void;
 }) {
   return (
@@ -591,6 +639,8 @@ function AutomationList(props: {
                 automation={automation}
                 executions={props.executions[automation.id]}
                 onHistory={() => props.onHistory(automation.id)}
+                onEdit={() => props.onEdit(automation)}
+                onArchive={() => props.onArchive(automation)}
               />
             ))}
           </Box>
@@ -629,6 +679,8 @@ function AutomationRow(props: {
   automation: InstagramAutomation;
   executions?: InstagramAutomationExecution[] | undefined;
   onHistory: () => void;
+  onEdit: () => void;
+  onArchive: () => void;
 }) {
   const { automation } = props;
   return (
@@ -674,9 +726,17 @@ function AutomationRow(props: {
             ))}
           </Flex>
         </Box>
-        <Button variant="outline" size="sm" onClick={props.onHistory}>
-          Histórico
-        </Button>
+        <Flex css={{ gap: 2, flexWrap: "wrap" }}>
+          <Button variant="outline" size="sm" onClick={props.onEdit}>
+            Editar
+          </Button>
+          <Button variant="ghost" size="sm" onClick={props.onArchive}>
+            Excluir
+          </Button>
+          <Button variant="outline" size="sm" onClick={props.onHistory}>
+            Histórico
+          </Button>
+        </Flex>
       </Flex>
       {props.executions?.map((execution) => (
         <Box

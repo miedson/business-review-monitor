@@ -204,7 +204,7 @@ export type InstagramAutomationExecution = z.infer<
 type RequestOptions = {
   accessToken?: string;
   body?: unknown;
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
 };
 
 export type AuthUser = z.infer<typeof authUserSchema>;
@@ -264,6 +264,45 @@ export async function createInstagramAutomation(input: {
         publicReplyEnabled: input.publicReplyEnabled ?? false,
         publicReplyMessages: input.publicReplyMessages ?? [],
       },
+    }),
+  );
+}
+export async function updateInstagramAutomation(input: {
+  accessToken: string;
+  automationId: string;
+  name: string;
+  instagramConnectionId: string;
+  scopeType: "SPECIFIC_MEDIA" | "ALL_MEDIA";
+  instagramMediaId?: string | null;
+  matchType: "ANY_COMMENT" | "CONTAINS" | "EXACT_MATCH" | "FULL_WORD";
+  keywords: string[];
+  excludedKeywords: string[];
+  dmMessage: string;
+  dmLink?: string | null;
+  publicReplyEnabled?: boolean;
+  publicReplyMessages?: string[];
+  status?: "DRAFT" | "ACTIVE" | "PAUSED" | "ARCHIVED";
+}): Promise<InstagramAutomation> {
+  return instagramAutomationSchema.parse(
+    await requestJson(`/automations/${encodeURIComponent(input.automationId)}`, {
+      accessToken: input.accessToken,
+      method: "PATCH",
+      body: {
+        ...input,
+        automationId: undefined,
+        accessToken: undefined,
+      },
+    }),
+  );
+}
+export async function archiveInstagramAutomation(input: {
+  accessToken: string;
+  automationId: string;
+}): Promise<{ archived: boolean }> {
+  return z.object({ archived: z.boolean() }).parse(
+    await requestJson(`/automations/${encodeURIComponent(input.automationId)}`, {
+      accessToken: input.accessToken,
+      method: "DELETE",
     }),
   );
 }
