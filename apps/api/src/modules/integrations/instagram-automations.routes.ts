@@ -45,9 +45,13 @@ export function registerInstagramAutomationRoutes(app: FastifyInstance, options:
     { schema: { ...routeSchema, summary: "List Instagram comment automations" } },
     async (request) => {
       const session = await sessionFor(request, options.authService);
-      return {
-        automations: await options.repository.listByTenant({ tenantId: session.tenant.id }),
-      };
+      const query = z
+        .object({
+          page: z.coerce.number().int().min(1).default(1),
+          pageSize: z.coerce.number().int().min(1).max(50).default(10),
+        })
+        .parse(request.query);
+      return options.repository.listByTenant({ tenantId: session.tenant.id, ...query });
     },
   );
   app.get(

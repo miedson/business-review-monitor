@@ -156,6 +156,10 @@ const instagramAutomationSchema = z.object({
 });
 const instagramAutomationsResponseSchema = z.object({
   automations: z.array(instagramAutomationSchema),
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().positive(),
 });
 const instagramAutomationMediaSchema = z.object({
   id: z.string(),
@@ -218,9 +222,19 @@ export type InstagramCommentsResponse = z.infer<typeof instagramCommentsResponse
 
 export async function listInstagramAutomations(
   accessToken: string,
-): Promise<{ automations: InstagramAutomation[] }> {
+  options: { page?: number; pageSize?: number } = {},
+): Promise<{
+  automations: InstagramAutomation[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}> {
+  const params = new URLSearchParams();
+  if (options.page) params.set("page", String(options.page));
+  if (options.pageSize) params.set("pageSize", String(options.pageSize));
   return instagramAutomationsResponseSchema.parse(
-    await requestJson("/automations", { accessToken }),
+    await requestJson(`/automations?${params.toString()}`, { accessToken }),
   );
 }
 export async function createInstagramAutomation(input: {

@@ -31,6 +31,13 @@ export type InstagramAutomationActionRecord = {
 export type InstagramAutomationWithActions = InstagramAutomationRecord & {
   actions: InstagramAutomationActionRecord[];
 };
+export type InstagramAutomationPage = {
+  automations: InstagramAutomationWithActions[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
 export type SaveInstagramAutomationInput = Omit<
   InstagramAutomationRecord,
   "id" | "createdAt" | "updatedAt"
@@ -71,7 +78,11 @@ export interface InstagramAutomationRepository {
     id: string;
     tenantId: string;
   }): Promise<InstagramAutomationWithActions | null>;
-  listByTenant(input: { tenantId: string }): Promise<InstagramAutomationWithActions[]>;
+  listByTenant(input: {
+    tenantId: string;
+    page: number;
+    pageSize: number;
+  }): Promise<InstagramAutomationPage>;
   findActiveCandidates(input: {
     tenantId: string;
     instagramConnectionId: string;

@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@brm/database";
 
 import type {
+  InstagramAutomationPage,
   InstagramAutomationRepository,
   InstagramAutomationWithActions,
   SaveInstagramAutomationInput,
@@ -62,13 +63,29 @@ export class PrismaInstagramAutomationRepository implements InstagramAutomationR
     });
     return value ? this.map(value) : null;
   }
-  async listByTenant(input: { tenantId: string }) {
-    const values = await this.prisma.instagramAutomation.findMany({
-      where: { tenantId: input.tenantId, status: { not: "ARCHIVED" } },
-      include: { actions: true },
-      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
-    });
-    return values.map((value) => this.map(value));
+  async listByTenant(input: {
+    tenantId: string;
+    page: number;
+    pageSize: number;
+  }): Promise<InstagramAutomationPage> {
+    const where = { tenantId: input.tenantId, status: { not: "ARCHIVED" as const } };
+    const [values, total] = await Promise.all([
+      this.prisma.instagramAutomation.findMany({
+        where,
+        include: { actions: true },
+        orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+        skip: (input.page - 1) * input.pageSize,
+        take: input.pageSize,
+      }),
+      this.prisma.instagramAutomation.count({ where }),
+    ]);
+    return {
+      automations: values.map((value) => this.map(value)),
+      page: input.page,
+      pageSize: input.pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / input.pageSize)),
+    };
   }
   async findActiveCandidates(input: {
     tenantId: string;
