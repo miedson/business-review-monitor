@@ -268,7 +268,7 @@ function ThreadRow({ thread, onOpen }: { thread: CommentThread; onOpen: () => vo
         bg: pending ? "rgba(245,158,11,.035)" : "surface.primary",
       }}
     >
-      <Avatar comment={latest} name={name} />
+      <Avatar comment={contact} name={name} />
       <Box css={{ flex: 1, minW: 0 }}>
         <Flex css={{ justifyContent: "space-between", gap: 3, flexWrap: "wrap" }}>
           <Box>
